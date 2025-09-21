@@ -12,6 +12,13 @@ yarn add -D @mherod/eslint-plugin-custom
 pnpm add -D @mherod/eslint-plugin-custom
 ```
 
+### Requirements
+
+- Node.js >= 18.0.0
+- ESLint ^8.0.0 or ^9.0.0
+- TypeScript ^5.0.0 (for TypeScript projects)
+- @typescript-eslint/parser ^8.0.0 (for TypeScript projects)
+
 ## Available Plugins
 
 This package provides five specialised plugins:
@@ -178,6 +185,13 @@ export default [
 - `prefer-reusable-swr-hooks` - Create reusable SWR hooks
 - `prefer-ui-promise-handling` - Handle promises properly in UI
 
+**Code Quality:**
+- `no-unstable-math-random` - Prevents Math.random() in React components
+- `no-dynamic-tailwind-classes` - Prevents dynamic Tailwind class generation (auto-fixable)
+  - Detects template literals, concatenation, ternary operators in className
+  - Configuration: `allowedDynamicClasses: string[]`, `allowConditionalClasses: boolean`
+  - Auto-fixes to use clsx/cn utilities when possible
+
 ### General Plugin
 
 Code organisation and quality rules applicable to any JavaScript/TypeScript project.
@@ -222,7 +236,6 @@ export default [
 
 - `enforce-import-order` - Enforces consistent import ordering (external → internal → relative)
 - `enforce-file-naming` - Enforces consistent file naming conventions
-- `enforce-workspace-imports` - Manages workspace package imports
 - `prefer-date-fns-over-date-operations` - Use date-fns for date operations
 
 ### Security Plugin
@@ -243,7 +256,6 @@ export default [
     },
     rules: {
       '@mherod/security/enforce-security-patterns': 'error',
-      '@mherod/security/no-unstable-math-random': 'warn',
 
       // Or use preset
       ...securityPlugin.configs.recommended.rules,
@@ -258,16 +270,14 @@ export default [
 {
   "plugins": ["@mherod/security"],
   "rules": {
-    "@mherod/security/enforce-security-patterns": "error",
-    "@mherod/security/no-unstable-math-random": "warn"
+    "@mherod/security/enforce-security-patterns": "error"
   }
 }
 ```
 
 #### Available Rules
 
-- `enforce-security-patterns` - Comprehensive security pattern enforcement
-- `no-unstable-math-random` - Prevents Math.random() in security-sensitive contexts
+- `enforce-security-patterns` - Comprehensive security pattern enforcement (checks for eval, innerHTML, SQL injection patterns, etc.)
 
 ### Vue.js Plugin
 
@@ -567,9 +577,59 @@ const config: Linter.FlatConfig[] = [
 export default config;
 ```
 
+## Development
+
+### Available Scripts
+
+```bash
+# Development
+npm run dev          # Watch mode for development
+npm run build        # Build all plugins
+npm run clean        # Clean build output
+
+# Testing
+npm test             # Run all tests
+npm run test:watch   # Run tests in watch mode
+
+# Code Quality
+npm run lint         # Check for linting issues
+npm run lint:fix     # Auto-fix linting issues
+npm run typecheck    # TypeScript type checking
+
+# Git Hooks
+npm run commitlint   # Check commit messages (Conventional Commits)
+npm run prepublishOnly  # Full build and test before publishing
+```
+
+### Package Exports
+
+The package provides multiple entry points:
+
+```javascript
+// Main plugin (all rules)
+import customPlugin from '@mherod/eslint-plugin-custom';
+
+// Category-specific plugins
+import typescriptPlugin from '@mherod/eslint-plugin-custom/typescript';
+import reactPlugin from '@mherod/eslint-plugin-custom/react';
+import vuePlugin from '@mherod/eslint-plugin-custom/vue';
+import generalPlugin from '@mherod/eslint-plugin-custom/general';
+import securityPlugin from '@mherod/eslint-plugin-custom/security';
+```
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+### Commit Message Format
+
+This project uses Conventional Commits:
+- `feat:` New features
+- `fix:` Bug fixes
+- `docs:` Documentation changes
+- `test:` Test changes
+- `refactor:` Code refactoring
+- `chore:` Maintenance tasks
 
 ## License
 

@@ -1,7 +1,7 @@
 {
   "name": "@mherod/eslint-plugin-custom",
   "version": "1.0.0",
-  "description": "Custom ESLint rules for TSX and React development",
+  "description": "Modular ESLint plugin with specialized rules for TypeScript, React/Next.js, Vue.js, security, and general code quality",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
