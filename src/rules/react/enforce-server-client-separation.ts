@@ -1,4 +1,8 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
 
 export const RULE_NAME = "enforce-server-client-separation";
 
@@ -54,10 +58,16 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     const allComments = [...comments, ...sourceCode.getAllComments()];
 
     for (const comment of allComments) {
-      if (comment.type === "Line" && comment.value.trim() === "use server") {
+      if (
+        comment.type === AST_NODE_TYPES.Line &&
+        comment.value.trim() === "use server"
+      ) {
         hasUseServerDirective = true;
       }
-      if (comment.type === "Line" && comment.value.trim() === "use client") {
+      if (
+        comment.type === AST_NODE_TYPES.Line &&
+        comment.value.trim() === "use client"
+      ) {
         hasUseClientDirective = true;
       }
     }
@@ -68,9 +78,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       const firstStatement = program.body[0];
       if (
         firstStatement &&
-        firstStatement.type === "ExpressionStatement" &&
+        firstStatement.type === AST_NODE_TYPES.ExpressionStatement &&
         "expression" in firstStatement &&
-        firstStatement.expression.type === "Literal" &&
+        firstStatement.expression.type === AST_NODE_TYPES.Literal &&
         typeof firstStatement.expression.value === "string"
       ) {
         if (firstStatement.expression.value === "use server") {
@@ -83,7 +93,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     }
 
     return {
-      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+      ImportDeclaration(node: TSESTree.ImportDeclaration): void {
         const importedModule = node.source.value;
 
         if (typeof importedModule !== "string") {
@@ -117,8 +127,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         }
       },
 
-      CallExpression(node: TSESTree.CallExpression) {
-        if (node.callee.type === "Identifier") {
+      CallExpression(node: TSESTree.CallExpression): void {
+        if (node.callee.type === AST_NODE_TYPES.Identifier) {
           const functionName = node.callee.name;
 
           // Check for client-only hooks in server components
@@ -135,15 +145,15 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         }
       },
 
-      MemberExpression(node: TSESTree.MemberExpression) {
+      MemberExpression(node: TSESTree.MemberExpression): void {
         // Check for process.env access in client components
         if (
-          node.object.type === "MemberExpression" &&
-          node.object.object.type === "Identifier" &&
+          node.object.type === AST_NODE_TYPES.MemberExpression &&
+          node.object.object.type === AST_NODE_TYPES.Identifier &&
           node.object.object.name === "process" &&
-          node.object.property.type === "Identifier" &&
+          node.object.property.type === AST_NODE_TYPES.Identifier &&
           node.object.property.name === "env" &&
-          node.property.type === "Identifier"
+          node.property.type === AST_NODE_TYPES.Identifier
         ) {
           const envVar = node.property.name;
 
@@ -160,7 +170,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         }
       },
 
-      "Program:exit"() {
+      "Program:exit"(): void {
         // Check for missing directives
         if (
           hasServerOnlyCode &&

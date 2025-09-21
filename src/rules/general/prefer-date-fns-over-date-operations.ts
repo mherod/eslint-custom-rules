@@ -1,4 +1,8 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
 
 export const RULE_NAME = "prefer-date-fns-over-date-operations";
 
@@ -38,8 +42,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     // Helper function to check if a node represents a new Date() call
     function isNewDateCall(node: TSESTree.Node): boolean {
       return (
-        node.type === "NewExpression" &&
-        node.callee.type === "Identifier" &&
+        node.type === AST_NODE_TYPES.NewExpression &&
+        node.callee.type === AST_NODE_TYPES.Identifier &&
         node.callee.name === "Date"
       );
     }
@@ -47,9 +51,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     // Helper function to check if a node represents .getTime() call
     function isGetTimeCall(node: TSESTree.Node): boolean {
       return (
-        node.type === "CallExpression" &&
-        node.callee.type === "MemberExpression" &&
-        node.callee.property.type === "Identifier" &&
+        node.type === AST_NODE_TYPES.CallExpression &&
+        node.callee.type === AST_NODE_TYPES.MemberExpression &&
+        node.callee.property.type === AST_NODE_TYPES.Identifier &&
         node.callee.property.name === "getTime"
       );
     }
@@ -58,7 +62,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     function isDateOperationInSort(
       node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression
     ): boolean {
-      if (!node.body || node.body.type !== "BinaryExpression") {
+      if (!node.body || node.body.type !== AST_NODE_TYPES.BinaryExpression) {
         return false;
       }
 
@@ -68,14 +72,14 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       if (body.operator === "-") {
         const leftIsDateOperation =
           isGetTimeCall(body.left) &&
-          body.left.type === "CallExpression" &&
-          body.left.callee.type === "MemberExpression" &&
+          body.left.type === AST_NODE_TYPES.CallExpression &&
+          body.left.callee.type === AST_NODE_TYPES.MemberExpression &&
           isNewDateCall(body.left.callee.object);
 
         const rightIsDateOperation =
           isGetTimeCall(body.right) &&
-          body.right.type === "CallExpression" &&
-          body.right.callee.type === "MemberExpression" &&
+          body.right.type === AST_NODE_TYPES.CallExpression &&
+          body.right.callee.type === AST_NODE_TYPES.MemberExpression &&
           isNewDateCall(body.right.callee.object);
 
         return leftIsDateOperation && rightIsDateOperation;
@@ -86,7 +90,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     return {
       // Track date-fns imports
-      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+      ImportDeclaration(node: TSESTree.ImportDeclaration): void {
         if (
           node.source.value === "date-fns" ||
           (typeof node.source.value === "string" &&
@@ -97,11 +101,11 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check for sort functions with date operations
-      CallExpression(node: TSESTree.CallExpression) {
+      CallExpression(node: TSESTree.CallExpression): void {
         // Look for .sort() calls
         if (
-          node.callee.type === "MemberExpression" &&
-          node.callee.property.type === "Identifier" &&
+          node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          node.callee.property.type === AST_NODE_TYPES.Identifier &&
           node.callee.property.name === "sort" &&
           node.arguments.length > 0
         ) {
@@ -109,8 +113,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
           if (
             sortFunction &&
-            (sortFunction.type === "ArrowFunctionExpression" ||
-              sortFunction.type === "FunctionExpression") &&
+            (sortFunction.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+              sortFunction.type === AST_NODE_TYPES.FunctionExpression) &&
             isDateOperationInSort(sortFunction) &&
             !hasDateFnsImport // Only warn if date-fns is not already imported
           ) {
@@ -123,16 +127,16 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check for binary expressions with date operations
-      BinaryExpression(node: TSESTree.BinaryExpression) {
+      BinaryExpression(node: TSESTree.BinaryExpression): void {
         // Skip if this is already inside a sort function (handled above)
         let parent: TSESTree.Node | undefined = node.parent;
         while (parent) {
           if (
-            (parent.type === "ArrowFunctionExpression" ||
-              parent.type === "FunctionExpression") &&
-            parent.parent?.type === "CallExpression" &&
-            parent.parent.callee.type === "MemberExpression" &&
-            parent.parent.callee.property.type === "Identifier" &&
+            (parent.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+              parent.type === AST_NODE_TYPES.FunctionExpression) &&
+            parent.parent?.type === AST_NODE_TYPES.CallExpression &&
+            parent.parent.callee.type === AST_NODE_TYPES.MemberExpression &&
+            parent.parent.callee.property.type === AST_NODE_TYPES.Identifier &&
             parent.parent.callee.property.name === "sort"
           ) {
             return; // Skip, already handled by sort check

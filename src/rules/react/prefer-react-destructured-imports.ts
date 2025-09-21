@@ -1,4 +1,8 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
 
 export const RULE_NAME = "prefer-react-destructured-imports";
 
@@ -51,7 +55,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     return {
       // Track React imports
-      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+      ImportDeclaration(node: TSESTree.ImportDeclaration): void {
         if (node.source.value === "react") {
           hasReactImport = true;
           reactImportNode = node;
@@ -60,8 +64,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           if (node.specifiers) {
             for (const specifier of node.specifiers) {
               if (
-                specifier.type === "ImportSpecifier" &&
-                specifier.imported.type === "Identifier"
+                specifier.type === AST_NODE_TYPES.ImportSpecifier &&
+                specifier.imported.type === AST_NODE_TYPES.Identifier
               ) {
                 existingDestructuredImports.add(specifier.imported.name);
               }
@@ -71,12 +75,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check for React.* usage
-      MemberExpression(node: TSESTree.MemberExpression) {
+      MemberExpression(node: TSESTree.MemberExpression): void {
         // Look for React.something patterns
         if (
-          node.object.type === "Identifier" &&
+          node.object.type === AST_NODE_TYPES.Identifier &&
           node.object.name === "React" &&
-          node.property.type === "Identifier" &&
+          node.property.type === AST_NODE_TYPES.Identifier &&
           hasReactImport
         ) {
           const memberName = node.property.name;
@@ -107,12 +111,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
               // Check if there's already a default import (React)
               const hasDefaultImport = reactImportNode.specifiers?.some(
-                (spec) => spec.type === "ImportDefaultSpecifier"
+                (spec) => spec.type === AST_NODE_TYPES.ImportDefaultSpecifier
               );
 
               // Check if there are already destructured imports
               const hasDestructuredImports = reactImportNode.specifiers?.some(
-                (spec) => spec.type === "ImportSpecifier"
+                (spec) => spec.type === AST_NODE_TYPES.ImportSpecifier
               );
 
               let newImportText: string;
@@ -127,7 +131,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
                 // React, { existing } from 'react' -> React, { existing, memberName } from 'react'
                 newImportText = importText.replace(
                   /\{\s*([^}]+)\s*\}/,
-                  (_match, existingImports) => {
+                  (_match: string, existingImports: string) => {
                     const imports = existingImports
                       .split(",")
                       .map((imp: string) => imp.trim());
@@ -141,7 +145,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
                 // { existing } from 'react' -> { existing, memberName } from 'react'
                 newImportText = importText.replace(
                   /\{\s*([^}]+)\s*\}/,
-                  (_match, existingImports) => {
+                  (_match: string, existingImports: string) => {
                     const imports = existingImports
                       .split(",")
                       .map((imp: string) => imp.trim());

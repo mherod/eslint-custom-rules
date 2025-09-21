@@ -44,11 +44,11 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     const imports: TSESTree.ImportDeclaration[] = [];
 
     return {
-      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+      ImportDeclaration(node: TSESTree.ImportDeclaration): void {
         imports.push(node);
       },
 
-      "Program:exit"() {
+      "Program:exit"(): void {
         if (imports.length < 2) {
           return;
         }
@@ -137,10 +137,13 @@ function validateGroupOrder(
   );
 
   if (JSON.stringify(groupOrder) !== JSON.stringify(sortedOrder)) {
-    context.report({
-      node: groups[0]?.imports[0],
-      messageId: "wrongOrder",
-    });
+    const firstImport = groups[0]?.imports[0];
+    if (firstImport) {
+      context.report({
+        node: firstImport,
+        messageId: "wrongOrder",
+      });
+    }
   }
 }
 
@@ -153,11 +156,14 @@ function validateSortingWithinGroups(
     const sortedSources = [...importSources].sort();
 
     if (JSON.stringify(importSources) !== JSON.stringify(sortedSources)) {
-      context.report({
-        node: group.imports[0],
-        messageId: "unsortedImports",
-        data: { group: group.type },
-      });
+      const firstImport = group.imports[0];
+      if (firstImport) {
+        context.report({
+          node: firstImport,
+          messageId: "unsortedImports",
+          data: { group: group.type },
+        });
+      }
     }
   }
 }
@@ -180,20 +186,26 @@ function validateEmptyLinesBetweenGroups(
     // Should have exactly 1 empty line between different groups
     if (linesBetween !== 1) {
       if (linesBetween === 0) {
-        context.report({
-          node: nextGroup.imports[0],
-          messageId: "missingEmptyLine",
-          data: {
-            currentGroup: currentGroup.type,
-            nextGroup: nextGroup.type,
-          },
-        });
+        const nextImport = nextGroup.imports[0];
+        if (nextImport) {
+          context.report({
+            node: nextImport,
+            messageId: "missingEmptyLine",
+            data: {
+              currentGroup: currentGroup.type,
+              nextGroup: nextGroup.type,
+            },
+          });
+        }
       } else if (linesBetween > 1) {
-        context.report({
-          node: nextGroup.imports[0],
-          messageId: "extraEmptyLine",
-          data: { group: nextGroup.type },
-        });
+        const nextImport = nextGroup.imports[0];
+        if (nextImport) {
+          context.report({
+            node: nextImport,
+            messageId: "extraEmptyLine",
+            data: { group: nextGroup.type },
+          });
+        }
       }
     }
   }

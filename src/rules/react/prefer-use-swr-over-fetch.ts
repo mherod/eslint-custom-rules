@@ -1,4 +1,8 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
 
 export const RULE_NAME = "prefer-use-swr-over-fetch";
 
@@ -28,12 +32,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     let componentOrHookContext = false; // Track if we're anywhere inside a component or hook
 
     // Check if we're in a file with "use client" directive
-    function checkForUseClientDirective(node: TSESTree.Program) {
+    function checkForUseClientDirective(node: TSESTree.Program): void {
       // Check the first few statements for "use client" directive
       for (const statement of node.body.slice(0, 3)) {
         if (
-          statement.type === "ExpressionStatement" &&
-          statement.expression.type === "Literal" &&
+          statement.type === AST_NODE_TYPES.ExpressionStatement &&
+          statement.expression.type === AST_NODE_TYPES.Literal &&
           typeof statement.expression.value === "string"
         ) {
           const value = statement.expression.value;
@@ -78,14 +82,15 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         const urlArg = node.arguments[0];
         if (
           urlArg &&
-          urlArg.type === "Literal" &&
+          urlArg.type === AST_NODE_TYPES.Literal &&
           typeof urlArg.value === "string"
         ) {
           reasons.push("simple URL fetch");
           confidence = "high";
         } else if (
           urlArg &&
-          (urlArg.type === "TemplateLiteral" || urlArg.type === "Identifier")
+          (urlArg.type === AST_NODE_TYPES.TemplateLiteral ||
+            urlArg.type === AST_NODE_TYPES.Identifier)
         ) {
           reasons.push("dynamic URL fetch");
           confidence = "medium";
@@ -95,13 +100,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       // Check for GET method or no method specified (defaults to GET)
       if (node.arguments.length >= 2) {
         const optionsArg = node.arguments[1];
-        if (optionsArg && optionsArg.type === "ObjectExpression") {
+        if (optionsArg && optionsArg.type === AST_NODE_TYPES.ObjectExpression) {
           const methodProperty = optionsArg.properties.find(
             (
               prop: TSESTree.ObjectLiteralElementLike
             ): prop is TSESTree.Property =>
-              prop.type === "Property" &&
-              prop.key.type === "Identifier" &&
+              prop.type === AST_NODE_TYPES.Property &&
+              prop.key.type === AST_NODE_TYPES.Identifier &&
               prop.key.name === "method"
           );
 
@@ -109,14 +114,14 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             reasons.push("no method specified (defaults to GET)");
             confidence = "high"; // fetch defaults to GET, so this is high confidence
           } else if (
-            methodProperty.value.type === "Literal" &&
+            methodProperty.value.type === AST_NODE_TYPES.Literal &&
             typeof methodProperty.value.value === "string" &&
             methodProperty.value.value.toUpperCase() === "GET"
           ) {
             reasons.push("explicit GET method");
             confidence = "high";
           } else if (
-            methodProperty.value.type === "Literal" &&
+            methodProperty.value.type === AST_NODE_TYPES.Literal &&
             typeof methodProperty.value.value === "string" &&
             ["POST", "PUT", "PATCH", "DELETE"].includes(
               methodProperty.value.value.toUpperCase()
@@ -135,28 +140,29 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             (
               prop: TSESTree.ObjectLiteralElementLike
             ): prop is TSESTree.Property =>
-              prop.type === "Property" &&
-              prop.key.type === "Identifier" &&
+              prop.type === AST_NODE_TYPES.Property &&
+              prop.key.type === AST_NODE_TYPES.Identifier &&
               prop.key.name === "headers"
           );
 
           if (
             headersProperty &&
-            headersProperty.value.type === "ObjectExpression"
+            headersProperty.value.type === AST_NODE_TYPES.ObjectExpression
           ) {
             const acceptHeader = headersProperty.value.properties.find(
               (
                 prop: TSESTree.ObjectLiteralElementLike
               ): prop is TSESTree.Property =>
-                prop.type === "Property" &&
-                ((prop.key.type === "Identifier" &&
+                prop.type === AST_NODE_TYPES.Property &&
+                ((prop.key.type === AST_NODE_TYPES.Identifier &&
                   prop.key.name === "Accept") ||
-                  (prop.key.type === "Literal" && prop.key.value === "Accept"))
+                  (prop.key.type === AST_NODE_TYPES.Literal &&
+                    prop.key.value === "Accept"))
             );
 
             if (
               acceptHeader &&
-              acceptHeader.value.type === "Literal" &&
+              acceptHeader.value.type === AST_NODE_TYPES.Literal &&
               typeof acceptHeader.value.value === "string" &&
               acceptHeader.value.value.includes("application/json")
             ) {
@@ -177,8 +183,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       let parent: TSESTree.Node | undefined = node.parent;
       while (parent) {
         if (
-          parent.type === "CallExpression" &&
-          parent.callee.type === "Identifier" &&
+          parent.type === AST_NODE_TYPES.CallExpression &&
+          parent.callee.type === AST_NODE_TYPES.Identifier &&
           parent.callee.name === "useEffect"
         ) {
           return true;
@@ -195,8 +201,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       // Check if fetch is part of an async function that sets state
       while (
         parent &&
-        parent.type !== "FunctionDeclaration" &&
-        parent.type !== "ArrowFunctionExpression"
+        parent.type !== AST_NODE_TYPES.FunctionDeclaration &&
+        parent.type !== AST_NODE_TYPES.ArrowFunctionExpression
       ) {
         parent = parent.parent;
       }
@@ -219,12 +225,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     return {
       // Check for "use client" directive at the top of the file
-      Program(node: TSESTree.Program) {
+      Program(node: TSESTree.Program): void {
         checkForUseClientDirective(node);
       },
 
       // Track when we enter/exit functions to know context
-      FunctionDeclaration(node: TSESTree.FunctionDeclaration) {
+      FunctionDeclaration(node: TSESTree.FunctionDeclaration): void {
         if (node.id?.name) {
           const isComponent = isReactComponent(node.id.name);
           const isHook = isCustomHookName(node.id.name);
@@ -236,7 +242,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         }
       },
 
-      FunctionExpression(node: TSESTree.FunctionExpression) {
+      FunctionExpression(node: TSESTree.FunctionExpression): void {
         if (node.id?.name) {
           const isComponent = isReactComponent(node.id.name);
           const isHook = isCustomHookName(node.id.name);
@@ -248,13 +254,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         }
       },
 
-      ArrowFunctionExpression(node: TSESTree.ArrowFunctionExpression) {
+      ArrowFunctionExpression(node: TSESTree.ArrowFunctionExpression): void {
         // For arrow functions, check parent to see if it's assigned to a component/hook-named variable
         const parent = node.parent;
         if (
           parent &&
-          parent.type === "VariableDeclarator" &&
-          parent.id.type === "Identifier"
+          parent.type === AST_NODE_TYPES.VariableDeclarator &&
+          parent.id.type === AST_NODE_TYPES.Identifier
         ) {
           const isComponent = isReactComponent(parent.id.name);
           const isHook = isCustomHookName(parent.id.name);
@@ -266,7 +272,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         }
       },
 
-      "FunctionDeclaration:exit"(node: TSESTree.FunctionDeclaration) {
+      "FunctionDeclaration:exit"(node: TSESTree.FunctionDeclaration): void {
         if (node.id?.name) {
           const isComponent = isReactComponent(node.id.name);
           const isHook = isCustomHookName(node.id.name);
@@ -278,7 +284,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         }
       },
 
-      "FunctionExpression:exit"(node: TSESTree.FunctionExpression) {
+      "FunctionExpression:exit"(node: TSESTree.FunctionExpression): void {
         if (node.id?.name) {
           const isComponent = isReactComponent(node.id.name);
           const isHook = isCustomHookName(node.id.name);
@@ -290,12 +296,14 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         }
       },
 
-      "ArrowFunctionExpression:exit"(node: TSESTree.ArrowFunctionExpression) {
+      "ArrowFunctionExpression:exit"(
+        node: TSESTree.ArrowFunctionExpression
+      ): void {
         const parent = node.parent;
         if (
           parent &&
-          parent.type === "VariableDeclarator" &&
-          parent.id.type === "Identifier"
+          parent.type === AST_NODE_TYPES.VariableDeclarator &&
+          parent.id.type === AST_NODE_TYPES.Identifier
         ) {
           const isComponent = isReactComponent(parent.id.name);
           const isHook = isCustomHookName(parent.id.name);
@@ -308,14 +316,17 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check fetch calls
-      CallExpression(node: TSESTree.CallExpression) {
+      CallExpression(node: TSESTree.CallExpression): void {
         // Only check if we should suggest useSWR in this context
         if (!shouldSuggestUseSwr()) {
           return;
         }
 
         // Check if this is a fetch call
-        if (node.callee.type === "Identifier" && node.callee.name === "fetch") {
+        if (
+          node.callee.type === AST_NODE_TYPES.Identifier &&
+          node.callee.name === "fetch"
+        ) {
           const fetchAnalysis = isDataFetchingCall(node);
 
           if (fetchAnalysis.isDataFetching) {

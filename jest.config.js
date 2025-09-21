@@ -16,12 +16,4 @@ module.exports = {
     "@typescript-eslint/rule-tester":
       "<rootDir>/node_modules/@typescript-eslint/rule-tester/dist/index.js",
   },
-  transform: {
-    "^.+\\.tsx?$": [
-      "ts-jest",
-      {
-        isolatedModules: true,
-      },
-    ],
-  },
 };

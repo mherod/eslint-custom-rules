@@ -1,4 +1,8 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
 
 export const RULE_NAME = "prefer-reusable-swr-hooks";
 
@@ -48,10 +52,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         const keyArg = args[0];
         if (
           keyArg &&
-          (keyArg.type === "ArrowFunctionExpression" ||
-            keyArg.type === "FunctionExpression" ||
-            (keyArg.type === "CallExpression" &&
-              keyArg.callee.type === "Identifier"))
+          (keyArg.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+            keyArg.type === AST_NODE_TYPES.FunctionExpression ||
+            (keyArg.type === AST_NODE_TYPES.CallExpression &&
+              keyArg.callee.type === AST_NODE_TYPES.Identifier))
         ) {
           complexityFactors.push("complex key function");
         }
@@ -60,12 +64,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         const fetcherArg = args[1];
         if (
           fetcherArg &&
-          (fetcherArg.type === "ArrowFunctionExpression" ||
-            fetcherArg.type === "FunctionExpression")
+          (fetcherArg.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+            fetcherArg.type === AST_NODE_TYPES.FunctionExpression)
         ) {
           const fetcherBody = fetcherArg.body;
           if (
-            fetcherBody.type === "BlockStatement" &&
+            fetcherBody.type === AST_NODE_TYPES.BlockStatement &&
             fetcherBody.body.length > 3
           ) {
             complexityFactors.push("complex fetcher logic");
@@ -75,7 +79,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         // Check for extensive configuration options
         if (args.length >= 3) {
           const configArg = args[2];
-          if (configArg && configArg.type === "ObjectExpression") {
+          if (configArg && configArg.type === AST_NODE_TYPES.ObjectExpression) {
             const properties = configArg.properties;
             if (properties.length >= 4) {
               complexityFactors.push("extensive configuration");
@@ -84,10 +88,11 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             // Check for specific complex configurations
             const propertyNames = properties
               .filter(
-                (prop): prop is TSESTree.Property => prop.type === "Property"
+                (prop): prop is TSESTree.Property =>
+                  prop.type === AST_NODE_TYPES.Property
               )
               .map((prop) => {
-                if (prop.key.type === "Identifier") {
+                if (prop.key.type === AST_NODE_TYPES.Identifier) {
                   return prop.key.name;
                 }
                 return "";
@@ -116,22 +121,22 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
       // Generate suggested hook name based on context
       const parent = node.parent;
-      if (parent && parent.type === "VariableDeclarator") {
+      if (parent && parent.type === AST_NODE_TYPES.VariableDeclarator) {
         // Handle simple identifier
-        if (parent.id.type === "Identifier") {
+        if (parent.id.type === AST_NODE_TYPES.Identifier) {
           const varName = parent.id.name;
           if (varName.includes("data") || varName.includes("Data")) {
             suggestedName = varName.replace(/data|Data/gi, "").toLowerCase();
           }
         }
         // Handle object destructuring pattern
-        else if (parent.id.type === "ObjectPattern") {
+        else if (parent.id.type === AST_NODE_TYPES.ObjectPattern) {
           // Find the first property
           const firstProp = parent.id.properties[0];
           if (
             firstProp &&
-            firstProp.type === "Property" &&
-            firstProp.key.type === "Identifier"
+            firstProp.type === AST_NODE_TYPES.Property &&
+            firstProp.key.type === AST_NODE_TYPES.Identifier
           ) {
             const varName = firstProp.key.name;
             if (varName.includes("data") || varName.includes("Data")) {
@@ -156,7 +161,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       if (
         !suggestedName &&
         args[0] &&
-        args[0].type === "Literal" &&
+        args[0].type === AST_NODE_TYPES.Literal &&
         typeof args[0].value === "string"
       ) {
         const key = args[0].value as string;
@@ -186,50 +191,50 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     return {
       // Track when we enter/exit functions to know if we're in a custom hook
-      FunctionDeclaration(node: TSESTree.FunctionDeclaration) {
+      FunctionDeclaration(node: TSESTree.FunctionDeclaration): void {
         if (node.id?.name) {
           currentFunctionName = node.id.name;
           isInCustomHook = isCustomHookName(node.id.name);
         }
       },
 
-      FunctionExpression(node: TSESTree.FunctionExpression) {
+      FunctionExpression(node: TSESTree.FunctionExpression): void {
         if (node.id?.name) {
           currentFunctionName = node.id.name;
           isInCustomHook = isCustomHookName(node.id.name);
         }
       },
 
-      ArrowFunctionExpression(node: TSESTree.ArrowFunctionExpression) {
+      ArrowFunctionExpression(node: TSESTree.ArrowFunctionExpression): void {
         // For arrow functions, check parent to see if it's assigned to a hook-named variable
         const parent = node.parent;
         if (
           parent &&
-          parent.type === "VariableDeclarator" &&
-          parent.id.type === "Identifier"
+          parent.type === AST_NODE_TYPES.VariableDeclarator &&
+          parent.id.type === AST_NODE_TYPES.Identifier
         ) {
           currentFunctionName = parent.id.name;
           isInCustomHook = isCustomHookName(parent.id.name);
         }
       },
 
-      "FunctionDeclaration:exit"() {
+      "FunctionDeclaration:exit"(): void {
         isInCustomHook = false;
         currentFunctionName = "";
       },
 
-      "FunctionExpression:exit"() {
+      "FunctionExpression:exit"(): void {
         isInCustomHook = false;
         currentFunctionName = "";
       },
 
-      "ArrowFunctionExpression:exit"() {
+      "ArrowFunctionExpression:exit"(): void {
         isInCustomHook = false;
         currentFunctionName = "";
       },
 
       // Check useSWR calls
-      CallExpression(node: TSESTree.CallExpression) {
+      CallExpression(node: TSESTree.CallExpression): void {
         // Only check if we're not already in a custom hook
         if (isInCustomHook) {
           return;
@@ -237,7 +242,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         // Check if this is a useSWR call
         if (
-          node.callee.type === "Identifier" &&
+          node.callee.type === AST_NODE_TYPES.Identifier &&
           node.callee.name === "useSWR"
         ) {
           const complexity = isComplexUseSwr(node);
@@ -255,37 +260,40 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             const fetcherArg = node.arguments[1];
             if (
               fetcherArg &&
-              (fetcherArg.type === "ArrowFunctionExpression" ||
-                fetcherArg.type === "FunctionExpression")
+              (fetcherArg.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+                fetcherArg.type === AST_NODE_TYPES.FunctionExpression)
             ) {
               // Check if the fetcher is complex enough to warrant extraction
               let isComplexFetcher = false;
 
               if (
-                fetcherArg.type === "ArrowFunctionExpression" &&
-                fetcherArg.body.type === "BlockStatement"
+                fetcherArg.type === AST_NODE_TYPES.ArrowFunctionExpression &&
+                fetcherArg.body.type === AST_NODE_TYPES.BlockStatement
               ) {
                 // Multi-line arrow function
                 isComplexFetcher = fetcherArg.body.body.length > 1;
               } else if (
-                fetcherArg.type === "FunctionExpression" &&
-                fetcherArg.body.type === "BlockStatement"
+                fetcherArg.type === AST_NODE_TYPES.FunctionExpression &&
+                fetcherArg.body.type === AST_NODE_TYPES.BlockStatement
               ) {
                 // Function expression with multiple statements
                 isComplexFetcher = fetcherArg.body.body.length > 1;
               } else if (
-                fetcherArg.type === "ArrowFunctionExpression" &&
-                fetcherArg.body.type === "CallExpression"
+                fetcherArg.type === AST_NODE_TYPES.ArrowFunctionExpression &&
+                fetcherArg.body.type === AST_NODE_TYPES.CallExpression
               ) {
                 // Check if it's a complex chain like fetch().then().then()
                 let callExpr = fetcherArg.body;
                 let chainLength = 0;
                 while (
-                  callExpr.type === "CallExpression" &&
-                  callExpr.callee.type === "MemberExpression"
+                  callExpr.type === AST_NODE_TYPES.CallExpression &&
+                  callExpr.callee.type === AST_NODE_TYPES.MemberExpression
                 ) {
                   chainLength++;
-                  if (callExpr.callee.object.type === "CallExpression") {
+                  if (
+                    callExpr.callee.object.type ===
+                    AST_NODE_TYPES.CallExpression
+                  ) {
                     callExpr = callExpr.callee.object;
                   } else {
                     break;

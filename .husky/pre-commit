@@ -65,4 +65,39 @@ if [ "$STAGED_HASH" != "$NEW_STAGED_HASH" ]; then
   echo "✨ Files formatted by Ultracite"
 fi
 
-exit $FORMAT_EXIT_CODE
+# Exit if formatting failed
+if [ $FORMAT_EXIT_CODE -ne 0 ]; then
+  echo "❌ Formatting failed"
+  exit $FORMAT_EXIT_CODE
+fi
+
+# Run quality gates
+echo "🔍 Running type checks..."
+npm run typecheck
+TYPECHECK_EXIT_CODE=$?
+
+if [ $TYPECHECK_EXIT_CODE -ne 0 ]; then
+  echo "❌ Type check failed"
+  exit $TYPECHECK_EXIT_CODE
+fi
+
+echo "🔍 Running linting..."
+npm run lint
+LINT_EXIT_CODE=$?
+
+if [ $LINT_EXIT_CODE -ne 0 ]; then
+  echo "❌ Linting failed"
+  exit $LINT_EXIT_CODE
+fi
+
+echo "🧪 Running tests..."
+npm test
+TEST_EXIT_CODE=$?
+
+if [ $TEST_EXIT_CODE -ne 0 ]; then
+  echo "❌ Tests failed"
+  exit $TEST_EXIT_CODE
+fi
+
+echo "✅ All quality gates passed"
+exit 0

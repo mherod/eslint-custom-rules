@@ -1,5 +1,10 @@
 import * as path from "node:path";
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
+import type { Rule } from "eslint";
 
 export const RULE_NAME = "enforce-api-patterns";
 
@@ -66,8 +71,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     return {
       // Check for exported handler functions
-      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
-        if (node.declaration?.type === "FunctionDeclaration") {
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration): void {
+        if (node.declaration?.type === AST_NODE_TYPES.FunctionDeclaration) {
           const functionName = node.declaration.id?.name;
           if (isHttpMethod(functionName)) {
             validateApiHandler(context, node.declaration, routeName);
@@ -76,23 +81,23 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check for default export functions
-      ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration) {
-        if (node.declaration.type === "FunctionDeclaration") {
+      ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration): void {
+        if (node.declaration.type === AST_NODE_TYPES.FunctionDeclaration) {
           validateApiHandler(context, node.declaration, routeName);
         }
       },
 
       // Check for try-catch blocks
-      TryStatement(_node: TSESTree.TryStatement) {
+      TryStatement(_node: TSESTree.TryStatement): void {
         hasErrorHandling = true;
       },
 
       // Check for request method validation
-      MemberExpression(node: TSESTree.MemberExpression) {
+      MemberExpression(node: TSESTree.MemberExpression): void {
         if (
-          node.object.type === "Identifier" &&
+          node.object.type === AST_NODE_TYPES.Identifier &&
           node.object.name === "request" &&
-          node.property.type === "Identifier" &&
+          node.property.type === AST_NODE_TYPES.Identifier &&
           node.property.name === "method"
         ) {
           hasMethodCheck = true;
@@ -100,10 +105,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check for status code usage
-      CallExpression(node: TSESTree.CallExpression) {
+      CallExpression(node: TSESTree.CallExpression): void {
         if (
-          node.callee.type === "MemberExpression" &&
-          node.callee.property.type === "Identifier" &&
+          node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          node.callee.property.type === AST_NODE_TYPES.Identifier &&
           node.callee.property.name === "status"
         ) {
           hasStatusCodeHandling = true;
@@ -111,8 +116,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         // Check for input validation
         if (
-          node.callee.type === "MemberExpression" &&
-          node.callee.property.type === "Identifier" &&
+          node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          node.callee.property.type === AST_NODE_TYPES.Identifier &&
           (node.callee.property.name === "parse" ||
             node.callee.property.name === "validate")
         ) {
@@ -121,7 +126,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         // Check for auth checks
         if (
-          node.callee.type === "Identifier" &&
+          node.callee.type === AST_NODE_TYPES.Identifier &&
           (node.callee.name.includes("auth") ||
             node.callee.name.includes("verify") ||
             node.callee.name.includes("authenticate"))
@@ -131,8 +136,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         // Check for direct database access
         if (
-          node.callee.type === "MemberExpression" &&
-          node.callee.object.type === "Identifier" &&
+          node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          node.callee.object.type === AST_NODE_TYPES.Identifier &&
           isDatabaseObject(node.callee.object.name)
         ) {
           hasDbAccess = true;
@@ -140,17 +145,17 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check for NextResponse usage
-      NewExpression(node: TSESTree.NewExpression) {
+      NewExpression(node: TSESTree.NewExpression): void {
         if (
-          node.callee.type === "MemberExpression" &&
-          node.callee.object.type === "Identifier" &&
+          node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          node.callee.object.type === AST_NODE_TYPES.Identifier &&
           node.callee.object.name === "NextResponse"
         ) {
           hasProperErrorResponse = true;
         }
       },
 
-      "Program:exit"() {
+      "Program:exit"(): void {
         // Validate API route patterns
         if (!hasErrorHandling) {
           context.report({
@@ -299,7 +304,7 @@ function isProtectedRoute(routeName: string): boolean {
 }
 
 function validateApiHandler(
-  context: any,
+  context: Readonly<Rule.RuleContext>,
   node: TSESTree.FunctionDeclaration,
   routeName: string
 ): void {

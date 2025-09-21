@@ -1,4 +1,9 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
+import type { Rule } from "eslint";
 
 export const RULE_NAME = "enforce-documentation";
 
@@ -59,7 +64,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     return {
       // Function declarations
-      FunctionDeclaration(node: TSESTree.FunctionDeclaration) {
+      FunctionDeclaration(node: TSESTree.FunctionDeclaration): void {
         if (!node.id) {
           return;
         }
@@ -96,11 +101,11 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Arrow function expressions in variable declarations
-      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+      VariableDeclarator(node: TSESTree.VariableDeclarator): void {
         if (
-          node.id.type === "Identifier" &&
-          (node.init?.type === "ArrowFunctionExpression" ||
-            node.init?.type === "FunctionExpression")
+          node.id.type === AST_NODE_TYPES.Identifier &&
+          (node.init?.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+            node.init?.type === AST_NODE_TYPES.FunctionExpression)
         ) {
           const functionName = node.id.name;
           const isExported = isExportedVariable(node);
@@ -136,7 +141,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Type aliases
-      TSTypeAliasDeclaration(node: TSESTree.TSTypeAliasDeclaration) {
+      TSTypeAliasDeclaration(node: TSESTree.TSTypeAliasDeclaration): void {
         const typeName = node.id.name;
         const isExported = isExportedType(node);
         const jsDocComment = getJsDocComment(node, sourceCode);
@@ -151,7 +156,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Interfaces
-      TSInterfaceDeclaration(node: TSESTree.TSInterfaceDeclaration) {
+      TSInterfaceDeclaration(node: TSESTree.TSInterfaceDeclaration): void {
         const interfaceName = node.id.name;
         const isExported = isExportedInterface(node);
         const jsDocComment = getJsDocComment(node, sourceCode);
@@ -171,27 +176,27 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 function isExportedFunction(node: TSESTree.FunctionDeclaration): boolean {
   const parent = node.parent;
   return (
-    parent?.type === "ExportNamedDeclaration" ||
-    parent?.type === "ExportDefaultDeclaration"
+    parent?.type === AST_NODE_TYPES.ExportNamedDeclaration ||
+    parent?.type === AST_NODE_TYPES.ExportDefaultDeclaration
   );
 }
 
 function isExportedVariable(node: TSESTree.VariableDeclarator): boolean {
   const parent = node.parent?.parent;
   return (
-    parent?.type === "ExportNamedDeclaration" ||
-    parent?.type === "ExportDefaultDeclaration"
+    parent?.type === AST_NODE_TYPES.ExportNamedDeclaration ||
+    parent?.type === AST_NODE_TYPES.ExportDefaultDeclaration
   );
 }
 
 function isExportedType(node: TSESTree.TSTypeAliasDeclaration): boolean {
   const parent = node.parent;
-  return parent?.type === "ExportNamedDeclaration";
+  return parent?.type === AST_NODE_TYPES.ExportNamedDeclaration;
 }
 
 function isExportedInterface(node: TSESTree.TSInterfaceDeclaration): boolean {
   const parent = node.parent;
-  return parent?.type === "ExportNamedDeclaration";
+  return parent?.type === AST_NODE_TYPES.ExportNamedDeclaration;
 }
 
 function isComponentName(name: string): boolean {
@@ -204,26 +209,37 @@ function isHookName(name: string): boolean {
 
 function isComplexType(typeAnnotation: TSESTree.TypeNode): boolean {
   return (
-    typeAnnotation.type === "TSUnionType" ||
-    typeAnnotation.type === "TSIntersectionType" ||
-    typeAnnotation.type === "TSMappedType" ||
-    typeAnnotation.type === "TSConditionalType" ||
-    (typeAnnotation.type === "TSTypeLiteral" &&
+    typeAnnotation.type === AST_NODE_TYPES.TSUnionType ||
+    typeAnnotation.type === AST_NODE_TYPES.TSIntersectionType ||
+    typeAnnotation.type === AST_NODE_TYPES.TSMappedType ||
+    typeAnnotation.type === AST_NODE_TYPES.TSConditionalType ||
+    (typeAnnotation.type === AST_NODE_TYPES.TSTypeLiteral &&
       typeAnnotation.members.length > 2)
   );
 }
 
-function getJsDocComment(node: TSESTree.Node, sourceCode: any): string | null {
-  const comments = sourceCode.getCommentsBefore(node);
+function getJsDocComment(
+  node: TSESTree.Node,
+  sourceCode: {
+    getCommentsBefore: (
+      node: TSESTree.Node
+    ) => Array<{ type: string; value: string }>;
+  }
+): string | null {
+  const comments = sourceCode.getCommentsBefore(node) as Array<{
+    type: string;
+    value: string;
+  }>;
   const jsDocComment = comments.find(
-    (comment: any) => comment.type === "Block" && comment.value.startsWith("*")
+    (comment) =>
+      comment.type === AST_NODE_TYPES.Block && comment.value.startsWith("*")
   );
 
   return jsDocComment ? jsDocComment.value : null;
 }
 
 function validateJsDocCompleteness(
-  context: any,
+  context: { report: (descriptor: Rule.ReportDescriptor) => void },
   node: TSESTree.Node,
   jsDocComment: string,
   functionName: string
@@ -231,7 +247,10 @@ function validateJsDocCompleteness(
   const missing: string[] = [];
 
   // Check for parameters documentation
-  if (node.type === "FunctionDeclaration" && node.params.length > 0) {
+  if (
+    node.type === AST_NODE_TYPES.FunctionDeclaration &&
+    node.params.length > 0
+  ) {
     const hasParamTags = /@param/.test(jsDocComment);
     if (!hasParamTags) {
       missing.push("@param tags");
@@ -239,7 +258,7 @@ function validateJsDocCompleteness(
   }
 
   // Check for return documentation
-  if (node.type === "FunctionDeclaration" && node.returnType) {
+  if (node.type === AST_NODE_TYPES.FunctionDeclaration && node.returnType) {
     const hasReturnTag = /@returns?/.test(jsDocComment);
     if (!hasReturnTag) {
       missing.push("@returns tag");
@@ -267,7 +286,7 @@ function validateJsDocCompleteness(
 }
 
 function isComplexFunction(node: TSESTree.Node): boolean {
-  if (node.type === "FunctionDeclaration") {
+  if (node.type === AST_NODE_TYPES.FunctionDeclaration) {
     // Consider a function complex if it has multiple parameters or complex return type
     return (
       node.params.length > 2 ||
@@ -280,9 +299,9 @@ function isComplexFunction(node: TSESTree.Node): boolean {
 function isComplexReturnType(returnType: TSESTree.TSTypeAnnotation): boolean {
   const typeNode = returnType.typeAnnotation;
   return (
-    typeNode.type === "TSUnionType" ||
-    typeNode.type === "TSIntersectionType" ||
-    typeNode.type === "TSMappedType" ||
-    typeNode.type === "TSConditionalType"
+    typeNode.type === AST_NODE_TYPES.TSUnionType ||
+    typeNode.type === AST_NODE_TYPES.TSIntersectionType ||
+    typeNode.type === AST_NODE_TYPES.TSMappedType ||
+    typeNode.type === AST_NODE_TYPES.TSConditionalType
   );
 }

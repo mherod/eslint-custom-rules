@@ -1,4 +1,8 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
 
 export const RULE_NAME = "no-unstable-math-random";
 
@@ -55,20 +59,20 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         | TSESTree.ArrowFunctionExpression
     ): boolean {
       // Check for PascalCase function name
-      if (node.type === "FunctionDeclaration" && node.id) {
+      if (node.type === AST_NODE_TYPES.FunctionDeclaration && node.id) {
         return /^[A-Z]/.test(node.id.name);
       }
 
       // Check for variable declaration with PascalCase
       if (
-        node.parent?.type === "VariableDeclarator" &&
-        node.parent.id.type === "Identifier"
+        node.parent?.type === AST_NODE_TYPES.VariableDeclarator &&
+        node.parent.id.type === AST_NODE_TYPES.Identifier
       ) {
         return /^[A-Z]/.test(node.parent.id.name);
       }
 
       // Check for export default
-      if (node.parent?.type === "ExportDefaultDeclaration") {
+      if (node.parent?.type === AST_NODE_TYPES.ExportDefaultDeclaration) {
         return true;
       }
 
@@ -78,64 +82,66 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     // Helper to check if Math.random is being called
     function isMathRandomCall(node: TSESTree.Node): boolean {
       return (
-        node.type === "CallExpression" &&
-        node.callee.type === "MemberExpression" &&
-        node.callee.object.type === "Identifier" &&
+        node.type === AST_NODE_TYPES.CallExpression &&
+        node.callee.type === AST_NODE_TYPES.MemberExpression &&
+        node.callee.object.type === AST_NODE_TYPES.Identifier &&
         node.callee.object.name === "Math" &&
-        node.callee.property.type === "Identifier" &&
+        node.callee.property.type === AST_NODE_TYPES.Identifier &&
         node.callee.property.name === "random"
       );
     }
 
     return {
       // Track entering/exiting React components
-      FunctionDeclaration(node: TSESTree.FunctionDeclaration) {
+      FunctionDeclaration(node: TSESTree.FunctionDeclaration): void {
         if (isReactComponent(node)) {
           componentStack.push(node.id?.name || "AnonymousComponent");
         }
       },
-      "FunctionDeclaration:exit"(node: TSESTree.FunctionDeclaration) {
+      "FunctionDeclaration:exit"(node: TSESTree.FunctionDeclaration): void {
         if (isReactComponent(node)) {
           componentStack.pop();
         }
       },
 
-      FunctionExpression(node: TSESTree.FunctionExpression) {
+      FunctionExpression(node: TSESTree.FunctionExpression): void {
         if (isReactComponent(node)) {
           const name =
-            node.parent?.type === "VariableDeclarator" &&
-            node.parent.id.type === "Identifier"
+            node.parent?.type === AST_NODE_TYPES.VariableDeclarator &&
+            node.parent.id.type === AST_NODE_TYPES.Identifier
               ? node.parent.id.name
               : "AnonymousComponent";
           componentStack.push(name);
         }
       },
-      "FunctionExpression:exit"(node: TSESTree.FunctionExpression) {
+      "FunctionExpression:exit"(node: TSESTree.FunctionExpression): void {
         if (isReactComponent(node)) {
           componentStack.pop();
         }
       },
 
-      ArrowFunctionExpression(node: TSESTree.ArrowFunctionExpression) {
+      ArrowFunctionExpression(node: TSESTree.ArrowFunctionExpression): void {
         if (isReactComponent(node)) {
           const name =
-            node.parent?.type === "VariableDeclarator" &&
-            node.parent.id.type === "Identifier"
+            node.parent?.type === AST_NODE_TYPES.VariableDeclarator &&
+            node.parent.id.type === AST_NODE_TYPES.Identifier
               ? node.parent.id.name
               : "AnonymousComponent";
           componentStack.push(name);
         }
       },
-      "ArrowFunctionExpression:exit"(node: TSESTree.ArrowFunctionExpression) {
+      "ArrowFunctionExpression:exit"(
+        node: TSESTree.ArrowFunctionExpression
+      ): void {
         if (isReactComponent(node)) {
           componentStack.pop();
         }
       },
 
       // Track entering/exiting React hooks
-      CallExpression(node: TSESTree.CallExpression) {
+      CallExpression(node: TSESTree.CallExpression): void {
         // Track hook calls first
-        if (node.callee.type === "Identifier") {
+        if (node.callee.type === AST_NODE_TYPES.Identifier) {
           const hookName = node.callee.name;
           if (hookName.startsWith("use")) {
             hookStack.push(hookName);
@@ -151,7 +157,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               if (hasMathRandom) {
                 // Check if it has empty dependencies
                 const hasEmptyDeps =
-                  node.arguments[1]?.type === "ArrayExpression" &&
+                  node.arguments[1]?.type === AST_NODE_TYPES.ArrayExpression &&
                   node.arguments[1].elements.length === 0;
 
                 // Only report if it doesn't have empty deps (empty deps = stable)
@@ -174,8 +180,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             // Find the useMemo call in the parent chain
             while (parent) {
               if (
-                parent.type === "CallExpression" &&
-                parent.callee.type === "Identifier" &&
+                parent.type === AST_NODE_TYPES.CallExpression &&
+                parent.callee.type === AST_NODE_TYPES.Identifier &&
                 parent.callee.name === "useMemo"
               ) {
                 useMemoNode = parent;
@@ -186,7 +192,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
             if (useMemoNode) {
               const hasEmptyDeps =
-                useMemoNode.arguments[1]?.type === "ArrayExpression" &&
+                useMemoNode.arguments[1]?.type ===
+                  AST_NODE_TYPES.ArrayExpression &&
                 useMemoNode.arguments[1].elements.length === 0;
 
               if (!hasEmptyDeps) {
@@ -207,9 +214,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             let parent: TSESTree.Node | undefined = node.parent;
             while (parent) {
               if (
-                parent.type === "JSXElement" ||
-                parent.type === "JSXFragment" ||
-                parent.type === "JSXExpressionContainer"
+                parent.type === AST_NODE_TYPES.JSXElement ||
+                parent.type === AST_NODE_TYPES.JSXFragment ||
+                parent.type === AST_NODE_TYPES.JSXExpressionContainer
               ) {
                 inJsx = true;
                 break;
@@ -231,8 +238,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           }
         }
       },
-      "CallExpression:exit"(node: TSESTree.CallExpression) {
-        if (node.callee.type === "Identifier") {
+      "CallExpression:exit"(node: TSESTree.CallExpression): void {
+        if (node.callee.type === AST_NODE_TYPES.Identifier) {
           const hookName = node.callee.name;
           if (hookName.startsWith("use")) {
             const index = hookStack.lastIndexOf(hookName);

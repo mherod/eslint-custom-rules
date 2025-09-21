@@ -3,7 +3,6 @@
 // General rules
 import enforceFileNaming from "./general/enforce-file-naming";
 import enforceImportOrder from "./general/enforce-import-order";
-import enforceWorkspaceImports from "./general/enforce-workspace-imports";
 import preferDateFnsOverDateOperations from "./general/prefer-date-fns-over-date-operations";
 // React/Next.js rules
 import enforceAdminSeparation from "./react/enforce-admin-separation";
@@ -11,6 +10,7 @@ import enforceComponentPatterns from "./react/enforce-component-patterns";
 import enforceServerClientSeparation from "./react/enforce-server-client-separation";
 import noDynamicTailwindClasses from "./react/no-dynamic-tailwind-classes";
 import noEventHandlersToClientProps from "./react/no-event-handlers-to-client-props";
+import noUnstableMathRandom from "./react/no-unstable-math-random";
 import noUseStateInAsyncComponent from "./react/no-use-state-in-async-component";
 import preferLinkOverRouterPush from "./react/prefer-link-over-router-push";
 import preferNextNavigation from "./react/prefer-next-navigation";
@@ -22,7 +22,6 @@ import preventEnvironmentPoisoning from "./react/prevent-environment-poisoning";
 import suggestServerComponentPages from "./react/suggest-server-component-pages";
 // Security rules
 import enforceSecurityPatterns from "./security/enforce-security-patterns";
-import noUnstableMathRandom from "./security/no-unstable-math-random";
 import enforceApiPatterns from "./typescript/enforce-api-patterns";
 import enforceDocumentation from "./typescript/enforce-documentation";
 import enforceTypescriptPatterns from "./typescript/enforce-typescript-patterns";
@@ -52,7 +51,6 @@ export const rules = {
   "enforce-admin-separation": enforceAdminSeparation,
   "enforce-api-patterns": enforceApiPatterns,
   "enforce-typescript-patterns": enforceTypescriptPatterns,
-  "enforce-workspace-imports": enforceWorkspaceImports,
   "enforce-security-patterns": enforceSecurityPatterns,
   "enforce-documentation": enforceDocumentation,
   "enforce-zod-schema-naming": enforceZodSchemaNaming,

@@ -1,4 +1,8 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
 
 export const RULE_NAME = "prefer-link-over-router-push";
 
@@ -31,15 +35,15 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       while (current) {
         // Check if we're inside a function that's used as a click handler
         if (
-          (current.type === "FunctionExpression" ||
-            current.type === "ArrowFunctionExpression") &&
+          (current.type === AST_NODE_TYPES.FunctionExpression ||
+            current.type === AST_NODE_TYPES.ArrowFunctionExpression) &&
           current.parent
         ) {
           // Check if parent is a JSX attribute with onClick, onPress, etc.
           if (
-            current.parent.type === "JSXExpressionContainer" &&
-            current.parent.parent?.type === "JSXAttribute" &&
-            current.parent.parent.name.type === "JSXIdentifier"
+            current.parent.type === AST_NODE_TYPES.JSXExpressionContainer &&
+            current.parent.parent?.type === AST_NODE_TYPES.JSXAttribute &&
+            current.parent.parent.name.type === AST_NODE_TYPES.JSXIdentifier
           ) {
             const attrName = current.parent.parent.name.name;
             if (
@@ -53,8 +57,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
           // Check if parent is a property with onClick, onPress, etc.
           if (
-            current.parent.type === "Property" &&
-            current.parent.key.type === "Identifier"
+            current.parent.type === AST_NODE_TYPES.Property &&
+            current.parent.key.type === AST_NODE_TYPES.Identifier
           ) {
             const propName = current.parent.key.name;
             if (
@@ -75,20 +79,20 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     return {
       // Check for router.push() calls
-      CallExpression(node: TSESTree.CallExpression) {
+      CallExpression(node: TSESTree.CallExpression): void {
         // Check for router.push() or useRouter().push()
         if (
-          node.callee.type === "MemberExpression" &&
-          node.callee.property.type === "Identifier" &&
+          node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          node.callee.property.type === AST_NODE_TYPES.Identifier &&
           node.callee.property.name === "push"
         ) {
           // Check if the object is a router (common patterns)
           const isRouterCall =
-            (node.callee.object.type === "Identifier" &&
+            (node.callee.object.type === AST_NODE_TYPES.Identifier &&
               (node.callee.object.name === "router" ||
                 node.callee.object.name === "navigation")) ||
-            (node.callee.object.type === "CallExpression" &&
-              node.callee.object.callee.type === "Identifier" &&
+            (node.callee.object.type === AST_NODE_TYPES.CallExpression &&
+              node.callee.object.callee.type === AST_NODE_TYPES.Identifier &&
               node.callee.object.callee.name === "useRouter");
 
           if (isRouterCall && isInClickHandler(node)) {

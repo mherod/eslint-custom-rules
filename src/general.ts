@@ -1,13 +1,11 @@
 // General/shared rules plugin
 import enforceFileNaming from "./rules/general/enforce-file-naming";
 import enforceImportOrder from "./rules/general/enforce-import-order";
-import enforceWorkspaceImports from "./rules/general/enforce-workspace-imports";
 import preferDateFnsOverDateOperations from "./rules/general/prefer-date-fns-over-date-operations";
 
 export const generalRules = {
   "enforce-file-naming": enforceFileNaming,
   "enforce-import-order": enforceImportOrder,
-  "enforce-workspace-imports": enforceWorkspaceImports,
   "prefer-date-fns-over-date-operations": preferDateFnsOverDateOperations,
 };
 
@@ -27,7 +25,6 @@ export const generalPlugin = {
       rules: {
         "@mherod/general/enforce-file-naming": "error",
         "@mherod/general/enforce-import-order": "error",
-        "@mherod/general/enforce-workspace-imports": "error",
         "@mherod/general/prefer-date-fns-over-date-operations": "warn",
       },
     },
@@ -53,7 +50,6 @@ export const generalConfigs = {
     rules: {
       "@mherod/general/enforce-file-naming": "error",
       "@mherod/general/enforce-import-order": "error",
-      "@mherod/general/enforce-workspace-imports": "error",
       "@mherod/general/prefer-date-fns-over-date-operations": "warn",
     },
   },

@@ -1,10 +1,8 @@
 // Security-specific rules plugin
 import enforceSecurityPatterns from "./rules/security/enforce-security-patterns";
-import noUnstableMathRandom from "./rules/security/no-unstable-math-random";
 
 export const securityRules = {
   "enforce-security-patterns": enforceSecurityPatterns,
-  "no-unstable-math-random": noUnstableMathRandom,
 };
 
 export const securityPlugin = {
@@ -14,14 +12,12 @@ export const securityPlugin = {
       plugins: ["@mherod/security"],
       rules: {
         "@mherod/security/enforce-security-patterns": "error",
-        "@mherod/security/no-unstable-math-random": "warn",
       },
     },
     strict: {
       plugins: ["@mherod/security"],
       rules: {
         "@mherod/security/enforce-security-patterns": "error",
-        "@mherod/security/no-unstable-math-random": "error",
       },
     },
   },

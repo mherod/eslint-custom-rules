@@ -4,6 +4,7 @@ import enforceComponentPatterns from "./rules/react/enforce-component-patterns";
 import enforceServerClientSeparation from "./rules/react/enforce-server-client-separation";
 import noDynamicTailwindClasses from "./rules/react/no-dynamic-tailwind-classes";
 import noEventHandlersToClientProps from "./rules/react/no-event-handlers-to-client-props";
+import noUnstableMathRandom from "./rules/react/no-unstable-math-random";
 import noUseStateInAsyncComponent from "./rules/react/no-use-state-in-async-component";
 import preferLinkOverRouterPush from "./rules/react/prefer-link-over-router-push";
 import preferNextNavigation from "./rules/react/prefer-next-navigation";
@@ -20,6 +21,7 @@ export const reactRules = {
   "enforce-server-client-separation": enforceServerClientSeparation,
   "no-dynamic-tailwind-classes": noDynamicTailwindClasses,
   "no-event-handlers-to-client-props": noEventHandlersToClientProps,
+  "no-unstable-math-random": noUnstableMathRandom,
   "no-use-state-in-async-component": noUseStateInAsyncComponent,
   "prefer-link-over-router-push": preferLinkOverRouterPush,
   "prefer-next-navigation": preferNextNavigation,
@@ -39,6 +41,7 @@ export const reactPlugin = {
       rules: {
         "@mherod/react/no-dynamic-tailwind-classes": "warn",
         "@mherod/react/no-event-handlers-to-client-props": "error",
+        "@mherod/react/no-unstable-math-random": "warn",
         "@mherod/react/no-use-state-in-async-component": "error",
         "@mherod/react/prevent-environment-poisoning": "error",
         "@mherod/react/enforce-server-client-separation": "error",
@@ -54,6 +57,7 @@ export const reactPlugin = {
         "@mherod/react/enforce-server-client-separation": "error",
         "@mherod/react/no-dynamic-tailwind-classes": "error",
         "@mherod/react/no-event-handlers-to-client-props": "error",
+        "@mherod/react/no-unstable-math-random": "error",
         "@mherod/react/no-use-state-in-async-component": "error",
         "@mherod/react/prefer-link-over-router-push": "warn",
         "@mherod/react/prefer-next-navigation": "warn",
@@ -77,6 +81,7 @@ export const reactConfigs = {
     rules: {
       "@mherod/react/no-dynamic-tailwind-classes": "warn",
       "@mherod/react/no-event-handlers-to-client-props": "error",
+      "@mherod/react/no-unstable-math-random": "warn",
       "@mherod/react/no-use-state-in-async-component": "error",
       "@mherod/react/prevent-environment-poisoning": "error",
       "@mherod/react/enforce-server-client-separation": "error",
@@ -94,6 +99,7 @@ export const reactConfigs = {
       "@mherod/react/enforce-server-client-separation": "error",
       "@mherod/react/no-dynamic-tailwind-classes": "error",
       "@mherod/react/no-event-handlers-to-client-props": "error",
+      "@mherod/react/no-unstable-math-random": "error",
       "@mherod/react/no-use-state-in-async-component": "error",
       "@mherod/react/prefer-link-over-router-push": "warn",
       "@mherod/react/prefer-next-navigation": "warn",

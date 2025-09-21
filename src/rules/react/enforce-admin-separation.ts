@@ -1,5 +1,6 @@
 import { dirname, normalize, resolve } from "node:path";
 import {
+  AST_NODE_TYPES,
   ESLintUtils,
   type TSESLint,
   type TSESTree,
@@ -55,7 +56,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     }
 
     return {
-      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+      ImportDeclaration(node: TSESTree.ImportDeclaration): void {
         const importSource = node.source.value;
 
         if (typeof importSource !== "string") {
@@ -88,8 +89,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check for JSX usage of admin components in public files
-      JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
-        if (node.name.type === "JSXIdentifier") {
+      JSXOpeningElement(node: TSESTree.JSXOpeningElement): void {
+        if (node.name.type === AST_NODE_TYPES.JSXIdentifier) {
           const componentName = node.name.name;
 
           // Check if a public file is using an admin component
@@ -104,8 +105,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check for admin utilities being called in public files
-      CallExpression(node: TSESTree.CallExpression) {
-        if (node.callee.type === "Identifier") {
+      CallExpression(node: TSESTree.CallExpression): void {
+        if (node.callee.type === AST_NODE_TYPES.Identifier) {
           const functionName = node.callee.name;
 
           if (isPublicFile && isAdminUtilityName(functionName)) {

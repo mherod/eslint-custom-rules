@@ -1,4 +1,9 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
+import type { Rule } from "eslint";
 
 export const RULE_NAME = "prefer-to-value";
 
@@ -75,21 +80,24 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     /**
      * Checks if toValue needs to be imported and adds it if necessary
      */
-    function ensureToValueImport(fixer: any): any[] {
-      const fixes: unknown[] = [];
+    function ensureToValueImport(fixer: Rule.RuleFixer): Rule.Fix[] {
+      const fixes: Rule.Fix[] = [];
 
       if (!hasToValueImport && autoImport) {
         if (vueImportNode) {
           // Add toValue to existing Vue import
           const importSpecifiers = vueImportNode.specifiers
             .filter(
-              (s): s is TSESTree.ImportSpecifier => s.type === "ImportSpecifier"
+              (s): s is TSESTree.ImportSpecifier =>
+                s.type === AST_NODE_TYPES.ImportSpecifier
             )
             .map((s) => (s.imported as TSESTree.Identifier).name);
 
           if (!importSpecifiers.includes("toValue")) {
             const lastSpecifier = vueImportNode.specifiers.at(-1);
-            fixes.push(fixer.insertTextAfter(lastSpecifier, ", toValue"));
+            if (lastSpecifier) {
+              fixes.push(fixer.insertTextAfter(lastSpecifier, ", toValue"));
+            }
           }
         } else {
           // Add new Vue import at the top
@@ -97,7 +105,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           const sourceCode = context.getSourceCode();
           const firstImport = program.body.find(
             (node): node is TSESTree.ImportDeclaration =>
-              node.type === "ImportDeclaration"
+              node.type === AST_NODE_TYPES.ImportDeclaration
           );
 
           // Try to detect indentation from the first line of code
@@ -136,12 +144,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
      * Gets the identifier name from various node types
      */
     function getIdentifierName(node: TSESTree.Node): string {
-      if (node.type === "Identifier") {
+      if (node.type === AST_NODE_TYPES.Identifier) {
         return node.name;
       }
       if (
-        node.type === "MemberExpression" &&
-        node.object.type === "Identifier"
+        node.type === AST_NODE_TYPES.MemberExpression &&
+        node.object.type === AST_NODE_TYPES.Identifier
       ) {
         return context.getSourceCode().getText(node.object);
       }
@@ -150,7 +158,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     return {
       // Track Vue imports
-      ImportDeclaration(node) {
+      ImportDeclaration(node: TSESTree.ImportDeclaration): void {
         if (
           node.source.value === "vue" ||
           node.source.value === "@vue/reactivity"
@@ -160,33 +168,33 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           // Check if toValue is already imported
           hasToValueImport = node.specifiers.some(
             (spec) =>
-              spec.type === "ImportSpecifier" &&
+              spec.type === AST_NODE_TYPES.ImportSpecifier &&
               (spec.imported as TSESTree.Identifier).name === "toValue"
           );
 
           // Check if unref is imported (we'll suggest replacing it)
           importsToValue = node.specifiers.some(
             (spec) =>
-              spec.type === "ImportSpecifier" &&
+              spec.type === AST_NODE_TYPES.ImportSpecifier &&
               (spec.imported as TSESTree.Identifier).name === "unref"
           );
         }
       },
 
       // Check for ref.value pattern
-      MemberExpression(node) {
+      MemberExpression(node: TSESTree.MemberExpression): void {
         if (
-          node.property.type === "Identifier" &&
+          node.property.type === AST_NODE_TYPES.Identifier &&
           node.property.name === "value" &&
-          node.object.type === "Identifier"
+          node.object.type === AST_NODE_TYPES.Identifier
         ) {
           // Skip if this is part of an isRef() ? x.value : x pattern
           const parent = node.parent;
           if (
-            parent?.type === "ConditionalExpression" &&
+            parent?.type === AST_NODE_TYPES.ConditionalExpression &&
             parent.consequent === node &&
-            parent.test.type === "CallExpression" &&
-            parent.test.callee.type === "Identifier" &&
+            parent.test.type === AST_NODE_TYPES.CallExpression &&
+            parent.test.callee.type === AST_NODE_TYPES.Identifier &&
             parent.test.callee.name === "isRef"
           ) {
             return; // This will be handled by ConditionalExpression
@@ -236,26 +244,30 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               },
               fix:
                 hasToValueImport || autoImport
-                  ? (fixer) => {
+                  ? (fixer: Rule.RuleFixer): Rule.Fix[] => {
                       const fixes = [
                         fixer.replaceText(node, `toValue(${refName})`),
                       ];
                       return fixes.concat(ensureToValueImport(fixer));
                     }
-                  : undefined,
+                  : null,
             });
           }
         }
       },
 
       // Check for unref() calls
-      CallExpression(node) {
+      CallExpression(node: TSESTree.CallExpression): void {
         if (
-          node.callee.type === "Identifier" &&
+          node.callee.type === AST_NODE_TYPES.Identifier &&
           node.callee.name === "unref" &&
           node.arguments.length === 1
         ) {
-          const argText = getIdentifierName(node.arguments[0]);
+          const firstArg = node.arguments[0];
+          if (!firstArg) {
+            return;
+          }
+          const argText = getIdentifierName(firstArg);
 
           context.report({
             node,
@@ -265,7 +277,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             },
             fix:
               hasToValueImport || autoImport
-                ? (fixer) => {
+                ? (fixer: Rule.RuleFixer): Rule.Fix[] => {
                     const fixes = [
                       fixer.replaceText(
                         node.callee as TSESTree.Identifier,
@@ -277,7 +289,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
                     if (importsToValue && !hasToValueImport && vueImportNode) {
                       const unrefSpecifier = vueImportNode.specifiers.find(
                         (s): s is TSESTree.ImportSpecifier =>
-                          s.type === "ImportSpecifier" &&
+                          s.type === AST_NODE_TYPES.ImportSpecifier &&
                           (s.imported as TSESTree.Identifier).name === "unref"
                       );
 
@@ -296,17 +308,17 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
                     return fixes;
                   }
-                : undefined,
+                : null,
           });
         }
       },
 
       // Check for isRef() ? .value : pattern
-      ConditionalExpression(node) {
+      ConditionalExpression(node: TSESTree.ConditionalExpression): void {
         // Check for pattern: isRef(x) ? x.value : x
         if (
-          node.test.type === "CallExpression" &&
-          node.test.callee.type === "Identifier" &&
+          node.test.type === AST_NODE_TYPES.CallExpression &&
+          node.test.callee.type === AST_NODE_TYPES.Identifier &&
           node.test.callee.name === "isRef" &&
           node.test.arguments.length === 1
         ) {
@@ -315,8 +327,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
           // Check if consequent is ref.value
           const isRefValuePattern =
-            node.consequent.type === "MemberExpression" &&
-            node.consequent.property.type === "Identifier" &&
+            node.consequent.type === AST_NODE_TYPES.MemberExpression &&
+            node.consequent.property.type === AST_NODE_TYPES.Identifier &&
             node.consequent.property.name === "value" &&
             context.getSourceCode().getText(node.consequent.object) === refText;
 
@@ -333,13 +345,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               },
               fix:
                 hasToValueImport || autoImport
-                  ? (fixer) => {
+                  ? (fixer: Rule.RuleFixer): Rule.Fix[] => {
                       const fixes = [
                         fixer.replaceText(node, `toValue(${refText})`),
                       ];
                       return fixes.concat(ensureToValueImport(fixer));
                     }
-                  : undefined,
+                  : null,
             });
           }
         }

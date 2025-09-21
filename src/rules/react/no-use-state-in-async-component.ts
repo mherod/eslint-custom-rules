@@ -1,4 +1,8 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
 
 export const RULE_NAME = "no-use-state-in-async-component";
 
@@ -36,7 +40,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           | TSESTree.FunctionDeclaration
           | TSESTree.FunctionExpression
           | TSESTree.ArrowFunctionExpression
-      ) {
+      ): void {
         // Check if function is async
         if (!node.async) {
           return;
@@ -52,14 +56,14 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check for useState calls within async components
-      CallExpression(node: TSESTree.CallExpression) {
+      CallExpression(node: TSESTree.CallExpression): void {
         if (!currentAsyncComponent) {
           return;
         }
 
         // Check for useState calls
         if (
-          node.callee.type === "Identifier" &&
+          node.callee.type === AST_NODE_TYPES.Identifier &&
           node.callee.name === "useState"
         ) {
           context.report({
@@ -70,10 +74,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         // Check for React.useState calls
         if (
-          node.callee.type === "MemberExpression" &&
-          node.callee.object.type === "Identifier" &&
+          node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          node.callee.object.type === AST_NODE_TYPES.Identifier &&
           node.callee.object.name === "React" &&
-          node.callee.property.type === "Identifier" &&
+          node.callee.property.type === AST_NODE_TYPES.Identifier &&
           node.callee.property.name === "useState"
         ) {
           context.report({
@@ -84,17 +88,19 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Clear the current component when we exit
-      "FunctionDeclaration:exit"(node: TSESTree.FunctionDeclaration) {
+      "FunctionDeclaration:exit"(node: TSESTree.FunctionDeclaration): void {
         if (currentAsyncComponent === node) {
           currentAsyncComponent = null;
         }
       },
-      "FunctionExpression:exit"(node: TSESTree.FunctionExpression) {
+      "FunctionExpression:exit"(node: TSESTree.FunctionExpression): void {
         if (currentAsyncComponent === node) {
           currentAsyncComponent = null;
         }
       },
-      "ArrowFunctionExpression:exit"(node: TSESTree.ArrowFunctionExpression) {
+      "ArrowFunctionExpression:exit"(
+        node: TSESTree.ArrowFunctionExpression
+      ): void {
         if (currentAsyncComponent === node) {
           currentAsyncComponent = null;
         }
@@ -109,21 +115,21 @@ function getFunctionName(
     | TSESTree.FunctionExpression
     | TSESTree.ArrowFunctionExpression
 ): string | null {
-  if (node.type === "FunctionDeclaration" && node.id) {
+  if (node.type === AST_NODE_TYPES.FunctionDeclaration && node.id) {
     return node.id.name;
   }
 
   // For function expressions and arrow functions, check if they're assigned to a variable
   const parent = node.parent;
   if (
-    parent?.type === "VariableDeclarator" &&
-    parent.id.type === "Identifier"
+    parent?.type === AST_NODE_TYPES.VariableDeclarator &&
+    parent.id.type === AST_NODE_TYPES.Identifier
   ) {
     return parent.id.name;
   }
 
   // Check if it's an export default
-  if (parent?.type === "ExportDefaultDeclaration") {
+  if (parent?.type === AST_NODE_TYPES.ExportDefaultDeclaration) {
     return "DefaultExport"; // Treat as component
   }
 

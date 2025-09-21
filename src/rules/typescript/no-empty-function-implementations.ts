@@ -1,4 +1,8 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
 
 export const RULE_NAME = "no-empty-function-implementations";
 
@@ -26,7 +30,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     return {
       // Check arrow functions
-      ArrowFunctionExpression(node: TSESTree.ArrowFunctionExpression) {
+      ArrowFunctionExpression(node: TSESTree.ArrowFunctionExpression): void {
         if (isEmptyFunction(node)) {
           context.report({
             node,
@@ -39,7 +43,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check function expressions
-      FunctionExpression(node: TSESTree.FunctionExpression) {
+      FunctionExpression(node: TSESTree.FunctionExpression): void {
         // Skip if already reported as method or property
         if (reportedNodes.has(node)) {
           return;
@@ -56,7 +60,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check function declarations
-      FunctionDeclaration(node: TSESTree.FunctionDeclaration) {
+      FunctionDeclaration(node: TSESTree.FunctionDeclaration): void {
         if (isEmptyFunction(node)) {
           context.report({
             node,
@@ -69,10 +73,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check method definitions (class methods, object methods)
-      MethodDefinition(node: TSESTree.MethodDefinition) {
+      MethodDefinition(node: TSESTree.MethodDefinition): void {
         if (
           node.value &&
-          node.value.type === "FunctionExpression" &&
+          node.value.type === AST_NODE_TYPES.FunctionExpression &&
           isEmptyFunction(node.value)
         ) {
           // Mark this function as already reported to avoid double reporting
@@ -88,12 +92,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check object method shorthand
-      Property(node: TSESTree.Property) {
+      Property(node: TSESTree.Property): void {
         if (
           node.method &&
           node.value &&
-          (node.value.type === "FunctionExpression" ||
-            node.value.type === "ArrowFunctionExpression") &&
+          (node.value.type === AST_NODE_TYPES.FunctionExpression ||
+            node.value.type === AST_NODE_TYPES.ArrowFunctionExpression) &&
           isEmptyFunction(node.value)
         ) {
           // Mark this function as already reported to avoid double reporting
@@ -122,14 +126,14 @@ function isEmptyFunction(
 ): boolean {
   // For arrow functions with expression body (e.g., () => expression)
   if (
-    node.type === "ArrowFunctionExpression" &&
-    node.body.type !== "BlockStatement"
+    node.type === AST_NODE_TYPES.ArrowFunctionExpression &&
+    node.body.type !== AST_NODE_TYPES.BlockStatement
   ) {
     return false; // Expression body is not empty
   }
 
   // For functions with block statement body
-  if (node.body && node.body.type === "BlockStatement") {
+  if (node.body && node.body.type === AST_NODE_TYPES.BlockStatement) {
     const statements = node.body.body;
 
     // Empty block: {}

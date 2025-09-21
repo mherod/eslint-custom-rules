@@ -1,5 +1,10 @@
 import * as path from "node:path";
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
+import type { Rule } from "eslint";
 
 export const RULE_NAME = "prevent-environment-poisoning";
 
@@ -54,7 +59,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     let hasBrowserHooks = false;
 
     return {
-      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+      ImportDeclaration(node: TSESTree.ImportDeclaration): void {
         const importedModule = node.source.value;
 
         if (typeof importedModule !== "string") {
@@ -90,15 +95,15 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check for process.env access to server secrets
-      MemberExpression(node: TSESTree.MemberExpression) {
+      MemberExpression(node: TSESTree.MemberExpression): void {
         // Check for dot notation access: process.env.SECRET
         if (
-          node.object.type === "MemberExpression" &&
-          node.object.object.type === "Identifier" &&
+          node.object.type === AST_NODE_TYPES.MemberExpression &&
+          node.object.object.type === AST_NODE_TYPES.Identifier &&
           node.object.object.name === "process" &&
-          node.object.property.type === "Identifier" &&
+          node.object.property.type === AST_NODE_TYPES.Identifier &&
           node.object.property.name === "env" &&
-          node.property.type === "Identifier"
+          node.property.type === AST_NODE_TYPES.Identifier
         ) {
           const envVar = node.property.name;
 
@@ -119,12 +124,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         // Check for bracket notation access: process.env["SECRET"]
         if (
-          node.object.type === "MemberExpression" &&
-          node.object.object.type === "Identifier" &&
+          node.object.type === AST_NODE_TYPES.MemberExpression &&
+          node.object.object.type === AST_NODE_TYPES.Identifier &&
           node.object.object.name === "process" &&
-          node.object.property.type === "Identifier" &&
+          node.object.property.type === AST_NODE_TYPES.Identifier &&
           node.object.property.name === "env" &&
-          node.property.type === "Literal" &&
+          node.property.type === AST_NODE_TYPES.Literal &&
           typeof node.property.value === "string"
         ) {
           const envVar = node.property.value;
@@ -146,9 +151,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check for browser-only hooks
-      CallExpression(node: TSESTree.CallExpression) {
+      CallExpression(node: TSESTree.CallExpression): void {
         if (
-          node.callee.type === "Identifier" &&
+          node.callee.type === AST_NODE_TYPES.Identifier &&
           isBrowserOnlyHook(node.callee.name)
         ) {
           hasBrowserHooks = true;
@@ -166,7 +171,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check at the end of file processing
-      "Program:exit"() {
+      "Program:exit"(): void {
         if (
           (hasServerSecrets || hasServerOnlyModules) &&
           !hasServerOnlyImport
@@ -452,80 +457,108 @@ function isBrowserOnlyHook(hookName: string): boolean {
  * Helper function to add server-only import at the very top of the file
  * Ensures it's positioned before any other imports and includes eslint-disable comment
  */
-function addServerOnlyImport(fixer: any, context: any) {
-  const sourceCode = context.sourceCode;
+function addServerOnlyImport(
+  fixer: Rule.RuleFixer,
+  context: ReturnType<
+    typeof ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>
+  >["create"]
+): Rule.Fix | null {
+  const sourceCode = context.sourceCode as unknown as {
+    ast: TSESTree.Program;
+    getFirstToken: (node: Rule.Node) => Rule.Node | null;
+  };
   const program = sourceCode.ast;
 
   // Check if server-only import already exists
   const hasServerOnlyImport = program.body.some(
-    (node: any) =>
-      node.type === "ImportDeclaration" &&
+    (node) =>
+      node.type === AST_NODE_TYPES.ImportDeclaration &&
       node.source &&
       node.source.value === "server-only"
   );
 
   if (hasServerOnlyImport) {
     // Already has server-only import, no fix needed
-    return;
+    return null;
   }
 
   // Find the position to insert - before any existing imports or at the very start
   const firstImport = program.body.find(
-    (node: any) => node.type === "ImportDeclaration"
-  );
+    (node) => node.type === AST_NODE_TYPES.ImportDeclaration
+  ) as TSESTree.ImportDeclaration | undefined;
   const insertText =
     '// eslint-disable-next-line @mherod/custom/enforce-import-order\nimport "server-only";\n\n';
 
   if (firstImport) {
     // Insert before the first import
-    return fixer.insertTextBefore(firstImport, insertText);
+    return fixer.insertTextBefore(
+      firstImport as unknown as Rule.Node,
+      insertText
+    );
   }
   // No imports exist, insert at the very beginning
-  const firstToken = sourceCode.getFirstToken(program);
+  const firstToken = sourceCode.getFirstToken(program as unknown as Rule.Node);
   if (firstToken) {
-    return fixer.insertTextBefore(firstToken, insertText);
+    return fixer.insertTextBefore(
+      firstToken as unknown as Rule.Node,
+      insertText
+    );
   }
   // Empty file
-  return fixer.insertTextAfter(program, insertText);
+  return fixer.insertTextAfter(program as unknown as Rule.Node, insertText);
 }
 
 /**
  * Helper function to add client-only import at the very top of the file
  * Ensures it's positioned before any other imports and includes eslint-disable comment
  */
-function addClientOnlyImport(fixer: any, context: any) {
-  const sourceCode = context.sourceCode;
+function addClientOnlyImport(
+  fixer: Rule.RuleFixer,
+  context: ReturnType<
+    typeof ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>
+  >["create"]
+): Rule.Fix | null {
+  const sourceCode = context.sourceCode as unknown as {
+    ast: TSESTree.Program;
+    getFirstToken: (node: Rule.Node) => Rule.Node | null;
+  };
   const program = sourceCode.ast;
 
   // Check if client-only import already exists
   const hasClientOnlyImport = program.body.some(
-    (node: any) =>
-      node.type === "ImportDeclaration" &&
+    (node) =>
+      node.type === AST_NODE_TYPES.ImportDeclaration &&
       node.source &&
       node.source.value === "client-only"
   );
 
   if (hasClientOnlyImport) {
     // Already has client-only import, no fix needed
-    return;
+    return null;
   }
 
   // Find the position to insert - before any existing imports or at the very start
   const firstImport = program.body.find(
-    (node: any) => node.type === "ImportDeclaration"
-  );
+    (node) => node.type === AST_NODE_TYPES.ImportDeclaration
+  ) as TSESTree.ImportDeclaration | undefined;
   const insertText =
     '// eslint-disable-next-line @mherod/custom/enforce-import-order\nimport "client-only";\n\n';
 
   if (firstImport) {
     // Insert before the first import
-    return fixer.insertTextBefore(firstImport, insertText);
+    return fixer.insertTextBefore(
+      firstImport as unknown as Rule.Node,
+      insertText
+    );
   }
   // No imports exist, insert at the very beginning
-  const firstToken = sourceCode.getFirstToken(program);
+  const firstToken = sourceCode.getFirstToken(program as unknown as Rule.Node);
   if (firstToken) {
-    return fixer.insertTextBefore(firstToken, insertText);
+    return fixer.insertTextBefore(
+      firstToken as unknown as Rule.Node,
+      insertText
+    );
   }
   // Empty file
-  return fixer.insertTextAfter(program, insertText);
+  return fixer.insertTextAfter(program as unknown as Rule.Node, insertText);
 }

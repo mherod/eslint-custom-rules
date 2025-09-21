@@ -1,4 +1,8 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
 
 export const RULE_NAME = "enforce-typescript-patterns";
 
@@ -66,7 +70,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     return {
       // Type alias declarations
-      TSTypeAliasDeclaration(node: TSESTree.TSTypeAliasDeclaration) {
+      TSTypeAliasDeclaration(node: TSESTree.TSTypeAliasDeclaration): void {
         const typeName = node.id.name;
 
         // Check PascalCase naming
@@ -97,7 +101,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Interface declarations
-      TSInterfaceDeclaration(node: TSESTree.TSInterfaceDeclaration) {
+      TSInterfaceDeclaration(node: TSESTree.TSInterfaceDeclaration): void {
         const interfaceName = node.id.name;
 
         // Check PascalCase naming
@@ -119,7 +123,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Enum declarations
-      TSEnumDeclaration(node: TSESTree.TSEnumDeclaration) {
+      TSEnumDeclaration(node: TSESTree.TSEnumDeclaration): void {
         const enumName = node.id.name;
 
         // Check PascalCase naming
@@ -142,7 +146,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Any type usage
-      TSAnyKeyword(node: TSESTree.TSAnyKeyword) {
+      TSAnyKeyword(node: TSESTree.TSAnyKeyword): void {
         context.report({
           node,
           messageId: "avoidAnyType",
@@ -150,7 +154,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Unknown type usage
-      TSUnknownKeyword(node: TSESTree.TSUnknownKeyword) {
+      TSUnknownKeyword(node: TSESTree.TSUnknownKeyword): void {
         // Be extremely permissive - if there are ANY comments anywhere in the file within reasonable range, allow it
         const currentLine = node.loc.start.line;
         const allComments = sourceCode.getAllComments();
@@ -177,9 +181,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         // Check if this is in a generic constraint (these are usually well-understood)
         const isInGenericConstraint =
-          node.parent?.type === "TSTypeReference" ||
-          node.parent?.type === "TSTypeLiteral" ||
-          node.parent?.parent?.type === "TSTypeParameterInstantiation";
+          node.parent?.type === AST_NODE_TYPES.TSTypeReference ||
+          node.parent?.type === AST_NODE_TYPES.TSTypeLiteral ||
+          node.parent?.parent?.type ===
+            AST_NODE_TYPES.TSTypeParameterInstantiation;
 
         // Check if the line itself has any meaningful content that suggests intentional usage
         const currentLineText = sourceCode.lines[currentLine - 1] || "";
@@ -220,7 +225,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Generic type parameters
-      TSTypeParameter(node: TSESTree.TSTypeParameter) {
+      TSTypeParameter(node: TSESTree.TSTypeParameter): void {
         // Check if generic has constraint for better type safety
         if (!node.constraint && node.name.name.length === 1) {
           context.report({
@@ -232,7 +237,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Type assertions
-      TSTypeAssertion(node: TSESTree.TSTypeAssertion) {
+      TSTypeAssertion(node: TSESTree.TSTypeAssertion): void {
         // Check if type assertion is unnecessary
         if (isUnnecessaryTypeAssertion(node)) {
           context.report({
@@ -243,7 +248,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // As expressions
-      TSAsExpression(node: TSESTree.TSAsExpression) {
+      TSAsExpression(node: TSESTree.TSAsExpression): void {
         // Check if should use const assertion
         if (shouldUseConstAssertion(node)) {
           context.report({
@@ -254,7 +259,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Non-null assertion
-      TSNonNullExpression(node: TSESTree.TSNonNullExpression) {
+      TSNonNullExpression(node: TSESTree.TSNonNullExpression): void {
         context.report({
           node,
           messageId: "avoidNonNullAssertion",
@@ -271,11 +276,11 @@ function isPascalCase(name: string): boolean {
 function isComplexType(typeAnnotation: TSESTree.TypeNode): boolean {
   // Consider union types, intersection types, mapped types as complex
   return (
-    typeAnnotation.type === "TSUnionType" ||
-    typeAnnotation.type === "TSIntersectionType" ||
-    typeAnnotation.type === "TSMappedType" ||
-    typeAnnotation.type === "TSConditionalType" ||
-    (typeAnnotation.type === "TSTypeLiteral" &&
+    typeAnnotation.type === AST_NODE_TYPES.TSUnionType ||
+    typeAnnotation.type === AST_NODE_TYPES.TSIntersectionType ||
+    typeAnnotation.type === AST_NODE_TYPES.TSMappedType ||
+    typeAnnotation.type === AST_NODE_TYPES.TSConditionalType ||
+    (typeAnnotation.type === AST_NODE_TYPES.TSTypeLiteral &&
       typeAnnotation.members.length > 3)
   );
 }
@@ -283,12 +288,12 @@ function isComplexType(typeAnnotation: TSESTree.TypeNode): boolean {
 function shouldBeInterface(typeAnnotation: TSESTree.TypeNode): boolean {
   // Object types with multiple properties should be interfaces
   return (
-    typeAnnotation.type === "TSTypeLiteral" &&
+    typeAnnotation.type === AST_NODE_TYPES.TSTypeLiteral &&
     typeAnnotation.members.length > 2 &&
     typeAnnotation.members.every(
       (member) =>
-        member.type === "TSPropertySignature" ||
-        member.type === "TSMethodSignature"
+        member.type === AST_NODE_TYPES.TSPropertySignature ||
+        member.type === AST_NODE_TYPES.TSMethodSignature
     )
   );
 }
@@ -298,7 +303,9 @@ function shouldBeTypeAlias(node: TSESTree.TSInterfaceDeclaration): boolean {
   return (
     node.extends === null &&
     node.body.body.length <= 3 &&
-    node.body.body.every((member) => member.type === "TSPropertySignature")
+    node.body.body.every(
+      (member) => member.type === AST_NODE_TYPES.TSPropertySignature
+    )
   );
 }
 
@@ -306,17 +313,17 @@ function isUnnecessaryTypeAssertion(node: TSESTree.TSTypeAssertion): boolean {
   // Check if the expression already has the asserted type
   // This is a simplified check - in practice, you'd need TypeScript's type checker
   return (
-    node.expression.type === "Literal" &&
-    node.typeAnnotation.type === "TSLiteralType"
+    node.expression.type === AST_NODE_TYPES.Literal &&
+    node.typeAnnotation.type === AST_NODE_TYPES.TSLiteralType
   );
 }
 
 function shouldUseConstAssertion(node: TSESTree.TSAsExpression): boolean {
   // Check if asserting to a literal type when const assertion would be better
   return (
-    node.expression.type === "ArrayExpression" ||
-    node.expression.type === "ObjectExpression" ||
-    (node.expression.type === "Literal" &&
-      node.typeAnnotation.type === "TSLiteralType")
+    node.expression.type === AST_NODE_TYPES.ArrayExpression ||
+    node.expression.type === AST_NODE_TYPES.ObjectExpression ||
+    (node.expression.type === AST_NODE_TYPES.Literal &&
+      node.typeAnnotation.type === AST_NODE_TYPES.TSLiteralType)
   );
 }

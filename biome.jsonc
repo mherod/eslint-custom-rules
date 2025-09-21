@@ -20,7 +20,7 @@
         "useMaxParams": "off"
       },
       "suspicious": {
-        "noExplicitAny": "off",
+        "noExplicitAny": "error",
         "noTemplateCurlyInString": "off"
       },
       "style": {
@@ -41,6 +41,7 @@
       "linter": {
         "rules": {
           "suspicious": {
+            "noExplicitAny": "off",
             "noTemplateCurlyInString": "off"
           },
           "correctness": {

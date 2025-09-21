@@ -1,5 +1,5 @@
 import type { TSESTree } from "@typescript-eslint/utils";
-import { ESLintUtils } from "@typescript-eslint/utils";
+import { AST_NODE_TYPES, ESLintUtils } from "@typescript-eslint/utils";
 
 const createRule = ESLintUtils.RuleCreator(
   (name) =>
@@ -35,7 +35,7 @@ export default createRule({
       // Check for window.location.search = "..."
       // Check for window.location.hash = "..."
       // Check for window.location = "..."
-      AssignmentExpression(node: TSESTree.AssignmentExpression) {
+      AssignmentExpression(node: TSESTree.AssignmentExpression): void {
         if (node.operator !== "=") {
           return;
         }
@@ -43,14 +43,14 @@ export default createRule({
         const left = node.left;
 
         // Check for window.location assignments
-        if (left.type === "MemberExpression") {
-          const { object, property } = left;
+        if (left.type === AST_NODE_TYPES.MemberExpression) {
+          const { object, property } = left as TSESTree.MemberExpression;
 
           // window.location = "..."
           if (
-            object.type === "Identifier" &&
+            object.type === AST_NODE_TYPES.Identifier &&
             object.name === "window" &&
-            property.type === "Identifier" &&
+            property.type === AST_NODE_TYPES.Identifier &&
             property.name === "location"
           ) {
             context.report({
@@ -65,12 +65,12 @@ export default createRule({
           // window.location.search = "..."
           // window.location.hash = "..."
           if (
-            object.type === "MemberExpression" &&
-            object.object.type === "Identifier" &&
+            object.type === AST_NODE_TYPES.MemberExpression &&
+            object.object.type === AST_NODE_TYPES.Identifier &&
             object.object.name === "window" &&
-            object.property.type === "Identifier" &&
+            object.property.type === AST_NODE_TYPES.Identifier &&
             object.property.name === "location" &&
-            property.type === "Identifier" &&
+            property.type === AST_NODE_TYPES.Identifier &&
             ["href", "pathname", "search", "hash"].includes(property.name)
           ) {
             context.report({
@@ -85,9 +85,9 @@ export default createRule({
           // location.search = "..."
           // location.hash = "..."
           if (
-            object.type === "Identifier" &&
+            object.type === AST_NODE_TYPES.Identifier &&
             object.name === "location" &&
-            property.type === "Identifier" &&
+            property.type === AST_NODE_TYPES.Identifier &&
             ["href", "pathname", "search", "hash"].includes(property.name)
           ) {
             context.report({
@@ -99,7 +99,10 @@ export default createRule({
         }
 
         // location = "..." (direct assignment)
-        if (left.type === "Identifier" && left.name === "location") {
+        if (
+          left.type === AST_NODE_TYPES.Identifier &&
+          left.name === "location"
+        ) {
           context.report({
             node,
             messageId: "locationAssignment",
@@ -110,18 +113,18 @@ export default createRule({
       // Note: History API methods are allowed as they might be needed for specific use cases
       // If you want to disallow them, uncomment the CallExpression visitor below
       /*
-      CallExpression(node: TSESTree.CallExpression) {
-        if (node.callee.type === "MemberExpression") {
+      CallExpression(node: TSESTree.CallExpression): void {
+        if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
           const { object, property } = node.callee;
 
           // window.history.pushState(), window.history.replaceState(), window.history.back(), window.history.forward(), window.history.go()
           if (
-            object.type === "MemberExpression" &&
-            object.object.type === "Identifier" &&
+            object.type === AST_NODE_TYPES.MemberExpression &&
+            object.object.type === AST_NODE_TYPES.Identifier &&
             object.object.name === "window" &&
-            object.property.type === "Identifier" &&
+            object.property.type === AST_NODE_TYPES.Identifier &&
             object.property.name === "history" &&
-            property.type === "Identifier" &&
+            property.type === AST_NODE_TYPES.Identifier &&
             ["pushState", "replaceState", "back", "forward", "go"].includes(
               property.name,
             )
@@ -135,9 +138,9 @@ export default createRule({
 
           // history.pushState(), history.replaceState(), history.back(), history.forward(), history.go() (without window prefix)
           if (
-            object.type === "Identifier" &&
+            object.type === AST_NODE_TYPES.Identifier &&
             object.name === "history" &&
-            property.type === "Identifier" &&
+            property.type === AST_NODE_TYPES.Identifier &&
             ["pushState", "replaceState", "back", "forward", "go"].includes(
               property.name,
             )

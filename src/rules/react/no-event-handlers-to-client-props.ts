@@ -1,4 +1,9 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
+import type { Rule } from "eslint";
 
 export const RULE_NAME = "no-event-handlers-to-client-props";
 
@@ -34,7 +39,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     const allComments = [...comments, ...sourceCode.getAllComments()];
 
     for (const comment of allComments) {
-      if (comment.type === "Line" && comment.value.trim() === "use client") {
+      if (
+        comment.type === AST_NODE_TYPES.Line &&
+        comment.value.trim() === "use client"
+      ) {
         hasUseClientDirective = true;
       }
     }
@@ -45,9 +53,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       const firstStatement = program.body[0];
       if (
         firstStatement &&
-        firstStatement.type === "ExpressionStatement" &&
+        firstStatement.type === AST_NODE_TYPES.ExpressionStatement &&
         "expression" in firstStatement &&
-        firstStatement.expression.type === "Literal" &&
+        firstStatement.expression.type === AST_NODE_TYPES.Literal &&
         typeof firstStatement.expression.value === "string" &&
         firstStatement.expression.value === "use client"
       ) {
@@ -64,7 +72,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       !filename.includes("/api/");
 
     return {
-      JSXElement(node: TSESTree.JSXElement) {
+      JSXElement(node: TSESTree.JSXElement): void {
         // Only check in server components
         if (!isServerComponent) {
           return;
@@ -78,9 +86,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         // Check each attribute/prop
         for (const attribute of openingElement.attributes) {
           if (
-            attribute.type === "JSXAttribute" &&
-            attribute.name.type === "JSXIdentifier" &&
-            attribute.value?.type === "JSXExpressionContainer"
+            attribute.type === AST_NODE_TYPES.JSXAttribute &&
+            attribute.name.type === AST_NODE_TYPES.JSXIdentifier &&
+            attribute.value?.type === AST_NODE_TYPES.JSXExpressionContainer
           ) {
             const propName = attribute.name.name;
             const expression = attribute.value.expression;
@@ -90,7 +98,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               // Check if the expression is a function (various forms)
               // Skip JSXEmptyExpression (e.g., onClick={})
               if (
-                expression.type !== "JSXEmptyExpression" &&
+                expression.type !== AST_NODE_TYPES.JSXEmptyExpression &&
                 isFunction(expression)
               ) {
                 // Skip Server Actions - they are legitimate to pass as props
@@ -147,24 +155,24 @@ function isEventHandlerPropName(propName: string): boolean {
 function isFunction(
   expression: TSESTree.Expression | TSESTree.JSXEmptyExpression
 ): boolean {
-  if (expression.type === "JSXEmptyExpression") {
+  if (expression.type === AST_NODE_TYPES.JSXEmptyExpression) {
     return false;
   }
   switch (expression.type) {
-    case "FunctionExpression":
-    case "ArrowFunctionExpression":
+    case AST_NODE_TYPES.FunctionExpression:
+    case AST_NODE_TYPES.ArrowFunctionExpression:
       return true;
-    case "Identifier":
+    case AST_NODE_TYPES.Identifier:
       // Could be a function variable - we'll assume it is if it follows naming patterns
       return isFunctionIdentifier(expression.name);
-    case "CallExpression":
+    case AST_NODE_TYPES.CallExpression:
       // Could be useCallback, useMemo returning a function, etc.
-      if (expression.callee.type === "Identifier") {
+      if (expression.callee.type === AST_NODE_TYPES.Identifier) {
         const calleeName = expression.callee.name;
         return ["useCallback", "useMemo"].includes(calleeName);
       }
       return false;
-    case "MemberExpression":
+    case AST_NODE_TYPES.MemberExpression:
       // Could be object.method
       return true;
     default:
@@ -194,23 +202,23 @@ function isFunctionIdentifier(name: string): boolean {
 function getFunctionName(
   expression: TSESTree.Expression | TSESTree.JSXEmptyExpression
 ): string | null {
-  if (expression.type === "JSXEmptyExpression") {
+  if (expression.type === AST_NODE_TYPES.JSXEmptyExpression) {
     return null;
   }
   switch (expression.type) {
-    case "FunctionExpression":
+    case AST_NODE_TYPES.FunctionExpression:
       return expression.id?.name || "function";
-    case "ArrowFunctionExpression":
+    case AST_NODE_TYPES.ArrowFunctionExpression:
       return "function";
-    case "Identifier":
+    case AST_NODE_TYPES.Identifier:
       return expression.name;
-    case "CallExpression":
-      if (expression.callee.type === "Identifier") {
+    case AST_NODE_TYPES.CallExpression:
+      if (expression.callee.type === AST_NODE_TYPES.Identifier) {
         return expression.callee.name;
       }
       return "function";
-    case "MemberExpression":
-      if (expression.property.type === "Identifier") {
+    case AST_NODE_TYPES.MemberExpression:
+      if (expression.property.type === AST_NODE_TYPES.Identifier) {
         return expression.property.name;
       }
       return "method";
@@ -224,19 +232,19 @@ function getFunctionName(
  */
 function isServerAction(
   expression: TSESTree.Expression | TSESTree.JSXEmptyExpression,
-  sourceCode: any
+  sourceCode: Rule.SourceCode
 ): boolean {
-  if (expression.type === "JSXEmptyExpression") {
+  if (expression.type === AST_NODE_TYPES.JSXEmptyExpression) {
     return false;
   }
 
   switch (expression.type) {
-    case "ArrowFunctionExpression":
-    case "FunctionExpression":
+    case AST_NODE_TYPES.ArrowFunctionExpression:
+    case AST_NODE_TYPES.FunctionExpression:
       // Check if the function contains "use server" directive
       return containsUseServerDirective(expression, sourceCode);
 
-    case "Identifier":
+    case AST_NODE_TYPES.Identifier:
       // For function references, try to find the function definition
       return isFunctionIdentifierServerAction(expression, sourceCode);
 
@@ -250,9 +258,12 @@ function isServerAction(
  */
 function containsUseServerDirective(
   functionNode: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression,
-  _sourceCode: any
+  _sourceCode: Rule.SourceCode
 ): boolean {
-  if (!functionNode.body || functionNode.body.type !== "BlockStatement") {
+  if (
+    !functionNode.body ||
+    functionNode.body.type !== AST_NODE_TYPES.BlockStatement
+  ) {
     return false;
   }
 
@@ -265,8 +276,8 @@ function containsUseServerDirective(
   const firstStatement = body[0];
   if (
     firstStatement &&
-    firstStatement.type === "ExpressionStatement" &&
-    firstStatement.expression.type === "Literal" &&
+    firstStatement.type === AST_NODE_TYPES.ExpressionStatement &&
+    firstStatement.expression.type === AST_NODE_TYPES.Literal &&
     firstStatement.expression.value === "use server"
   ) {
     return true;
@@ -280,7 +291,7 @@ function containsUseServerDirective(
  */
 function isFunctionIdentifierServerAction(
   identifier: TSESTree.Identifier,
-  _sourceCode: any
+  _sourceCode: Rule.SourceCode
 ): boolean {
   // Simple heuristic approach: check for common Server Action patterns
   // This is more reliable than complex AST traversal for an ESLint rule

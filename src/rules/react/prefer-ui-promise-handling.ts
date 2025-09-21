@@ -1,4 +1,8 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
 
 export const RULE_NAME = "prefer-ui-promise-handling";
 
@@ -26,11 +30,11 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     let isInReactComponent = false;
 
     // Check if we're in a file with "use client" directive
-    function checkForUseClientDirective(node: TSESTree.Program) {
+    function checkForUseClientDirective(node: TSESTree.Program): void {
       for (const statement of node.body.slice(0, 3)) {
         if (
-          statement.type === "ExpressionStatement" &&
-          statement.expression.type === "Literal" &&
+          statement.type === AST_NODE_TYPES.ExpressionStatement &&
+          statement.expression.type === AST_NODE_TYPES.Literal &&
           statement.expression.value === "use client"
         ) {
           hasUseClientDirective = true;
@@ -63,12 +67,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       const argument = node.argument;
 
       // Check for direct promise-returning calls
-      if (argument.type === "CallExpression") {
+      if (argument.type === AST_NODE_TYPES.CallExpression) {
         return isLikelyPromiseCall(argument);
       }
 
       // Check for await expressions
-      if (argument.type === "AwaitExpression") {
+      if (argument.type === AST_NODE_TYPES.AwaitExpression) {
         return true;
       }
 
@@ -79,16 +83,16 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     function isLikelyPromiseCall(node: TSESTree.CallExpression): boolean {
       // Server actions (functions ending with "Action")
       if (
-        node.callee.type === "Identifier" &&
+        node.callee.type === AST_NODE_TYPES.Identifier &&
         node.callee.name.endsWith("Action")
       ) {
         return true;
       }
 
       // Method calls that commonly return promises
-      if (node.callee.type === "MemberExpression") {
+      if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
         const property = node.callee.property;
-        if (property.type === "Identifier") {
+        if (property.type === AST_NODE_TYPES.Identifier) {
           const promiseMethods = [
             "fetch",
             "post",
@@ -112,7 +116,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       }
 
       // Direct promise-returning functions
-      if (node.callee.type === "Identifier") {
+      if (node.callee.type === AST_NODE_TYPES.Identifier) {
         const promiseFunctions = ["fetch", "axios", "request"];
         return promiseFunctions.includes(node.callee.name);
       }
@@ -127,8 +131,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       while (parent) {
         // Check for common event handler patterns
         if (
-          parent.type === "Property" &&
-          parent.key.type === "Identifier" &&
+          parent.type === AST_NODE_TYPES.Property &&
+          parent.key.type === AST_NODE_TYPES.Identifier &&
           (parent.key.name.startsWith("on") || // onClick, onSubmit, etc.
             parent.key.name.includes("Handle") || // handleClick, handleSubmit
             parent.key.name.includes("handler")) // clickHandler, submitHandler
@@ -138,8 +142,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         // Check for arrow functions assigned to event handler variables
         if (
-          parent.type === "VariableDeclarator" &&
-          parent.id.type === "Identifier" &&
+          parent.type === AST_NODE_TYPES.VariableDeclarator &&
+          parent.id.type === AST_NODE_TYPES.Identifier &&
           (parent.id.name.startsWith("handle") ||
             parent.id.name.startsWith("on") ||
             parent.id.name.includes("Handler"))
@@ -154,59 +158,61 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     }
 
     return {
-      Program(node: TSESTree.Program) {
+      Program(node: TSESTree.Program): void {
         checkForUseClientDirective(node);
       },
 
-      FunctionDeclaration(node: TSESTree.FunctionDeclaration) {
+      FunctionDeclaration(node: TSESTree.FunctionDeclaration): void {
         if (node.id?.name && isReactComponent(node.id.name)) {
           isInReactComponent = true;
         }
       },
 
-      FunctionExpression(node: TSESTree.FunctionExpression) {
+      FunctionExpression(node: TSESTree.FunctionExpression): void {
         if (node.id?.name && isReactComponent(node.id.name)) {
           isInReactComponent = true;
         }
       },
 
-      ArrowFunctionExpression(node: TSESTree.ArrowFunctionExpression) {
+      ArrowFunctionExpression(node: TSESTree.ArrowFunctionExpression): void {
         const parent = node.parent;
         if (
           parent &&
-          parent.type === "VariableDeclarator" &&
-          parent.id.type === "Identifier" &&
+          parent.type === AST_NODE_TYPES.VariableDeclarator &&
+          parent.id.type === AST_NODE_TYPES.Identifier &&
           isReactComponent(parent.id.name)
         ) {
           isInReactComponent = true;
         }
       },
 
-      "FunctionDeclaration:exit"(node: TSESTree.FunctionDeclaration) {
+      "FunctionDeclaration:exit"(node: TSESTree.FunctionDeclaration): void {
         if (node.id?.name && isReactComponent(node.id.name)) {
           isInReactComponent = false;
         }
       },
 
-      "FunctionExpression:exit"(node: TSESTree.FunctionExpression) {
+      "FunctionExpression:exit"(node: TSESTree.FunctionExpression): void {
         if (node.id?.name && isReactComponent(node.id.name)) {
           isInReactComponent = false;
         }
       },
 
-      "ArrowFunctionExpression:exit"(node: TSESTree.ArrowFunctionExpression) {
+      "ArrowFunctionExpression:exit"(
+        node: TSESTree.ArrowFunctionExpression
+      ): void {
         const parent = node.parent;
         if (
           parent &&
-          parent.type === "VariableDeclarator" &&
-          parent.id.type === "Identifier" &&
+          parent.type === AST_NODE_TYPES.VariableDeclarator &&
+          parent.id.type === AST_NODE_TYPES.Identifier &&
           isReactComponent(parent.id.name)
         ) {
           isInReactComponent = false;
         }
       },
 
-      UnaryExpression(node: TSESTree.UnaryExpression) {
+      UnaryExpression(node: TSESTree.UnaryExpression): void {
         if (!shouldCheckPromiseHandling()) {
           return;
         }
@@ -224,13 +230,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Also check for promises in expression statements that might be ignored
-      ExpressionStatement(node: TSESTree.ExpressionStatement) {
+      ExpressionStatement(node: TSESTree.ExpressionStatement): void {
         if (!shouldCheckPromiseHandling()) {
           return;
         }
 
         if (
-          node.expression.type === "CallExpression" &&
+          node.expression.type === AST_NODE_TYPES.CallExpression &&
           isLikelyPromiseCall(node.expression) &&
           isInEventHandler(node)
         ) {

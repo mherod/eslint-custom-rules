@@ -53,7 +53,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   defaultOptions: [],
   create(context) {
     return {
-      Program(_node: TSESTree.Program) {
+      Program(_node: TSESTree.Program): void {
         const filename = context.getFilename();
         validateFilename(context, filename);
       },

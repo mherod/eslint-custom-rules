@@ -1,5 +1,6 @@
 import { basename } from "node:path";
 import {
+  AST_NODE_TYPES,
   ESLintUtils,
   type TSESLint,
   type TSESTree,
@@ -66,7 +67,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     const exportedNames: string[] = [];
 
     return {
-      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+      ImportDeclaration(node: TSESTree.ImportDeclaration): void {
         const importSource = node.source.value;
 
         if (typeof importSource === "string" && importSource === "react") {
@@ -75,7 +76,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Function declarations
-      FunctionDeclaration(node: TSESTree.FunctionDeclaration) {
+      FunctionDeclaration(node: TSESTree.FunctionDeclaration): void {
         if (!node.id) {
           return;
         }
@@ -94,11 +95,11 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Arrow function expressions assigned to variables
-      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+      VariableDeclarator(node: TSESTree.VariableDeclarator): void {
         if (
-          node.id.type === "Identifier" &&
-          (node.init?.type === "ArrowFunctionExpression" ||
-            node.init?.type === "FunctionExpression")
+          node.id.type === AST_NODE_TYPES.Identifier &&
+          (node.init?.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+            node.init?.type === AST_NODE_TYPES.FunctionExpression)
         ) {
           const functionName = node.id.name;
 
@@ -115,23 +116,23 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Export declarations
-      ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration) {
-        if (node.declaration.type === "Identifier") {
+      ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration): void {
+        if (node.declaration.type === AST_NODE_TYPES.Identifier) {
           exportedNames.push(node.declaration.name);
         }
       },
 
-      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration): void {
         if (
-          node.declaration?.type === "FunctionDeclaration" &&
+          node.declaration?.type === AST_NODE_TYPES.FunctionDeclaration &&
           node.declaration.id
         ) {
           exportedNames.push(node.declaration.id.name);
         }
 
-        if (node.declaration?.type === "VariableDeclaration") {
+        if (node.declaration?.type === AST_NODE_TYPES.VariableDeclaration) {
           for (const declarator of node.declaration.declarations) {
-            if (declarator.id.type === "Identifier") {
+            if (declarator.id.type === AST_NODE_TYPES.Identifier) {
               exportedNames.push(declarator.id.name);
             }
           }
@@ -139,9 +140,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         if (node.specifiers) {
           for (const specifier of node.specifiers) {
-            if (specifier.type === "ExportSpecifier") {
+            if (specifier.type === AST_NODE_TYPES.ExportSpecifier) {
               const exportedName =
-                specifier.exported.type === "Identifier"
+                specifier.exported.type === AST_NODE_TYPES.Identifier
                   ? specifier.exported.name
                   : "";
               if (exportedName) {
@@ -152,7 +153,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         }
       },
 
-      "Program:exit"() {
+      "Program:exit"(): void {
         // Check if component file has React import
         if (isComponentFile && !hasReactImport) {
           context.report({
@@ -214,11 +215,14 @@ function validateComponentDeclaration(
   }
 
   // Check for props interface
-  if (node.type === "FunctionDeclaration") {
+  if (node.type === AST_NODE_TYPES.FunctionDeclaration) {
     const params = node.params;
     if (params.length > 0) {
       const propsParam = params[0];
-      if (propsParam?.type === "Identifier" && !propsParam.typeAnnotation) {
+      if (
+        propsParam?.type === AST_NODE_TYPES.Identifier &&
+        !propsParam.typeAnnotation
+      ) {
         context.report({
           node,
           messageId: "componentMustHavePropsInterface",
@@ -237,11 +241,11 @@ function validateHookDeclaration(
   // Check for explicit return type
   let hasReturnType = false;
 
-  if (node.type === "FunctionDeclaration") {
+  if (node.type === AST_NODE_TYPES.FunctionDeclaration) {
     hasReturnType = !!node.returnType;
   } else if (
-    node.type === "VariableDeclarator" &&
-    node.id.type === "Identifier"
+    node.type === AST_NODE_TYPES.VariableDeclarator &&
+    node.id.type === AST_NODE_TYPES.Identifier
   ) {
     hasReturnType = !!node.id.typeAnnotation;
   }

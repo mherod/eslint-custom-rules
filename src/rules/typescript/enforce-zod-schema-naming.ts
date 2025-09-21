@@ -1,4 +1,8 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
 
 export const RULE_NAME = "enforce-zod-schema-naming";
 
@@ -22,10 +26,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   defaultOptions: [],
   create(context) {
     return {
-      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+      VariableDeclarator(node: TSESTree.VariableDeclarator): void {
         // Check if this is a Zod schema variable declaration
         if (
-          node.id.type === "Identifier" &&
+          node.id.type === AST_NODE_TYPES.Identifier &&
           node.init &&
           isZodSchemaCall(node.init)
         ) {
@@ -48,9 +52,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 function isZodSchemaCall(node: TSESTree.Node): boolean {
   // Check for direct z.object(), z.string(), etc.
   if (
-    node.type === "CallExpression" &&
-    node.callee.type === "MemberExpression" &&
-    node.callee.object.type === "Identifier" &&
+    node.type === AST_NODE_TYPES.CallExpression &&
+    node.callee.type === AST_NODE_TYPES.MemberExpression &&
+    node.callee.object.type === AST_NODE_TYPES.Identifier &&
     node.callee.object.name === "z"
   ) {
     return true;
@@ -58,8 +62,8 @@ function isZodSchemaCall(node: TSESTree.Node): boolean {
 
   // Check for chained Zod methods like z.object().required()
   if (
-    node.type === "CallExpression" &&
-    node.callee.type === "MemberExpression" &&
+    node.type === AST_NODE_TYPES.CallExpression &&
+    node.callee.type === AST_NODE_TYPES.MemberExpression &&
     isZodSchemaCall(node.callee.object)
   ) {
     return true;
@@ -67,8 +71,8 @@ function isZodSchemaCall(node: TSESTree.Node): boolean {
 
   // Check for imported Zod functions (e.g., object(), string())
   if (
-    node.type === "CallExpression" &&
-    node.callee.type === "Identifier" &&
+    node.type === AST_NODE_TYPES.CallExpression &&
+    node.callee.type === AST_NODE_TYPES.Identifier &&
     isZodMethod(node.callee.name)
   ) {
     return true;

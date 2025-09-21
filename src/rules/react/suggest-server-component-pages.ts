@@ -1,4 +1,9 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
+import type { Rule } from "eslint";
 
 export const RULE_NAME = "suggest-server-component-pages";
 
@@ -41,9 +46,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       const firstStatement = program.body[0];
       if (
         firstStatement &&
-        firstStatement.type === "ExpressionStatement" &&
+        firstStatement.type === AST_NODE_TYPES.ExpressionStatement &&
         "expression" in firstStatement &&
-        firstStatement.expression.type === "Literal" &&
+        firstStatement.expression.type === AST_NODE_TYPES.Literal &&
         typeof firstStatement.expression.value === "string" &&
         firstStatement.expression.value === "use client"
       ) {
@@ -57,7 +62,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     const comments = sourceCode.getCommentsBefore(firstToken || program);
 
     for (const comment of comments) {
-      if (comment.type === "Line" && comment.value.trim() === "use client") {
+      if (
+        (comment.type as string) === "Line" &&
+        comment.value.trim() === "use client"
+      ) {
         hasUseClientDirective = true;
         // For comments, we'll report on the program node since we can't report on comments directly
         useClientNode = program;
@@ -66,7 +74,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     }
 
     return {
-      "Program:exit"() {
+      "Program:exit"(): void {
         if (hasUseClientDirective && useClientNode) {
           context.report({
             node: useClientNode,
@@ -74,13 +82,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             suggest: [
               {
                 messageId: "considerServerComponent",
-                *fix(fixer) {
+                *fix(fixer): Rule.RuleFixer[] {
                   // If it's a literal "use client", we can suggest removing it
                   if (
                     useClientNode &&
-                    useClientNode.type === "ExpressionStatement" &&
+                    useClientNode.type === AST_NODE_TYPES.ExpressionStatement &&
                     "expression" in useClientNode &&
-                    useClientNode.expression.type === "Literal"
+                    useClientNode.expression.type === AST_NODE_TYPES.Literal
                   ) {
                     // Simple removal of the entire statement including semicolon and line
                     const text = sourceCode.getText();

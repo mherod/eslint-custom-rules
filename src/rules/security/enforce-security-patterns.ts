@@ -1,4 +1,8 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
 
 export const RULE_NAME = "enforce-security-patterns";
 
@@ -72,13 +76,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     return {
       // Check for direct process.env access in client code
-      MemberExpression(node: TSESTree.MemberExpression) {
+      MemberExpression(node: TSESTree.MemberExpression): void {
         if (
           isClientFile &&
-          node.object.type === "MemberExpression" &&
-          node.object.object.type === "Identifier" &&
+          node.object.type === AST_NODE_TYPES.MemberExpression &&
+          node.object.object.type === AST_NODE_TYPES.Identifier &&
           node.object.object.name === "process" &&
-          node.object.property.type === "Identifier" &&
+          node.object.property.type === AST_NODE_TYPES.Identifier &&
           node.object.property.name === "env"
         ) {
           context.report({
@@ -89,7 +93,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check for hardcoded secrets
-      Literal(node: TSESTree.Literal) {
+      Literal(node: TSESTree.Literal): void {
         if (typeof node.value === "string" && isHardcodedSecret(node.value)) {
           context.report({
             node,
@@ -100,8 +104,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check for unsafe eval usage
-      CallExpression(node: TSESTree.CallExpression) {
-        if (node.callee.type === "Identifier") {
+      CallExpression(node: TSESTree.CallExpression): void {
+        if (node.callee.type === AST_NODE_TYPES.Identifier) {
           const functionName = node.callee.name;
 
           // Check for eval or Function constructor
@@ -151,9 +155,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check for dangerouslySetInnerHTML
-      JSXAttribute(node: TSESTree.JSXAttribute) {
+      JSXAttribute(node: TSESTree.JSXAttribute): void {
         if (
-          node.name.type === "JSXIdentifier" &&
+          node.name.type === AST_NODE_TYPES.JSXIdentifier &&
           node.name.name === "dangerouslySetInnerHTML"
         ) {
           context.report({
@@ -164,7 +168,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check for template literals with user input
-      TemplateLiteral(node: TSESTree.TemplateLiteral) {
+      TemplateLiteral(node: TSESTree.TemplateLiteral): void {
         // Skip if Zod is present in the file
         if (skipTemplateCheck) {
           return; // Skip rule completely when Zod is present
@@ -184,7 +188,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check API routes for security patterns
-      FunctionDeclaration(node: TSESTree.FunctionDeclaration) {
+      FunctionDeclaration(node: TSESTree.FunctionDeclaration): void {
         if (isApiFile && node.id) {
           // Check for missing authentication in protected routes
           if (isProtectedRoute(filename) && !hasAuthValidation(node)) {
@@ -205,8 +209,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check for client-side secrets in variable declarations
-      VariableDeclarator(node: TSESTree.VariableDeclarator) {
-        if (isClientFile && node.init && node.init.type === "Literal") {
+      VariableDeclarator(node: TSESTree.VariableDeclarator): void {
+        if (
+          isClientFile &&
+          node.init &&
+          node.init.type === AST_NODE_TYPES.Literal
+        ) {
           const value = node.init.value;
           if (typeof value === "string" && isApiKeyOrSecret(value)) {
             context.report({
@@ -262,21 +270,22 @@ function hasStringConcatenation(
 ): boolean {
   return args.some(
     (arg) =>
-      arg.type === "BinaryExpression" &&
+      arg.type === AST_NODE_TYPES.BinaryExpression &&
       arg.operator === "+" &&
-      (arg.left.type === "Literal" || arg.right.type === "Literal")
+      (arg.left.type === AST_NODE_TYPES.Literal ||
+        arg.right.type === AST_NODE_TYPES.Literal)
   );
 }
 
 function isLoggingFunction(node: TSESTree.CallExpression): boolean {
-  if (node.callee.type === "MemberExpression") {
+  if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
     const object = node.callee.object;
     const property = node.callee.property;
 
     if (
-      object.type === "Identifier" &&
+      object.type === AST_NODE_TYPES.Identifier &&
       object.name === "console" &&
-      property.type === "Identifier"
+      property.type === AST_NODE_TYPES.Identifier
     ) {
       return ["log", "info", "warn", "error", "debug"].includes(property.name);
     }
@@ -289,7 +298,7 @@ function hasSecretInArguments(
   args: TSESTree.CallExpressionArgument[]
 ): boolean {
   return args.some((arg) => {
-    if (arg.type === "Identifier") {
+    if (arg.type === AST_NODE_TYPES.Identifier) {
       const varName = arg.name.toLowerCase();
       return (
         varName.includes("secret") ||
@@ -305,7 +314,7 @@ function hasSecretInArguments(
 function _hasUnsanitizedInput(node: TSESTree.TemplateLiteral): boolean {
   // Be much more conservative - only flag template literals with clearly dangerous variables
   return node.expressions.some((expr) => {
-    if (expr.type === "Identifier") {
+    if (expr.type === AST_NODE_TYPES.Identifier) {
       const varName = expr.name;
       const varNameLower = varName.toLowerCase();
 
@@ -319,7 +328,7 @@ function _hasUnsanitizedInput(node: TSESTree.TemplateLiteral): boolean {
     }
 
     // Flag direct access to request properties
-    if (expr.type === "MemberExpression") {
+    if (expr.type === AST_NODE_TYPES.MemberExpression) {
       return isDirectRequestAccess(expr);
     }
 
@@ -348,8 +357,8 @@ function isObviouslyDangerousVariable(varName: string): boolean {
 function isDirectRequestAccess(expr: TSESTree.MemberExpression): boolean {
   // Flag direct access like req.body, req.query, req.params
   if (
-    expr.object.type === "Identifier" &&
-    expr.property.type === "Identifier"
+    expr.object.type === AST_NODE_TYPES.Identifier &&
+    expr.property.type === AST_NODE_TYPES.Identifier
   ) {
     const objName = expr.object.name.toLowerCase();
     const propName = expr.property.name.toLowerCase();
@@ -387,17 +396,23 @@ function _isRiskyTemplateContext(node: TSESTree.TemplateLiteral): boolean {
 
 function isErrorMessageContext(node: TSESTree.Node): boolean {
   // Check if this is in an error object or return statement with error
-  if (node.type === "Property" && node.key.type === "Identifier") {
+  if (
+    node.type === AST_NODE_TYPES.Property &&
+    node.key.type === AST_NODE_TYPES.Identifier
+  ) {
     return node.key.name === "error" || node.key.name === "message";
   }
 
-  if (node.type === "ReturnStatement" || node.type === "ObjectExpression") {
+  if (
+    node.type === AST_NODE_TYPES.ReturnStatement ||
+    node.type === AST_NODE_TYPES.ObjectExpression
+  ) {
     // Look for error-related context in parent
     const parent = node.parent;
     if (
       parent &&
-      parent.type === "Property" &&
-      parent.key.type === "Identifier"
+      parent.type === AST_NODE_TYPES.Property &&
+      parent.key.type === AST_NODE_TYPES.Identifier
     ) {
       return parent.key.name === "error" || parent.key.name === "message";
     }
@@ -411,15 +426,15 @@ function isLoggingContext(node: TSESTree.Node): boolean {
   let current = node.parent;
   while (current) {
     if (
-      current.type === "CallExpression" &&
-      current.callee.type === "MemberExpression"
+      current.type === AST_NODE_TYPES.CallExpression &&
+      current.callee.type === AST_NODE_TYPES.MemberExpression
     ) {
       const obj = current.callee.object;
       const prop = current.callee.property;
       if (
-        obj.type === "Identifier" &&
+        obj.type === AST_NODE_TYPES.Identifier &&
         obj.name === "console" &&
-        prop.type === "Identifier" &&
+        prop.type === AST_NODE_TYPES.Identifier &&
         ["log", "info", "warn", "error", "debug"].includes(prop.name)
       ) {
         return true;
@@ -432,9 +447,9 @@ function isLoggingContext(node: TSESTree.Node): boolean {
 
 function isValidationContext(node: TSESTree.Node): boolean {
   // Check if this is in validation/error checking context
-  if (node.type === "ObjectExpression") {
+  if (node.type === AST_NODE_TYPES.ObjectExpression) {
     // Look for validation-related property names
-    if (node.parent && node.parent.type === "ReturnStatement") {
+    if (node.parent && node.parent.type === AST_NODE_TYPES.ReturnStatement) {
       return true; // Likely a validation result
     }
   }
@@ -446,8 +461,8 @@ function isDangerousContext(node: TSESTree.Node): boolean {
   let current = node.parent;
   while (current) {
     if (
-      current.type === "CallExpression" &&
-      current.callee.type === "Identifier"
+      current.type === AST_NODE_TYPES.CallExpression &&
+      current.callee.type === AST_NODE_TYPES.Identifier
     ) {
       const functionName = current.callee.name.toLowerCase();
       // Flag dangerous functions
@@ -464,7 +479,7 @@ function isDangerousContext(node: TSESTree.Node): boolean {
   return false;
 }
 
-function hasZodImport(sourceCode: any): boolean {
+function hasZodImport(sourceCode: { text: string }): boolean {
   const fileText = sourceCode.text;
 
   // Check for any Zod import patterns - if ANY are present, skip the rule entirely
@@ -481,12 +496,12 @@ function hasDangerousTemplateUsage(node: TSESTree.TemplateLiteral): boolean {
   // Only flag template literals that contain obviously dangerous patterns
   return node.expressions.some((expr) => {
     // Check for direct request object access
-    if (expr.type === "MemberExpression") {
+    if (expr.type === AST_NODE_TYPES.MemberExpression) {
       return isDirectRequestAccess(expr);
     }
 
     // Check for variables with dangerous names
-    if (expr.type === "Identifier") {
+    if (expr.type === AST_NODE_TYPES.Identifier) {
       const varName = expr.name.toLowerCase();
       return isDangerousVariableName(varName);
     }

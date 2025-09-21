@@ -1,4 +1,8 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
 
 export const RULE_NAME = "no-dynamic-tailwind-classes";
 
@@ -110,8 +114,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
      */
     function isClassProp(node: TSESTree.JSXAttribute): boolean {
       return (
-        node.type === "JSXAttribute" &&
-        node.name.type === "JSXIdentifier" &&
+        node.type === AST_NODE_TYPES.JSXAttribute &&
+        node.name.type === AST_NODE_TYPES.JSXIdentifier &&
         COMMON_CLASS_PROPS.includes(node.name.name)
       );
     }
@@ -122,7 +126,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
      * @returns True if the function is cn, clsx, classNames, twMerge, or cx
      */
     function isUtilityFunction(node: TSESTree.CallExpression): boolean {
-      if (node.callee.type === "Identifier") {
+      if (node.callee.type === AST_NODE_TYPES.Identifier) {
         return COMMON_UTILITY_FUNCTIONS.includes(node.callee.name);
       }
       return false;
@@ -152,7 +156,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
      * Reports errors for patterns like `bg-${color}-500` or `p-${spacing}`.
      * @param node - Template literal node to analyze
      */
-    function checkTemplateLiteral(node: TSESTree.TemplateLiteral) {
+    function checkTemplateLiteral(node: TSESTree.TemplateLiteral): void {
       // Check if template literal contains dynamic Tailwind patterns
       const hasExpression = node.expressions.length > 0;
       if (!hasExpression) {
@@ -233,7 +237,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     function checkBinaryExpression(
       node: TSESTree.BinaryExpression,
       isNested = false
-    ) {
+    ): void {
       if (node.operator !== "+") {
         return;
       }
@@ -241,10 +245,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       // Check if concatenating partial class names
       const leftText = getStaticString(node.left);
       const rightText = getStaticString(node.right);
-      const leftIsVariable = node.left.type === "Identifier";
-      const rightIsVariable = node.right.type === "Identifier";
-      const leftIsBinary = node.left.type === "BinaryExpression";
-      const rightIsBinary = node.right.type === "BinaryExpression";
+      const leftIsVariable = node.left.type === AST_NODE_TYPES.Identifier;
+      const rightIsVariable = node.right.type === AST_NODE_TYPES.Identifier;
+      const leftIsBinary = node.left.type === AST_NODE_TYPES.BinaryExpression;
+      const rightIsBinary = node.right.type === AST_NODE_TYPES.BinaryExpression;
 
       // Check patterns:
       // 1. Prefix patterns: "md:" + something, "hover:" + something
@@ -303,7 +307,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       }
     }
 
-    function checkConditionalExpression(node: TSESTree.ConditionalExpression) {
+    function checkConditionalExpression(
+      node: TSESTree.ConditionalExpression
+    ): void {
       if (!allowConditionalClasses) {
         // If not allowing any conditional classes
         context.report({
@@ -323,10 +329,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
       // Also check if consequent or alternate are binary expressions (string concatenation)
       const consequentIsDynamic =
-        node.consequent.type === "BinaryExpression" &&
+        node.consequent.type === AST_NODE_TYPES.BinaryExpression &&
         node.consequent.operator === "+";
       const alternateIsDynamic =
-        node.alternate.type === "BinaryExpression" &&
+        node.alternate.type === AST_NODE_TYPES.BinaryExpression &&
         node.alternate.operator === "+";
 
       // Check if the binary expressions are actually constructing dynamic classes
@@ -352,7 +358,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       }
     }
 
-    function checkLogicalExpression(node: TSESTree.LogicalExpression) {
+    function checkLogicalExpression(node: TSESTree.LogicalExpression): void {
       if (!allowConditionalClasses) {
         context.report({
           node,
@@ -371,7 +377,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
       // Also check if right side is a binary expression (string concatenation)
       const rightIsDynamic =
-        node.right.type === "BinaryExpression" && node.right.operator === "+";
+        node.right.type === AST_NODE_TYPES.BinaryExpression &&
+        node.right.operator === "+";
 
       // Check the binary expression if it exists
       if (rightIsDynamic) {
@@ -394,16 +401,16 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     function checkArrayJoin(node: TSESTree.CallExpression): boolean {
       if (
-        node.callee.type === "MemberExpression" &&
-        node.callee.property.type === "Identifier" &&
+        node.callee.type === AST_NODE_TYPES.MemberExpression &&
+        node.callee.property.type === AST_NODE_TYPES.Identifier &&
         node.callee.property.name === "join" &&
-        node.callee.object.type === "ArrayExpression"
+        node.callee.object.type === AST_NODE_TYPES.ArrayExpression
       ) {
         // Check if array contains partial class names
         const elements = node.callee.object.elements;
         const hasPartialClasses = elements.some((element) => {
           if (
-            element?.type === "Literal" &&
+            element?.type === AST_NODE_TYPES.Literal &&
             typeof element.value === "string"
           ) {
             return isTailwindPrefix(element.value);
@@ -466,10 +473,16 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
      * @returns The string value if static, null otherwise
      */
     function getStaticString(node: TSESTree.Node): string | null {
-      if (node.type === "Literal" && typeof node.value === "string") {
+      if (
+        node.type === AST_NODE_TYPES.Literal &&
+        typeof node.value === "string"
+      ) {
         return node.value;
       }
-      if (node.type === "TemplateLiteral" && node.expressions.length === 0) {
+      if (
+        node.type === AST_NODE_TYPES.TemplateLiteral &&
+        node.expressions.length === 0
+      ) {
         return node.quasis[0]?.value.raw || null;
       }
       return null;
@@ -496,29 +509,29 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     return {
       // Check className and class props in JSX
-      JSXAttribute(node) {
+      JSXAttribute(node: TSESTree.JSXAttribute): void {
         if (!(isClassProp(node) && node.value)) {
           return;
         }
 
         // Handle JSXExpressionContainer
-        if (node.value.type === "JSXExpressionContainer") {
+        if (node.value.type === AST_NODE_TYPES.JSXExpressionContainer) {
           const expression = node.value.expression;
-          if (expression.type === "TemplateLiteral") {
+          if (expression.type === AST_NODE_TYPES.TemplateLiteral) {
             checkTemplateLiteral(expression);
-          } else if (expression.type === "BinaryExpression") {
+          } else if (expression.type === AST_NODE_TYPES.BinaryExpression) {
             checkBinaryExpression(expression);
-          } else if (expression.type === "ConditionalExpression") {
+          } else if (expression.type === AST_NODE_TYPES.ConditionalExpression) {
             checkConditionalExpression(expression);
-          } else if (expression.type === "LogicalExpression") {
+          } else if (expression.type === AST_NODE_TYPES.LogicalExpression) {
             checkLogicalExpression(expression);
-          } else if (expression.type === "CallExpression") {
+          } else if (expression.type === AST_NODE_TYPES.CallExpression) {
             checkArrayJoin(expression);
           }
         }
         // Handle direct template literal
         else if (
-          node.value.type === "Literal" &&
+          node.value.type === AST_NODE_TYPES.Literal &&
           typeof node.value.value === "string"
         ) {
           // Check for variable-like patterns in string literals (less common but possible)
@@ -537,15 +550,15 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       // Check utility functions like cn(), clsx(), etc.
-      CallExpression(node) {
+      CallExpression(node: TSESTree.CallExpression): void {
         // Skip array.join() calls inside className (handled by JSXAttribute visitor)
         const parent = node.parent;
         if (
-          parent?.type === "JSXExpressionContainer" &&
-          parent.parent?.type === "JSXAttribute" &&
+          parent?.type === AST_NODE_TYPES.JSXExpressionContainer &&
+          parent.parent?.type === AST_NODE_TYPES.JSXAttribute &&
           isClassProp(parent.parent as TSESTree.JSXAttribute) &&
-          node.callee.type === "MemberExpression" &&
-          node.callee.property.type === "Identifier" &&
+          node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          node.callee.property.type === AST_NODE_TYPES.Identifier &&
           node.callee.property.name === "join"
         ) {
           // Array.join() in className will be handled by the JSXAttribute visitor
@@ -554,14 +567,14 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         // Check for string methods that construct classes
         if (
-          node.callee.type === "MemberExpression" &&
-          node.callee.property.type === "Identifier"
+          node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          node.callee.property.type === AST_NODE_TYPES.Identifier
         ) {
           const method = node.callee.property.name;
           const object = node.callee.object;
 
           // Check for .concat() method
-          if (method === "concat" && object.type === "Literal") {
+          if (method === "concat" && object.type === AST_NODE_TYPES.Literal) {
             const baseString = String(object.value);
             if (isTailwindPrefix(baseString)) {
               context.report({
@@ -576,7 +589,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           }
 
           // Check for .replace() method constructing classes
-          if (method === "replace" && object.type === "Literal") {
+          if (method === "replace" && object.type === AST_NODE_TYPES.Literal) {
             const baseString = String(object.value);
             // Check if it's a pattern like "bg-COLOR-500".replace("COLOR", var)
             if (
@@ -606,38 +619,38 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         // Check arguments for dynamic patterns
         node.arguments.forEach((arg) => {
-          if (arg.type === "TemplateLiteral") {
+          if (arg.type === AST_NODE_TYPES.TemplateLiteral) {
             checkTemplateLiteral(arg);
-          } else if (arg.type === "BinaryExpression") {
+          } else if (arg.type === AST_NODE_TYPES.BinaryExpression) {
             checkBinaryExpression(arg);
-          } else if (arg.type === "ConditionalExpression") {
+          } else if (arg.type === AST_NODE_TYPES.ConditionalExpression) {
             checkConditionalExpression(arg);
-          } else if (arg.type === "LogicalExpression") {
+          } else if (arg.type === AST_NODE_TYPES.LogicalExpression) {
             checkLogicalExpression(arg);
-          } else if (arg.type === "CallExpression") {
+          } else if (arg.type === AST_NODE_TYPES.CallExpression) {
             checkArrayJoin(arg);
           }
         });
       },
 
       // Check template literals in general (not just in className)
-      TemplateLiteral(node) {
+      TemplateLiteral(node: TSESTree.TemplateLiteral): void {
         // Skip if not in a relevant context
         const parent = node.parent;
         if (
-          parent?.type !== "JSXExpressionContainer" &&
-          parent?.type !== "CallExpression" &&
-          parent?.type !== "VariableDeclarator" &&
-          parent?.type !== "ReturnStatement" &&
-          parent?.type !== "ArrowFunctionExpression"
+          parent?.type !== AST_NODE_TYPES.JSXExpressionContainer &&
+          parent?.type !== AST_NODE_TYPES.CallExpression &&
+          parent?.type !== AST_NODE_TYPES.VariableDeclarator &&
+          parent?.type !== AST_NODE_TYPES.ReturnStatement &&
+          parent?.type !== AST_NODE_TYPES.ArrowFunctionExpression
         ) {
           return;
         }
 
         // Skip if this is inside a className/class prop (already handled by JSXAttribute)
         if (
-          parent?.type === "JSXExpressionContainer" &&
-          parent.parent?.type === "JSXAttribute"
+          parent?.type === AST_NODE_TYPES.JSXExpressionContainer &&
+          parent.parent?.type === AST_NODE_TYPES.JSXAttribute
         ) {
           const attr = parent.parent as TSESTree.JSXAttribute;
           if (isClassProp(attr)) {
@@ -646,7 +659,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         }
 
         // Skip if this is an argument to a utility function (already handled by CallExpression)
-        if (parent?.type === "CallExpression" && isUtilityFunction(parent)) {
+        if (
+          parent?.type === AST_NODE_TYPES.CallExpression &&
+          isUtilityFunction(parent)
+        ) {
           return; // Already handled by CallExpression visitor for utility functions
         }
 
