@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 1.0.1)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run type check
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build package
+        run: npm run build
+
+      - name: Verify package contents
+        run: |
+          npm pack --dry-run
+          echo ""
+          echo "Package size:"
+          npm pack --dry-run 2>/dev/null | tail -n 1
+
+  publish-npm:
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Update version if manual trigger
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version
+          echo "Updated package.json version to ${{ github.event.inputs.version }}"
+
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish success notification
+        if: success()
+        run: |
+          echo "✅ Package successfully published to npm!"
+          echo "📦 Package: @mherod/eslint-plugin-custom"
+          echo "🏷️ Version: $(node -p "require('./package.json').version")"

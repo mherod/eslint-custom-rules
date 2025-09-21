@@ -1,0 +1,66 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": ["ultracite"],
+  "linter": {
+    "rules": {
+      "performance": {
+        "noBarrelFile": "off",
+        "useTopLevelRegex": "off",
+        "noNamespaceImport": "off"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": {
+          "options": {
+            "maxAllowedComplexity": 30
+          }
+        },
+        "noForEach": "off"
+      },
+      "nursery": {
+        "useMaxParams": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noTemplateCurlyInString": "off"
+      },
+      "style": {
+        "useNamingConvention": {
+          "options": {
+            "strictCase": false
+          }
+        },
+        "noNestedTernary": "off",
+        "noMagicNumbers": "off",
+        "useCollapsedIf": "off"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/__tests__/**/*", "**/test-examples/**/*"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noTemplateCurlyInString": "off"
+          },
+          "correctness": {
+            "noUndeclaredVariables": "off"
+          },
+          "style": {
+            "noExportedImports": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [".eslintrc.js", "test-examples/.eslintrc.js"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useFilenamingConvention": "off"
+          }
+        }
+      }
+    }
+  ]
+}

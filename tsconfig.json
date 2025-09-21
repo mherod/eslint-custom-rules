@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2021",
+    "lib": ["ES2021"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declarationMap": true,
+    "declaration": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "types": ["node", "eslint"],
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "strictNullChecks": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "src/**/__tests__/**/*",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx"
+  ]
+}
