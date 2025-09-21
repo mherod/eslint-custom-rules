@@ -3,7 +3,12 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
-import type { Rule } from "eslint";
+
+// Using any for fixer type to avoid complex type resolution issues
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type RuleFixer = any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type RuleFix = any;
 
 export const RULE_NAME = "prefer-to-value";
 
@@ -80,8 +85,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     /**
      * Checks if toValue needs to be imported and adds it if necessary
      */
-    function ensureToValueImport(fixer: Rule.RuleFixer): Rule.Fix[] {
-      const fixes: Rule.Fix[] = [];
+    function ensureToValueImport(fixer: RuleFixer): RuleFix[] {
+      const fixes: RuleFix[] = [];
 
       if (!hasToValueImport && autoImport) {
         if (vueImportNode) {
@@ -96,6 +101,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           if (!importSpecifiers.includes("toValue")) {
             const lastSpecifier = vueImportNode.specifiers.at(-1);
             if (lastSpecifier) {
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
               fixes.push(fixer.insertTextAfter(lastSpecifier, ", toValue"));
             }
           }
@@ -117,6 +123,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
           if (firstImport) {
             fixes.push(
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
               fixer.insertTextBefore(
                 firstImport,
                 `${indent}import { toValue } from 'vue';\n`
@@ -132,6 +139,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               ? `\n${indent}import { toValue } from 'vue';\n`
               : `${indent}import { toValue } from 'vue';\n\n`;
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
             fixes.push(fixer.insertTextBeforeRange([0, 0], importStatement));
           }
         }
@@ -244,8 +252,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               },
               fix:
                 hasToValueImport || autoImport
-                  ? (fixer: Rule.RuleFixer): Rule.Fix[] => {
+                  ? (fixer: RuleFixer): RuleFix | RuleFix[] => {
                       const fixes = [
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
                         fixer.replaceText(node, `toValue(${refName})`),
                       ];
                       return fixes.concat(ensureToValueImport(fixer));
@@ -277,8 +286,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             },
             fix:
               hasToValueImport || autoImport
-                ? (fixer: Rule.RuleFixer): Rule.Fix[] => {
+                ? (fixer: RuleFixer): RuleFix | RuleFix[] => {
                     const fixes = [
+                      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
                       fixer.replaceText(
                         node.callee as TSESTree.Identifier,
                         "toValue"
@@ -296,6 +306,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
                       if (unrefSpecifier) {
                         // Replace unref with toValue in imports
                         fixes.push(
+                          // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
                           fixer.replaceText(
                             unrefSpecifier.imported as TSESTree.Identifier,
                             "toValue"
@@ -303,6 +314,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
                         );
                       }
                     } else {
+                      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                       fixes.push(...ensureToValueImport(fixer));
                     }
 
@@ -345,9 +357,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               },
               fix:
                 hasToValueImport || autoImport
-                  ? (fixer: Rule.RuleFixer): Rule.Fix[] => {
+                  ? (fixer: RuleFixer): RuleFix | RuleFix[] => {
                       const fixes = [
-                        fixer.replaceText(node, `toValue(${refText})`),
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+                        fixer.replaceText(
+                          node,
+                          `toValue(${refText as string})`
+                        ),
                       ];
                       return fixes.concat(ensureToValueImport(fixer));
                     }

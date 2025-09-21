@@ -4,7 +4,10 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
-import type { Rule } from "eslint";
+
+// Using any for context type to avoid complex type inference issues
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type RuleContext = any;
 
 export const RULE_NAME = "enforce-api-patterns";
 
@@ -304,13 +307,14 @@ function isProtectedRoute(routeName: string): boolean {
 }
 
 function validateApiHandler(
-  context: Readonly<Rule.RuleContext>,
+  context: Readonly<RuleContext<MessageIds, Options>>,
   node: TSESTree.FunctionDeclaration,
   routeName: string
 ): void {
   // Check if function has proper parameters
   if (node.params.length < 1) {
-    context.report({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    (context as any).report({
       node,
       messageId: "missingResponseType",
       data: { route: routeName },
@@ -319,7 +323,8 @@ function validateApiHandler(
 
   // Check if function has return type annotation
   if (!node.returnType) {
-    context.report({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    (context as any).report({
       node,
       messageId: "missingResponseType",
       data: { route: routeName },

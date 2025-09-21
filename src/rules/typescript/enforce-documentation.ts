@@ -231,8 +231,7 @@ function getJsDocComment(
     value: string;
   }>;
   const jsDocComment = comments.find(
-    (comment) =>
-      comment.type === AST_NODE_TYPES.Block && comment.value.startsWith("*")
+    (comment) => comment.type === "Block" && comment.value.startsWith("*")
   );
 
   return jsDocComment ? jsDocComment.value : null;

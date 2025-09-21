@@ -59,13 +59,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     for (const comment of allComments) {
       if (
-        comment.type === AST_NODE_TYPES.Line &&
+        (comment.type as string) === "Line" &&
         comment.value.trim() === "use server"
       ) {
         hasUseServerDirective = true;
       }
       if (
-        comment.type === AST_NODE_TYPES.Line &&
+        (comment.type as string) === "Line" &&
         comment.value.trim() === "use client"
       ) {
         hasUseClientDirective = true;

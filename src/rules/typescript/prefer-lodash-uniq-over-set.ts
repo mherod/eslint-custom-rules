@@ -3,7 +3,6 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
-import type { Rule } from "eslint";
 
 export const RULE_NAME = "prefer-lodash-uniq-over-set";
 
@@ -279,20 +278,18 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
                 nextStmt.body.type === AST_NODE_TYPES.BlockStatement
               ) {
                 // Check if the loop body contains set.add()
-                const hasSetAdd = nextStmt.body.body.some(
-                  (loopStmt: Rule.RuleFixer) => {
-                    if (loopStmt.type === AST_NODE_TYPES.IfStatement) {
-                      // Check for conditional add pattern
-                      const consequent = loopStmt.consequent as
-                        | TSESTree.BlockStatement
-                        | TSESTree.Statement;
-                      if (
-                        consequent.type === AST_NODE_TYPES.BlockStatement &&
-                        consequent.body.length > 0
-                      ) {
-                        return (
-                          consequent as TSESTree.BlockStatement
-                        ).body.some((innerStmt) => {
+                const hasSetAdd = nextStmt.body.body.some((loopStmt) => {
+                  if (loopStmt.type === AST_NODE_TYPES.IfStatement) {
+                    // Check for conditional add pattern
+                    const consequent = loopStmt.consequent as
+                      | TSESTree.BlockStatement
+                      | TSESTree.Statement;
+                    if (
+                      consequent.type === AST_NODE_TYPES.BlockStatement &&
+                      consequent.body.length > 0
+                    ) {
+                      return (consequent as TSESTree.BlockStatement).body.some(
+                        (innerStmt) => {
                           if (
                             innerStmt.type ===
                               AST_NODE_TYPES.ExpressionStatement &&
@@ -322,50 +319,50 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
                             return true;
                           }
                           return false;
-                        });
-                      }
-                    } else if (
-                      loopStmt.type === AST_NODE_TYPES.ExpressionStatement &&
-                      (loopStmt.expression as TSESTree.CallExpression).type ===
-                        AST_NODE_TYPES.CallExpression &&
-                      (loopStmt.expression as TSESTree.CallExpression).callee
-                        .type === AST_NODE_TYPES.MemberExpression &&
-                      (
-                        (loopStmt.expression as TSESTree.CallExpression)
-                          .callee as TSESTree.MemberExpression
-                      ).object.type === AST_NODE_TYPES.Identifier &&
-                      (
-                        (
-                          (loopStmt.expression as TSESTree.CallExpression)
-                            .callee as TSESTree.MemberExpression
-                        ).object as TSESTree.Identifier
-                      ).name === setVarName &&
-                      (
-                        (loopStmt.expression as TSESTree.CallExpression)
-                          .callee as TSESTree.MemberExpression
-                      ).property.type === AST_NODE_TYPES.Identifier &&
-                      (
-                        (
-                          (loopStmt.expression as TSESTree.CallExpression)
-                            .callee as TSESTree.MemberExpression
-                        ).property as TSESTree.Identifier
-                      ).name === "add"
-                    ) {
-                      // Check if adding a property
-                      const addArg = (
-                        loopStmt.expression as TSESTree.CallExpression
-                      ).arguments[0] as TSESTree.Node | undefined;
-                      if (
-                        addArg?.type === AST_NODE_TYPES.MemberExpression &&
-                        addArg.property.type === AST_NODE_TYPES.Identifier
-                      ) {
-                        propertyName = addArg.property.name;
-                      }
-                      return true;
+                        }
+                      );
                     }
-                    return false;
+                  } else if (
+                    loopStmt.type === AST_NODE_TYPES.ExpressionStatement &&
+                    (loopStmt.expression as TSESTree.CallExpression).type ===
+                      AST_NODE_TYPES.CallExpression &&
+                    (loopStmt.expression as TSESTree.CallExpression).callee
+                      .type === AST_NODE_TYPES.MemberExpression &&
+                    (
+                      (loopStmt.expression as TSESTree.CallExpression)
+                        .callee as TSESTree.MemberExpression
+                    ).object.type === AST_NODE_TYPES.Identifier &&
+                    (
+                      (
+                        (loopStmt.expression as TSESTree.CallExpression)
+                          .callee as TSESTree.MemberExpression
+                      ).object as TSESTree.Identifier
+                    ).name === setVarName &&
+                    (
+                      (loopStmt.expression as TSESTree.CallExpression)
+                        .callee as TSESTree.MemberExpression
+                    ).property.type === AST_NODE_TYPES.Identifier &&
+                    (
+                      (
+                        (loopStmt.expression as TSESTree.CallExpression)
+                          .callee as TSESTree.MemberExpression
+                      ).property as TSESTree.Identifier
+                    ).name === "add"
+                  ) {
+                    // Check if adding a property
+                    const addArg = (
+                      loopStmt.expression as TSESTree.CallExpression
+                    ).arguments[0] as TSESTree.Node | undefined;
+                    if (
+                      addArg?.type === AST_NODE_TYPES.MemberExpression &&
+                      addArg.property.type === AST_NODE_TYPES.Identifier
+                    ) {
+                      propertyName = addArg.property.name;
+                    }
+                    return true;
                   }
-                );
+                  return false;
+                });
 
                 if (hasSetAdd) {
                   hasForLoop = true;

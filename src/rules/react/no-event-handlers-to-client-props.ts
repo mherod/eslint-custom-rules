@@ -3,7 +3,7 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
-import type { Rule } from "eslint";
+import type { SourceCode } from "@typescript-eslint/utils/dist/ts-eslint";
 
 export const RULE_NAME = "no-event-handlers-to-client-props";
 
@@ -40,7 +40,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     for (const comment of allComments) {
       if (
-        comment.type === AST_NODE_TYPES.Line &&
+        (comment.type as string) === "Line" &&
         comment.value.trim() === "use client"
       ) {
         hasUseClientDirective = true;
@@ -232,7 +232,7 @@ function getFunctionName(
  */
 function isServerAction(
   expression: TSESTree.Expression | TSESTree.JSXEmptyExpression,
-  sourceCode: Rule.SourceCode
+  sourceCode: SourceCode
 ): boolean {
   if (expression.type === AST_NODE_TYPES.JSXEmptyExpression) {
     return false;
@@ -258,7 +258,7 @@ function isServerAction(
  */
 function containsUseServerDirective(
   functionNode: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression,
-  _sourceCode: Rule.SourceCode
+  _sourceCode: SourceCode
 ): boolean {
   if (
     !functionNode.body ||
@@ -291,7 +291,7 @@ function containsUseServerDirective(
  */
 function isFunctionIdentifierServerAction(
   identifier: TSESTree.Identifier,
-  _sourceCode: Rule.SourceCode
+  _sourceCode: SourceCode
 ): boolean {
   // Simple heuristic approach: check for common Server Action patterns
   // This is more reliable than complex AST traversal for an ESLint rule

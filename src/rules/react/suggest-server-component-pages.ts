@@ -3,7 +3,6 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
-import type { Rule } from "eslint";
 
 export const RULE_NAME = "suggest-server-component-pages";
 
@@ -82,7 +81,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             suggest: [
               {
                 messageId: "considerServerComponent",
-                *fix(fixer): Rule.RuleFixer[] {
+                fix(fixer): ReturnType<typeof fixer.remove> | null {
                   // If it's a literal "use client", we can suggest removing it
                   if (
                     useClientNode &&
@@ -103,8 +102,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
                       lineEnd++; // Include the newline
                     }
 
-                    yield fixer.removeRange([start, lineEnd]);
+                    return fixer.removeRange([start, lineEnd]);
                   }
+                  return null;
                 },
               },
             ],

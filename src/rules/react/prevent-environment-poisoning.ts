@@ -4,7 +4,6 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
-import type { Rule } from "eslint";
 
 export const RULE_NAME = "prevent-environment-poisoning";
 
@@ -59,8 +58,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     let hasBrowserHooks = false;
 
     return {
-      ImportDeclaration(node: TSESTree.ImportDeclaration): void {
-        const importedModule = node.source.value;
+      ImportDeclaration(importNode: TSESTree.ImportDeclaration): void {
+        const importedModule = importNode.source.value;
 
         if (typeof importedModule !== "string") {
           return;
@@ -83,11 +82,39 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           hasServerOnlyModules = true;
           if (!hasServerOnlyImport) {
             context.report({
-              node,
+              node: importNode,
               messageId: "serverOnlyInUtil",
               data: { module: importedModule },
               fix(fixer) {
-                return addServerOnlyImport(fixer, context);
+                const sourceCode =
+                  context.sourceCode || context.getSourceCode();
+                const program = sourceCode.ast;
+
+                // Check if server-only import already exists
+                const serverOnlyExists = program.body.some(
+                  (stmt) =>
+                    stmt.type === AST_NODE_TYPES.ImportDeclaration &&
+                    stmt.source &&
+                    stmt.source.value === "server-only"
+                );
+
+                if (serverOnlyExists) {
+                  return null;
+                }
+
+                // Find the position to insert
+                const firstImport = program.body.find(
+                  (stmt) => stmt.type === AST_NODE_TYPES.ImportDeclaration
+                ) as TSESTree.ImportDeclaration | undefined;
+                const insertText = 'import "server-only";\n\n';
+
+                if (firstImport) {
+                  return fixer.insertTextBefore(firstImport, insertText);
+                }
+                const firstNode = program.body[0];
+                return firstNode
+                  ? fixer.insertTextBefore(firstNode, insertText)
+                  : null;
               },
             });
           }
@@ -115,7 +142,35 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
                 messageId: "serverSecretInUtil",
                 data: { secret: envVar },
                 fix(fixer) {
-                  return addServerOnlyImport(fixer, context);
+                  const sourceCode =
+                    context.sourceCode || context.getSourceCode();
+                  const program = sourceCode.ast;
+
+                  // Check if server-only import already exists
+                  const serverOnlyExists = program.body.some(
+                    (stmt) =>
+                      stmt.type === AST_NODE_TYPES.ImportDeclaration &&
+                      stmt.source &&
+                      stmt.source.value === "server-only"
+                  );
+
+                  if (serverOnlyExists) {
+                    return null;
+                  }
+
+                  // Find the position to insert
+                  const firstImport = program.body.find(
+                    (stmt) => stmt.type === AST_NODE_TYPES.ImportDeclaration
+                  ) as TSESTree.ImportDeclaration | undefined;
+                  const insertText = 'import "server-only";\n\n';
+
+                  if (firstImport) {
+                    return fixer.insertTextBefore(firstImport, insertText);
+                  }
+                  const firstNode = program.body[0];
+                  return firstNode
+                    ? fixer.insertTextBefore(firstNode, insertText)
+                    : null;
                 },
               });
             }
@@ -142,7 +197,35 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
                 messageId: "serverSecretInUtil",
                 data: { secret: envVar },
                 fix(fixer) {
-                  return addServerOnlyImport(fixer, context);
+                  const sourceCode =
+                    context.sourceCode || context.getSourceCode();
+                  const program = sourceCode.ast;
+
+                  // Check if server-only import already exists
+                  const serverOnlyExists = program.body.some(
+                    (stmt) =>
+                      stmt.type === AST_NODE_TYPES.ImportDeclaration &&
+                      stmt.source &&
+                      stmt.source.value === "server-only"
+                  );
+
+                  if (serverOnlyExists) {
+                    return null;
+                  }
+
+                  // Find the position to insert
+                  const firstImport = program.body.find(
+                    (stmt) => stmt.type === AST_NODE_TYPES.ImportDeclaration
+                  ) as TSESTree.ImportDeclaration | undefined;
+                  const insertText = 'import "server-only";\n\n';
+
+                  if (firstImport) {
+                    return fixer.insertTextBefore(firstImport, insertText);
+                  }
+                  const firstNode = program.body[0];
+                  return firstNode
+                    ? fixer.insertTextBefore(firstNode, insertText)
+                    : null;
                 },
               });
             }
@@ -163,7 +246,35 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               messageId: "browserHookInUtil",
               data: { hook: node.callee.name },
               fix(fixer) {
-                return addClientOnlyImport(fixer, context);
+                const sourceCode =
+                  context.sourceCode || context.getSourceCode();
+                const program = sourceCode.ast;
+
+                // Check if client-only import already exists
+                const clientOnlyExists = program.body.some(
+                  (stmt) =>
+                    stmt.type === AST_NODE_TYPES.ImportDeclaration &&
+                    stmt.source &&
+                    stmt.source.value === "client-only"
+                );
+
+                if (clientOnlyExists) {
+                  return null;
+                }
+
+                // Find the position to insert
+                const firstImport = program.body.find(
+                  (stmt) => stmt.type === AST_NODE_TYPES.ImportDeclaration
+                ) as TSESTree.ImportDeclaration | undefined;
+                const insertText = 'import "client-only";\n\n';
+
+                if (firstImport) {
+                  return fixer.insertTextBefore(firstImport, insertText);
+                }
+                const firstNode = program.body[0];
+                return firstNode
+                  ? fixer.insertTextBefore(firstNode, insertText)
+                  : null;
               },
             });
           }
@@ -180,7 +291,34 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             node: context.sourceCode.ast,
             messageId: "missingServerOnlyDirective",
             fix(fixer) {
-              return addServerOnlyImport(fixer, context);
+              const sourceCode = context.sourceCode || context.getSourceCode();
+              const program = sourceCode.ast;
+
+              // Check if server-only import already exists
+              const serverOnlyExists = program.body.some(
+                (stmt) =>
+                  stmt.type === AST_NODE_TYPES.ImportDeclaration &&
+                  stmt.source &&
+                  stmt.source.value === "server-only"
+              );
+
+              if (serverOnlyExists) {
+                return null;
+              }
+
+              // Find the position to insert
+              const firstImport = program.body.find(
+                (stmt) => stmt.type === AST_NODE_TYPES.ImportDeclaration
+              ) as TSESTree.ImportDeclaration | undefined;
+              const insertText = 'import "server-only";\n\n';
+
+              if (firstImport) {
+                return fixer.insertTextBefore(firstImport, insertText);
+              }
+              const firstNode = program.body[0];
+              return firstNode
+                ? fixer.insertTextBefore(firstNode, insertText)
+                : null;
             },
           });
         }
@@ -190,7 +328,15 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             node: context.sourceCode.ast,
             messageId: "missingClientOnlyDirective",
             fix(fixer) {
-              return addClientOnlyImport(fixer, context);
+              // Add 'client-only' import at the top of the file
+              const firstStatement = context.sourceCode.ast.body[0];
+              if (firstStatement) {
+                return fixer.insertTextBefore(
+                  firstStatement,
+                  "import 'client-only';\n"
+                );
+              }
+              return null;
             },
           });
         }
@@ -457,108 +603,8 @@ function isBrowserOnlyHook(hookName: string): boolean {
  * Helper function to add server-only import at the very top of the file
  * Ensures it's positioned before any other imports and includes eslint-disable comment
  */
-function addServerOnlyImport(
-  fixer: Rule.RuleFixer,
-  context: ReturnType<
-    typeof ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>
-  >["create"]
-): Rule.Fix | null {
-  const sourceCode = context.sourceCode as unknown as {
-    ast: TSESTree.Program;
-    getFirstToken: (node: Rule.Node) => Rule.Node | null;
-  };
-  const program = sourceCode.ast;
-
-  // Check if server-only import already exists
-  const hasServerOnlyImport = program.body.some(
-    (node) =>
-      node.type === AST_NODE_TYPES.ImportDeclaration &&
-      node.source &&
-      node.source.value === "server-only"
-  );
-
-  if (hasServerOnlyImport) {
-    // Already has server-only import, no fix needed
-    return null;
-  }
-
-  // Find the position to insert - before any existing imports or at the very start
-  const firstImport = program.body.find(
-    (node) => node.type === AST_NODE_TYPES.ImportDeclaration
-  ) as TSESTree.ImportDeclaration | undefined;
-  const insertText =
-    '// eslint-disable-next-line @mherod/custom/enforce-import-order\nimport "server-only";\n\n';
-
-  if (firstImport) {
-    // Insert before the first import
-    return fixer.insertTextBefore(
-      firstImport as unknown as Rule.Node,
-      insertText
-    );
-  }
-  // No imports exist, insert at the very beginning
-  const firstToken = sourceCode.getFirstToken(program as unknown as Rule.Node);
-  if (firstToken) {
-    return fixer.insertTextBefore(
-      firstToken as unknown as Rule.Node,
-      insertText
-    );
-  }
-  // Empty file
-  return fixer.insertTextAfter(program as unknown as Rule.Node, insertText);
-}
 
 /**
  * Helper function to add client-only import at the very top of the file
  * Ensures it's positioned before any other imports and includes eslint-disable comment
  */
-function addClientOnlyImport(
-  fixer: Rule.RuleFixer,
-  context: ReturnType<
-    typeof ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>
-  >["create"]
-): Rule.Fix | null {
-  const sourceCode = context.sourceCode as unknown as {
-    ast: TSESTree.Program;
-    getFirstToken: (node: Rule.Node) => Rule.Node | null;
-  };
-  const program = sourceCode.ast;
-
-  // Check if client-only import already exists
-  const hasClientOnlyImport = program.body.some(
-    (node) =>
-      node.type === AST_NODE_TYPES.ImportDeclaration &&
-      node.source &&
-      node.source.value === "client-only"
-  );
-
-  if (hasClientOnlyImport) {
-    // Already has client-only import, no fix needed
-    return null;
-  }
-
-  // Find the position to insert - before any existing imports or at the very start
-  const firstImport = program.body.find(
-    (node) => node.type === AST_NODE_TYPES.ImportDeclaration
-  ) as TSESTree.ImportDeclaration | undefined;
-  const insertText =
-    '// eslint-disable-next-line @mherod/custom/enforce-import-order\nimport "client-only";\n\n';
-
-  if (firstImport) {
-    // Insert before the first import
-    return fixer.insertTextBefore(
-      firstImport as unknown as Rule.Node,
-      insertText
-    );
-  }
-  // No imports exist, insert at the very beginning
-  const firstToken = sourceCode.getFirstToken(program as unknown as Rule.Node);
-  if (firstToken) {
-    return fixer.insertTextBefore(
-      firstToken as unknown as Rule.Node,
-      insertText
-    );
-  }
-  // Empty file
-  return fixer.insertTextAfter(program as unknown as Rule.Node, insertText);
-}
