@@ -1,9 +1,15 @@
-import * as path from "node:path";
 import {
   AST_NODE_TYPES,
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import {
+  getRouteName,
+  isApiRoute,
+  isDatabaseObject,
+  isHttpMethod,
+  isProtectedRoute,
+} from "../utils/common";
 
 // Using any for context type to avoid complex type inference issues
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -117,7 +123,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           hasStatusCodeHandling = true;
         }
 
-        // Check for input validation
+        // Check for input validation using helper
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
           node.callee.property.type === AST_NODE_TYPES.Identifier &&
@@ -221,93 +227,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
 });
 
-function isApiRoute(filename: string): boolean {
-  return (
-    filename.includes("/api/") ||
-    filename.includes("/route.ts") ||
-    filename.includes("/route.js")
-  );
-}
-
-function getRouteName(filename: string): string {
-  const normalizedPath = path.normalize(filename);
-  const parts = normalizedPath.split("/");
-  const apiIndex = parts.indexOf("api");
-
-  if (apiIndex !== -1) {
-    return `/${parts
-      .slice(apiIndex + 1)
-      .join("/")
-      .replace(/\.(ts|js)$/, "")}`;
-  }
-
-  return path.basename(filename, path.extname(filename));
-}
-
-function isHttpMethod(functionName: string | undefined): boolean {
-  if (!functionName) {
-    return false;
-  }
-
-  const httpMethods = [
-    "GET",
-    "POST",
-    "PUT",
-    "DELETE",
-    "PATCH",
-    "OPTIONS",
-    "HEAD",
-  ];
-  return httpMethods.includes(functionName.toUpperCase());
-}
-
-function isDatabaseObject(objectName: string): boolean {
-  const dbObjects = [
-    "db",
-    "database",
-    "collection",
-    "model",
-    "prisma",
-    "mongoose",
-    "sequelize",
-    "knex",
-    "firebase",
-    "firestore",
-    "mongo",
-    "client",
-    "connection",
-  ];
-
-  return dbObjects.some((dbObj) => objectName.toLowerCase().includes(dbObj));
-}
-
-function isProtectedRoute(routeName: string): boolean {
-  // Routes that typically require authentication
-  const protectedPatterns = [
-    "/admin",
-    "/dashboard",
-    "/profile",
-    "/settings",
-    "/account",
-    "/user",
-    "/auth",
-    "/private",
-    "/protected",
-    "/secure",
-    "/management",
-    "/upload",
-    "/delete",
-    "/update",
-    "/create",
-  ];
-
-  return protectedPatterns.some((pattern) =>
-    routeName.toLowerCase().includes(pattern)
-  );
-}
-
 function validateApiHandler(
-  context: Readonly<RuleContext<MessageIds, Options>>,
+  context: RuleContext,
   node: TSESTree.FunctionDeclaration,
   routeName: string
 ): void {

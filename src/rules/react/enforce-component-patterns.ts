@@ -1,16 +1,17 @@
-import { basename } from "node:path";
 import {
   AST_NODE_TYPES,
   ESLintUtils,
   type TSESLint,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import {
+  isComponentName,
+  isComponentPath,
+  isHookName,
+  isHookPath,
+} from "../utils/common";
 
 export const RULE_NAME = "enforce-component-patterns";
-
-// Constants for regex patterns
-const COMPONENT_NAME_REGEX = /^[A-Z][a-zA-Z0-9]*$/;
-const HOOK_NAME_REGEX = /^use[A-Z][a-zA-Z0-9]*$/;
 
 type MessageIds =
   | "componentMustBePascalCase"
@@ -176,29 +177,6 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     };
   },
 });
-
-function isComponentPath(filename: string): boolean {
-  return (
-    filename.includes("/components/") ||
-    filename.includes("/pages/") ||
-    filename.includes("/app/") ||
-    (filename.endsWith(".tsx") && !filename.includes("/hooks/"))
-  );
-}
-
-function isHookPath(filename: string): boolean {
-  return filename.includes("/hooks/") || basename(filename).startsWith("use");
-}
-
-function isComponentName(name: string): boolean {
-  // Component names should be PascalCase
-  return COMPONENT_NAME_REGEX.test(name);
-}
-
-function isHookName(name: string): boolean {
-  // Hook names should start with 'use' and be camelCase
-  return HOOK_NAME_REGEX.test(name);
-}
 
 function validateComponentDeclaration(
   context: Readonly<TSESLint.RuleContext<string, unknown[]>>,

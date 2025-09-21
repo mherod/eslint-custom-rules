@@ -1,9 +1,20 @@
+import type { TSESLint } from "@typescript-eslint/utils";
 import {
   AST_NODE_TYPES,
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
-import type { Rule } from "eslint";
+import {
+  getJsDocComment,
+  isComplexReturnType,
+  isComplexType,
+  isComponentName,
+  isExportedFunction,
+  isExportedInterface,
+  isExportedType,
+  isExportedVariable,
+  isHookName,
+} from "../utils/common";
 
 export const RULE_NAME = "enforce-documentation";
 
@@ -173,72 +184,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
 });
 
-function isExportedFunction(node: TSESTree.FunctionDeclaration): boolean {
-  const parent = node.parent;
-  return (
-    parent?.type === AST_NODE_TYPES.ExportNamedDeclaration ||
-    parent?.type === AST_NODE_TYPES.ExportDefaultDeclaration
-  );
-}
-
-function isExportedVariable(node: TSESTree.VariableDeclarator): boolean {
-  const parent = node.parent?.parent;
-  return (
-    parent?.type === AST_NODE_TYPES.ExportNamedDeclaration ||
-    parent?.type === AST_NODE_TYPES.ExportDefaultDeclaration
-  );
-}
-
-function isExportedType(node: TSESTree.TSTypeAliasDeclaration): boolean {
-  const parent = node.parent;
-  return parent?.type === AST_NODE_TYPES.ExportNamedDeclaration;
-}
-
-function isExportedInterface(node: TSESTree.TSInterfaceDeclaration): boolean {
-  const parent = node.parent;
-  return parent?.type === AST_NODE_TYPES.ExportNamedDeclaration;
-}
-
-function isComponentName(name: string): boolean {
-  return /^[A-Z][a-zA-Z0-9]*$/.test(name);
-}
-
-function isHookName(name: string): boolean {
-  return /^use[A-Z][a-zA-Z0-9]*$/.test(name);
-}
-
-function isComplexType(typeAnnotation: TSESTree.TypeNode): boolean {
-  return (
-    typeAnnotation.type === AST_NODE_TYPES.TSUnionType ||
-    typeAnnotation.type === AST_NODE_TYPES.TSIntersectionType ||
-    typeAnnotation.type === AST_NODE_TYPES.TSMappedType ||
-    typeAnnotation.type === AST_NODE_TYPES.TSConditionalType ||
-    (typeAnnotation.type === AST_NODE_TYPES.TSTypeLiteral &&
-      typeAnnotation.members.length > 2)
-  );
-}
-
-function getJsDocComment(
-  node: TSESTree.Node,
-  sourceCode: {
-    getCommentsBefore: (
-      node: TSESTree.Node
-    ) => Array<{ type: string; value: string }>;
-  }
-): string | null {
-  const comments = sourceCode.getCommentsBefore(node) as Array<{
-    type: string;
-    value: string;
-  }>;
-  const jsDocComment = comments.find(
-    (comment) => comment.type === "Block" && comment.value.startsWith("*")
-  );
-
-  return jsDocComment ? jsDocComment.value : null;
-}
-
 function validateJsDocCompleteness(
-  context: { report: (descriptor: Rule.ReportDescriptor) => void },
+  context: TSESLint.RuleContext<MessageIds, []>,
   node: TSESTree.Node,
   jsDocComment: string,
   functionName: string
@@ -293,14 +240,4 @@ function isComplexFunction(node: TSESTree.Node): boolean {
     );
   }
   return false;
-}
-
-function isComplexReturnType(returnType: TSESTree.TSTypeAnnotation): boolean {
-  const typeNode = returnType.typeAnnotation;
-  return (
-    typeNode.type === AST_NODE_TYPES.TSUnionType ||
-    typeNode.type === AST_NODE_TYPES.TSIntersectionType ||
-    typeNode.type === AST_NODE_TYPES.TSMappedType ||
-    typeNode.type === AST_NODE_TYPES.TSConditionalType
-  );
 }

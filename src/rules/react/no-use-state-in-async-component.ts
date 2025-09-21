@@ -3,11 +3,9 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import { isAsyncFunction } from "../utils/common";
 
 export const RULE_NAME = "no-use-state-in-async-component";
-
-// Constants for regex patterns
-const COMPONENT_NAME_REGEX = /^[A-Z]/;
 
 type MessageIds = "noUseStateInAsyncComponent";
 type Options = [];
@@ -41,12 +39,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           | TSESTree.FunctionExpression
           | TSESTree.ArrowFunctionExpression
       ): void {
-        // Check if function is async
-        if (!node.async) {
+        // Check if function is async using helper
+        if (!isAsyncFunction(node)) {
           return;
         }
 
-        // Check if this looks like a React component (starts with uppercase)
+        // Check if this looks like a React component
         const functionName = getFunctionName(node);
         if (!(functionName && isComponentName(functionName))) {
           return;
@@ -61,24 +59,15 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           return;
         }
 
-        // Check for useState calls
+        // Check for useState calls (both direct and React.useState)
         if (
-          node.callee.type === AST_NODE_TYPES.Identifier &&
-          node.callee.name === "useState"
-        ) {
-          context.report({
-            node,
-            messageId: "noUseStateInAsyncComponent" as const,
-          });
-        }
-
-        // Check for React.useState calls
-        if (
-          node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.object.type === AST_NODE_TYPES.Identifier &&
-          node.callee.object.name === "React" &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          node.callee.property.name === "useState"
+          (node.callee.type === AST_NODE_TYPES.Identifier &&
+            node.callee.name === "useState") ||
+          (node.callee.type === AST_NODE_TYPES.MemberExpression &&
+            node.callee.object.type === AST_NODE_TYPES.Identifier &&
+            node.callee.object.name === "React" &&
+            node.callee.property.type === AST_NODE_TYPES.Identifier &&
+            node.callee.property.name === "useState")
         ) {
           context.report({
             node,
@@ -109,6 +98,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
 });
 
+// Local helper function for getting function name
 function getFunctionName(
   node:
     | TSESTree.FunctionDeclaration
@@ -136,7 +126,8 @@ function getFunctionName(
   return null;
 }
 
+// Local helper for component name checking with special case
 function isComponentName(name: string): boolean {
   // React components should start with uppercase letter
-  return COMPONENT_NAME_REGEX.test(name) || name === "DefaultExport";
+  return /^[A-Z]/.test(name) || name === "DefaultExport";
 }
