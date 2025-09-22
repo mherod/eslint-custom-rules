@@ -63,6 +63,35 @@ export default [
 ];
 ```
 
+### ✅ ESLint 9 Compatibility
+
+This plugin is fully compatible with ESLint 9's flat config format. **No workarounds or special configuration required!**
+
+The plugin exports the correct structure for both ESM and CommonJS environments:
+
+```js
+// ✅ ESM imports work correctly
+import reactPlugin from '@mherod/eslint-plugin-custom/react';
+
+export default [
+  {
+    plugins: {
+      '@mherod/react': reactPlugin, // Direct usage - no .default needed
+    },
+    rules: {
+      '@mherod/react/no-dynamic-tailwind-classes': 'warn',
+    },
+  },
+];
+```
+
+**Fixed Issues (v1.2.0+):**
+- ❌ `Dynamic require of "eslint/use-at-your-own-risk" is not supported`
+- ❌ `Could not find "rule-name" in plugin "@mherod/react"`
+- ❌ Requiring `.default` access to plugin object
+
+All rules are now properly exported and accessible without workarounds.
+
 ## Plugin Configuration Guides
 
 ### TypeScript Plugin

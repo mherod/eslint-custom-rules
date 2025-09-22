@@ -1,31 +1,37 @@
 {
   "name": "@mherod/eslint-plugin-custom",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Modular ESLint plugin with specialized rules for TypeScript, React/Next.js, Vue.js, security, and general code quality",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
     "./typescript": {
+      "types": "./dist/typescript.d.ts",
       "import": "./dist/typescript.mjs",
       "require": "./dist/typescript.js"
     },
     "./react": {
+      "types": "./dist/react.d.ts",
       "import": "./dist/react.mjs",
       "require": "./dist/react.js"
     },
     "./vue": {
+      "types": "./dist/vue.d.ts",
       "import": "./dist/vue.mjs",
       "require": "./dist/vue.js"
     },
     "./general": {
+      "types": "./dist/general.d.ts",
       "import": "./dist/general.mjs",
       "require": "./dist/general.js"
     },
     "./security": {
+      "types": "./dist/security.d.ts",
       "import": "./dist/security.mjs",
       "require": "./dist/security.js"
     }

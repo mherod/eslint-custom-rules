@@ -1,14 +1,15 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: {
-    index: "src/index.ts",
-    typescript: "src/typescript.ts",
-    react: "src/react.ts",
-    vue: "src/vue.ts",
-    general: "src/general.ts",
-    security: "src/security.ts",
-  },
+  entry: [
+    "src/index.ts",
+    "src/typescript.ts",
+    "src/react.ts",
+    "src/vue.ts",
+    "src/general.ts",
+    "src/security.ts",
+    "src/rules/**/!(*.test).ts",
+  ],
   format: ["cjs", "esm"],
   dts: true,
   clean: true,
@@ -16,4 +17,11 @@ export default defineConfig({
   splitting: false,
   minify: false,
   target: "node18",
+  // Fix ESM compatibility issues - keep dependencies external
+  external: [
+    "@typescript-eslint/utils",
+    "@typescript-eslint/parser",
+    "eslint",
+    "typescript",
+  ],
 });
