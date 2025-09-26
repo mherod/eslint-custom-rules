@@ -52,6 +52,14 @@ ruleTester.run("prefer-to-value", rule, {
         const value2 = toValue(getSomeRef());
       `,
     },
+    // Assignment to a .value property should be ignored
+    {
+      code: `
+        import { ref } from 'vue';
+        const isHovered = ref(false);
+        isHovered.value = true;
+      `,
+    },
   ],
 
   invalid: [
