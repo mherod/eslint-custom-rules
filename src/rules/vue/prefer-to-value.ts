@@ -196,8 +196,17 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           node.property.name === "value" &&
           node.object.type === AST_NODE_TYPES.Identifier
         ) {
-          // Skip if this is part of an isRef() ? x.value : x pattern
           const parent = node.parent;
+
+          // Check if the MemberExpression is on the left side of an assignment (i.e., being written to)
+          if (
+            parent?.type === AST_NODE_TYPES.AssignmentExpression &&
+            parent.left === node
+          ) {
+            return; // This is an assignment (e.g., `myRef.value = ...`), so we should not suggest toValue()
+          }
+
+          // Skip if this is part of an isRef() ? x.value : x pattern
           if (
             parent?.type === AST_NODE_TYPES.ConditionalExpression &&
             parent.consequent === node &&
