@@ -278,3 +278,12 @@ export function getRouteName(filename: string): string {
   const basename = parts.at(-1) ?? "";
   return basename.replace(/\.(ts|js)$/, "");
 }
+
+/**
+ * Get the filename from the context
+ */
+// Using any for context type to avoid complex type inference issues
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function getFilename(context: any): string {
+  return context.getFilename?.() ?? context.filename ?? "";
+}

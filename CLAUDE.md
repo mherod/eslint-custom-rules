@@ -484,6 +484,14 @@ npm publish
 ### Vue.js Rules (`@mherod/vue`)
 - `prefer-to-value` - Use toValue() for ref unwrapping
 
+## Common Patterns & Conventions
+
+### Phosphor Icons
+1. **Imports**: Use `@phosphor-icons/react` for Client Components ("use client") and `@phosphor-icons/react/ssr` for Server Components (default in App Router).
+2. **Styling**: Use `size` prop for dimensions (default 24). Use `className` with Tailwind for colors (e.g., `text-zinc-900 dark:text-zinc-100`). Do NOT use the `color` prop.
+3. **Deprecations**: Resolve deprecations by using the new name directly (e.g., `CaretUpDownIcon` instead of `CaretUpDown`), do not use aliases.
+4. **Accessibility**: Add `aria-label` to interactive icons; use `aria-hidden="true"` for decorative ones.
+
 ## Resources
 
 ### Documentation

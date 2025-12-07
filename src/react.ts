@@ -4,8 +4,11 @@ import enforceComponentPatterns from "./rules/react/enforce-component-patterns";
 import enforceServerClientSeparation from "./rules/react/enforce-server-client-separation";
 import noDynamicTailwindClasses from "./rules/react/no-dynamic-tailwind-classes";
 import noEventHandlersToClientProps from "./rules/react/no-event-handlers-to-client-props";
+import noNonSerializableProps from "./rules/react/no-non-serializable-props";
+import noSequentialDataFetching from "./rules/react/no-sequential-data-fetching";
 import noUnstableMathRandom from "./rules/react/no-unstable-math-random";
 import noUseStateInAsyncComponent from "./rules/react/no-use-state-in-async-component";
+import preferCacheApi from "./rules/react/prefer-cache-api";
 import preferLinkOverRouterPush from "./rules/react/prefer-link-over-router-push";
 import preferNextNavigation from "./rules/react/prefer-next-navigation";
 import preferReactDestructuredImports from "./rules/react/prefer-react-destructured-imports";
@@ -21,8 +24,11 @@ export const reactRules = {
   "enforce-server-client-separation": enforceServerClientSeparation,
   "no-dynamic-tailwind-classes": noDynamicTailwindClasses,
   "no-event-handlers-to-client-props": noEventHandlersToClientProps,
+  "no-non-serializable-props": noNonSerializableProps,
+  "no-sequential-data-fetching": noSequentialDataFetching,
   "no-unstable-math-random": noUnstableMathRandom,
   "no-use-state-in-async-component": noUseStateInAsyncComponent,
+  "prefer-cache-api": preferCacheApi,
   "prefer-link-over-router-push": preferLinkOverRouterPush,
   "prefer-next-navigation": preferNextNavigation,
   "prefer-react-destructured-imports": preferReactDestructuredImports,
@@ -43,6 +49,9 @@ export const reactPlugin = {
         "@mherod/react/no-event-handlers-to-client-props": "error",
         "@mherod/react/no-unstable-math-random": "warn",
         "@mherod/react/no-use-state-in-async-component": "error",
+        "@mherod/react/no-non-serializable-props": "error",
+        "@mherod/react/no-sequential-data-fetching": "warn",
+        "@mherod/react/prefer-cache-api": "error",
         "@mherod/react/prevent-environment-poisoning": "error",
         "@mherod/react/enforce-server-client-separation": "error",
         "@mherod/react/enforce-component-patterns": "warn",
@@ -59,6 +68,9 @@ export const reactPlugin = {
         "@mherod/react/no-event-handlers-to-client-props": "error",
         "@mherod/react/no-unstable-math-random": "error",
         "@mherod/react/no-use-state-in-async-component": "error",
+        "@mherod/react/no-non-serializable-props": "error",
+        "@mherod/react/no-sequential-data-fetching": "warn",
+        "@mherod/react/prefer-cache-api": "error",
         "@mherod/react/prefer-link-over-router-push": "warn",
         "@mherod/react/prefer-next-navigation": "warn",
         "@mherod/react/prefer-react-destructured-imports": "error",
@@ -83,6 +95,9 @@ export const reactConfigs = {
       "@mherod/react/no-event-handlers-to-client-props": "error",
       "@mherod/react/no-unstable-math-random": "warn",
       "@mherod/react/no-use-state-in-async-component": "error",
+      "@mherod/react/no-non-serializable-props": "error",
+      "@mherod/react/no-sequential-data-fetching": "warn",
+      "@mherod/react/prefer-cache-api": "error",
       "@mherod/react/prevent-environment-poisoning": "error",
       "@mherod/react/enforce-server-client-separation": "error",
       "@mherod/react/enforce-component-patterns": "warn",
@@ -101,6 +116,9 @@ export const reactConfigs = {
       "@mherod/react/no-event-handlers-to-client-props": "error",
       "@mherod/react/no-unstable-math-random": "error",
       "@mherod/react/no-use-state-in-async-component": "error",
+      "@mherod/react/no-non-serializable-props": "error",
+      "@mherod/react/no-sequential-data-fetching": "warn",
+      "@mherod/react/prefer-cache-api": "error",
       "@mherod/react/prefer-link-over-router-push": "warn",
       "@mherod/react/prefer-next-navigation": "warn",
       "@mherod/react/prefer-react-destructured-imports": "error",

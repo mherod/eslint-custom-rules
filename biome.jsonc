@@ -66,7 +66,11 @@
     {
       "includes": [
         "src/rules/typescript/enforce-api-patterns.ts",
-        "src/rules/vue/prefer-to-value.ts"
+        "src/rules/vue/prefer-to-value.ts",
+        "src/rules/react/no-sequential-data-fetching.ts",
+        "src/rules/react/prefer-await-params-in-page.ts",
+        "src/rules/react/prefer-use-hook-for-promise-props.ts",
+        "src/rules/utils/common.ts"
       ],
       "linter": {
         "rules": {
