@@ -4,7 +4,6 @@ import enforceDocumentation from "./rules/typescript/enforce-documentation";
 import enforceTypescriptPatterns from "./rules/typescript/enforce-typescript-patterns";
 import enforceZodSchemaNaming from "./rules/typescript/enforce-zod-schema-naming";
 import noEmptyFunctionImplementations from "./rules/typescript/no-empty-function-implementations";
-import preferLodashUniqOverSet from "./rules/typescript/prefer-lodash-uniq-over-set";
 
 export const typescriptRules = {
   "enforce-api-patterns": enforceApiPatterns,
@@ -12,7 +11,6 @@ export const typescriptRules = {
   "enforce-typescript-patterns": enforceTypescriptPatterns,
   "enforce-zod-schema-naming": enforceZodSchemaNaming,
   "no-empty-function-implementations": noEmptyFunctionImplementations,
-  "prefer-lodash-uniq-over-set": preferLodashUniqOverSet,
 };
 
 export const typescriptPlugin = {
@@ -34,7 +32,6 @@ export const typescriptPlugin = {
         "@mherod/typescript/enforce-typescript-patterns": "error",
         "@mherod/typescript/enforce-zod-schema-naming": "error",
         "@mherod/typescript/no-empty-function-implementations": "error",
-        "@mherod/typescript/prefer-lodash-uniq-over-set": "warn",
       },
     },
   },
@@ -62,7 +59,6 @@ export const typescriptConfigs = {
       "@mherod/typescript/enforce-typescript-patterns": "error",
       "@mherod/typescript/enforce-zod-schema-naming": "error",
       "@mherod/typescript/no-empty-function-implementations": "error",
-      "@mherod/typescript/prefer-lodash-uniq-over-set": "warn",
     },
   },
 };

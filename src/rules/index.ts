@@ -3,7 +3,11 @@
 // General rules
 import enforceFileNaming from "./general/enforce-file-naming";
 import enforceImportOrder from "./general/enforce-import-order";
+import preferDateFns from "./general/prefer-date-fns";
 import preferDateFnsOverDateOperations from "./general/prefer-date-fns-over-date-operations";
+import preferLodashEsImports from "./general/prefer-lodash-es-imports";
+import preferLodashUniqOverSet from "./general/prefer-lodash-uniq-over-set";
+import preferUfoWithQuery from "./general/prefer-ufo-with-query";
 // React/Next.js rules
 import enforceAdminSeparation from "./react/enforce-admin-separation";
 import enforceComponentPatterns from "./react/enforce-component-patterns";
@@ -39,7 +43,6 @@ import enforceDocumentation from "./typescript/enforce-documentation";
 import enforceTypescriptPatterns from "./typescript/enforce-typescript-patterns";
 import enforceZodSchemaNaming from "./typescript/enforce-zod-schema-naming";
 import noEmptyFunctionImplementations from "./typescript/no-empty-function-implementations";
-import preferLodashUniqOverSet from "./typescript/prefer-lodash-uniq-over-set";
 
 export const rules = {
   "no-dynamic-tailwind-classes": noDynamicTailwindClasses,
@@ -67,6 +70,9 @@ export const rules = {
   "prefer-use-swr-over-fetch": preferUseSwrOverFetch,
   "prefer-ui-promise-handling": preferUiPromiseHandling,
   "prefer-use-hook-for-promise-props": preferUseHookForPromiseProps,
+  "prefer-lodash-es-imports": preferLodashEsImports,
+  "prefer-date-fns": preferDateFns,
+  "prefer-ufo-with-query": preferUfoWithQuery,
   "prevent-environment-poisoning": preventEnvironmentPoisoning,
   "enforce-import-order": enforceImportOrder,
   "enforce-file-naming": enforceFileNaming,
