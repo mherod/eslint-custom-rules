@@ -23,7 +23,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     let isClientComponent = false;
 
     return {
-      Program(node) {
+      Program(node): void {
         if (node.body.length > 0) {
           const firstStatement = node.body[0];
           if (
@@ -36,7 +36,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           }
         }
       },
-      CallExpression(node) {
+      CallExpression(node): void {
         if (isClientComponent) {
           return;
         }

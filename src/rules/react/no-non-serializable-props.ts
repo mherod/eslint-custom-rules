@@ -22,7 +22,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   defaultOptions: [],
   create(context) {
     return {
-      JSXAttribute(node) {
+      JSXAttribute(node): void {
         if (node.name.type !== AST_NODE_TYPES.JSXIdentifier) {
           return;
         }

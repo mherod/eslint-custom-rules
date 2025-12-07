@@ -26,13 +26,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   defaultOptions: [],
   create(context) {
     return {
-      FunctionDeclaration(node) {
+      FunctionDeclaration(node): void {
         checkAsyncFunction(node, context);
       },
-      ArrowFunctionExpression(node) {
+      ArrowFunctionExpression(node): void {
         checkAsyncFunction(node, context);
       },
-      FunctionExpression(node) {
+      FunctionExpression(node): void {
         checkAsyncFunction(node, context);
       },
     };
@@ -40,14 +40,14 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 });
 
 // Using any for context type to avoid complex type inference issues
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function checkAsyncFunction(
   node:
     | TSESTree.FunctionDeclaration
     | TSESTree.ArrowFunctionExpression
     | TSESTree.FunctionExpression,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   context: any
-) {
+): void {
   if (!node.async || node.body.type !== AST_NODE_TYPES.BlockStatement) {
     return;
   }
@@ -76,6 +76,7 @@ function checkAsyncFunction(
     for (let i = 1; i < awaitStatements.length; i++) {
       // We report on the note, ideally we'd check dependency but that's hard.
       // This is a "suggestion" rule so it's okay to have false positives to prompt review.
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
       context.report({
         node: awaitStatements[i],
         messageId: "sequentialAwait",

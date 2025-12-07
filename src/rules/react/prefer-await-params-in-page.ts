@@ -34,12 +34,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     }
 
     return {
-      FunctionDeclaration(node) {
+      FunctionDeclaration(node): void {
         if (node.id?.name && isExported(node)) {
           checkPageProps(node, context);
         }
       },
-      ExportDefaultDeclaration(node) {
+      ExportDefaultDeclaration(node): void {
         const declaration = node.declaration;
         if (
           declaration.type === AST_NODE_TYPES.FunctionDeclaration ||
@@ -53,7 +53,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
 });
 
-function isExported(node: TSESTree.FunctionDeclaration) {
+function isExported(node: TSESTree.FunctionDeclaration): boolean {
   return (
     node.parent?.type === AST_NODE_TYPES.ExportDefaultDeclaration ||
     node.parent?.type === AST_NODE_TYPES.ExportNamedDeclaration
@@ -61,14 +61,14 @@ function isExported(node: TSESTree.FunctionDeclaration) {
 }
 
 // Using any for context type to avoid complex type inference issues
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function checkPageProps(
   node:
     | TSESTree.FunctionDeclaration
     | TSESTree.ArrowFunctionExpression
     | TSESTree.FunctionExpression,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   context: any
-) {
+): void {
   if (node.params.length === 0) {
     return;
   }
@@ -84,6 +84,7 @@ function checkPageProps(
         if (["params", "searchParams"].includes(prop.key.name)) {
           // Flag if the function is not async, as they CANNOT await it.
           if (!node.async) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             context.report({
               node: prop,
               messageId: "awaitParams",
@@ -106,12 +107,15 @@ function checkPageProps(
       // But we shouldn't report unless we see usage.
       // Scanning body for `props.params` or `props.searchParams`.
       const propsName = propsParam.name;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
       const sourceCode = context.getSourceCode();
-      const text = sourceCode.getText(node.body);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+      const text: string = sourceCode.getText(node.body) as string;
       if (
         text.includes(`${propsName}.params`) ||
         text.includes(`${propsName}.searchParams`)
       ) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         context.report({
           node: propsParam,
           messageId: "awaitParams",

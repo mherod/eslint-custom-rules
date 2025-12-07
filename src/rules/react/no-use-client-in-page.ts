@@ -34,7 +34,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     }
 
     return {
-      Program(node) {
+      Program(node): void {
         // Check for "use client" directive
         if (node.body.length > 0) {
           const firstStatement = node.body[0];

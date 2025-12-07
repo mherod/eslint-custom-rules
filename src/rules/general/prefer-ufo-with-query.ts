@@ -39,7 +39,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
       // Detect simple string concatenation usage involving '?' which looks like query param construction
       // e.g. base + "?" + query
-      BinaryExpression(node: TSESTree.BinaryExpression) {
+      BinaryExpression(node: TSESTree.BinaryExpression): void {
         if (node.operator === "+") {
           if (
             node.right.type === AST_NODE_TYPES.Literal &&
@@ -65,7 +65,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         }
       },
       // Template literals
-      TemplateLiteral(node: TSESTree.TemplateLiteral) {
+      TemplateLiteral(node: TSESTree.TemplateLiteral): void {
         // Check if any quasi ends with ? or contains ? followed by nothing/variable
         // e.g. `${base}?foo=${bar}`
         for (const quasi of node.quasis) {

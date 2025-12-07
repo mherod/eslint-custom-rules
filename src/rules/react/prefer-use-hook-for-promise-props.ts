@@ -28,7 +28,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     let isClientComponent = false;
 
     return {
-      Program(node) {
+      Program(node): void {
         if (node.body.length > 0) {
           const firstStatement = node.body[0];
           if (
@@ -41,19 +41,19 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           }
         }
       },
-      FunctionDeclaration(node) {
+      FunctionDeclaration(node): void {
         if (!isClientComponent) {
           return;
         }
         checkComponentProps(node, context);
       },
-      ArrowFunctionExpression(node) {
+      ArrowFunctionExpression(node): void {
         if (!isClientComponent) {
           return;
         }
         checkComponentProps(node, context);
       },
-      FunctionExpression(node) {
+      FunctionExpression(node): void {
         if (!isClientComponent) {
           return;
         }
@@ -64,14 +64,14 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 });
 
 // Using any for context type to avoid complex type inference issues
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function checkComponentProps(
   node:
     | TSESTree.FunctionDeclaration
     | TSESTree.ArrowFunctionExpression
     | TSESTree.FunctionExpression,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   context: any
-) {
+): void {
   if (node.params.length === 0) {
     return;
   }
@@ -96,6 +96,7 @@ function checkComponentProps(
                 : propName
             )
           ) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             context.report({
               node: prop,
               messageId: "preferUseHook",

@@ -22,7 +22,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   defaultOptions: [],
   create(context) {
     return {
-      ExportNamedDeclaration(node) {
+      ExportNamedDeclaration(node): void {
         if (
           !node.declaration ||
           node.declaration.type !== AST_NODE_TYPES.VariableDeclaration
