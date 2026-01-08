@@ -49,17 +49,21 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     // Also check for string literals
     const program = sourceCode.ast;
-    if (program.body.length > 0) {
-      const firstStatement = program.body[0];
+    for (const statement of program.body) {
       if (
-        firstStatement &&
-        firstStatement.type === AST_NODE_TYPES.ExpressionStatement &&
-        "expression" in firstStatement &&
-        firstStatement.expression.type === AST_NODE_TYPES.Literal &&
-        typeof firstStatement.expression.value === "string" &&
-        firstStatement.expression.value === "use client"
+        statement.type === AST_NODE_TYPES.ExpressionStatement &&
+        "expression" in statement &&
+        statement.expression.type === AST_NODE_TYPES.Literal &&
+        typeof statement.expression.value === "string"
       ) {
-        hasUseClientDirective = true;
+        if (statement.expression.value === "use client") {
+          hasUseClientDirective = true;
+          break;
+        }
+        // Continue checking other string literals (like "use strict")
+      } else {
+        // Stop checking once we hit a non-directive statement
+        break;
       }
     }
 
