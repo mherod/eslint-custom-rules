@@ -509,6 +509,7 @@ ruleTester.run('rule-name', rule, {
 - No unsafe operations
 - No unused variables (except those prefixed with `_`)
 - Comprehensive type safety checks
+- **DO**: Use `interface` definitions instead of `type` aliases for object shapes (enforced by Biome)
 
 ### Commit Message Format
 Uses Conventional Commits with commitlint:
@@ -541,7 +542,7 @@ Configured with **Lefthook** (v1.13.1):
 ### Linting & Formatting
 
 **Biome Configuration** (`biome.jsonc`):
-- Extends: `ultracite` preset
+- Extends: `ultracite/core` preset (DO: Use `ultracite/core` for v7+, NOT `ultracite`)
 - **Linter Rules**:
   - Performance: `noBarrelFile`, `useTopLevelRegex`, `noNamespaceImport` (all off)
   - Complexity: `noExcessiveCognitiveComplexity` (max 30), `noForEach` (off)
@@ -633,9 +634,11 @@ npm version patch|minor|major
 ```
 
 3. **Build and publish**:
+**DO**: Use 1Password CLI to get the OTP for npm publishing.
 ```bash
 npm run prepublishOnly
-npm publish
+# Get OTP from 1Password (item: Npmjs)
+npm publish --otp=$(op item get Npmjs --otp)
 ```
 
 ## Troubleshooting
