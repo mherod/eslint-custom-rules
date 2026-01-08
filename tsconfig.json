@@ -13,6 +13,12 @@
     "checkJs": false,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@typescript-eslint/rule-tester": [
+        "./node_modules/@typescript-eslint/rule-tester/dist/index.d.ts"
+      ]
+    },
     "resolveJsonModule": true,
     "isolatedModules": true,
     "types": ["node", "eslint"],
@@ -27,11 +33,5 @@
     "exactOptionalPropertyTypes": true
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": [
-    "dist",
-    "node_modules",
-    "src/**/__tests__/**/*",
-    "src/**/*.test.ts",
-    "src/**/*.test.tsx"
-  ]
+  "exclude": ["dist", "node_modules"]
 }
