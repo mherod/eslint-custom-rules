@@ -62,7 +62,7 @@
   "author": "Matthew Herod",
   "license": "MIT",
   "devDependencies": {
-    "@biomejs/biome": "^2.2.4",
+    "@biomejs/biome": "^2.3.11",
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@types/eslint": "^8.56.10",
@@ -81,7 +81,7 @@
     "ts-jest": "^29.2.2",
     "tsup": "^8.1.0",
     "typescript": "^5.5.3",
-    "ultracite": "^5.4.3"
+    "ultracite": "^7.0.10"
   },
   "peerDependencies": {
     "@typescript-eslint/parser": "^8.0.0",
