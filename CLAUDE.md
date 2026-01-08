@@ -12,7 +12,7 @@ This is a custom ESLint plugin (`@mherod/eslint-plugin-custom`) containing custo
 - **Auto-fixable Rules**: Many rules provide automatic fixes
 - **Framework Support**: Specialized rules for React/Next.js and Vue.js
 - **ESLint 9 Support**: Both flat config and legacy config formats supported
-- **Comprehensive Testing**: All rules have extensive test coverage
+- **Comprehensive Testing**: 20 test suites with 315 tests covering major rules
 
 ## Quick Start for New Developers
 
@@ -907,13 +907,16 @@ dist/
 
 ## Test Coverage
 
-Current test files (15 test suites):
-- **TypeScript**: 3 test files (enforce-zod-schema-naming, no-empty-function-implementations, prefer-lodash-uniq-over-set)
+Current test files (20 test suites, 315 tests total):
+- **TypeScript**: 2 test files (enforce-zod-schema-naming, no-empty-function-implementations)
 - **React**: 10 test files (no-dynamic-tailwind-classes, no-event-handlers-to-client-props, no-unstable-math-random, no-use-state-in-async-component, prefer-link-over-router-push, prefer-next-navigation, prefer-react-destructured-imports, prefer-reusable-swr-hooks, prefer-use-swr-over-fetch, suggest-server-component-pages)
-- **General**: 1 test file (prefer-date-fns-over-date-operations)
+- **General**: 6 test files (enforce-file-naming, enforce-import-order, prefer-date-fns, prefer-date-fns-over-date-operations, prefer-lodash-es-imports, prefer-lodash-uniq-over-set, prefer-ufo-with-query)
 - **Vue**: 1 test file (prefer-to-value)
 
-**Note**: Not all rules have test files yet. When creating new rules, always include comprehensive tests.
+**Note**: Many rules still don't have test files yet. When creating new rules, always include comprehensive tests. Remaining rules needing tests:
+- **React**: 17 rules (enforce-admin-separation, enforce-component-patterns, enforce-server-client-separation, no-context-provider-in-server-component, no-internal-fetch-in-server-component, no-non-serializable-props, no-react-hooks-in-server-component, no-sequential-data-fetching, no-use-client-in-layout, no-use-client-in-page, no-use-params-in-client-component, prefer-async-page-component, prefer-await-params-in-page, prefer-cache-api, prefer-ui-promise-handling, prefer-use-hook-for-promise-props, prevent-environment-poisoning)
+- **TypeScript**: 3 rules (enforce-api-patterns, enforce-documentation, enforce-typescript-patterns)
+- **Security**: 1 rule (enforce-security-patterns)
 
 ## Common Patterns & Conventions
 
