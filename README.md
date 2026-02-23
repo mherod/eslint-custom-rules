@@ -21,13 +21,13 @@ pnpm add -D @mherod/eslint-plugin-custom
 
 ## Available Plugins
 
-This package provides five specialised plugins:
+This package provides five specialised plugins with 76 rules total:
 
-- **`@mherod/typescript`** - TypeScript-specific rules for better type safety and code patterns
-- **`@mherod/react`** - React and Next.js rules for component patterns and SSR/CSR separation
-- **`@mherod/vue`** - Vue.js rules for composition API best practices and reactivity patterns
-- **`@mherod/general`** - General code organisation rules (imports, naming, etc.)
-- **`@mherod/security`** - Security-focused rules to prevent common vulnerabilities
+- **`@mherod/typescript`** (5 rules) - TypeScript-specific rules for better type safety and code patterns
+- **`@mherod/react`** (44 rules) - React and Next.js rules for component patterns and SSR/CSR separation
+- **`@mherod/vue`** (1 rule) - Vue.js rules for composition API best practices and reactivity patterns
+- **`@mherod/general`** (14 rules) - General code organisation rules (imports, naming, etc.)
+- **`@mherod/security`** (12 rules) - Security-focused rules to prevent common vulnerabilities
 
 ## Quick Start
 
@@ -146,7 +146,6 @@ export default [
 - `enforce-typescript-patterns` - General TypeScript best practices
 - `enforce-zod-schema-naming` - Consistent naming for Zod schemas
 - `no-empty-function-implementations` - Prevents empty function bodies
-- `prefer-lodash-uniq-over-set` - Use lodash for array deduplication
 
 ### React/Next.js Plugin
 
@@ -191,35 +190,67 @@ export default [
 }
 ```
 
-#### Available Rules
+#### Available Rules (44 rules)
 
 **Server/Client Separation:**
-- `no-use-state-in-async-component` - Prevents useState in server components
-- `no-event-handlers-to-client-props` - Prevents passing event handlers to client components
-- `prevent-environment-poisoning` - Enforces proper server-only/client-only imports
-- `enforce-server-client-separation` - Prevents server code in client components
 - `enforce-admin-separation` - Isolates admin-only functionality
+- `enforce-server-client-separation` - Prevents server code in client components
+- `enforce-use-server-vs-server-only` - Enforces correct use of "use server" vs server-only imports
+- `no-async-server-component-in-client` - Prevents async server components imported in client files
+- `no-conflicting-directives` - Prevents conflicting "use client" and "use server" directives
+- `no-context-provider-in-server-component` - Prevents Context providers in server components
+- `no-event-handlers-to-client-props` - Prevents passing event handlers to client components
+- `no-internal-fetch-in-server-component` - Warns against internal fetch calls in server components
+- `no-react-hooks-in-server-component` - Prevents React hooks in server components
+- `no-use-client-in-layout` - Prevents "use client" directive in layout files
+- `no-use-client-in-page` - Prevents "use client" directive in page files
+- `no-use-params-in-client-component` - Prevents use of params in client components
+- `no-use-state-in-async-component` - Prevents useState in server components
+- `prevent-environment-poisoning` - Enforces proper server-only/client-only imports
+- `require-use-client-for-client-named-files` - Requires "use client" in files with client naming conventions
+- `require-use-client-for-react-hooks` - Requires "use client" in files using client-only React hooks
+
+**Directives and Caching:**
+- `no-parenthesized-use-cache` - Prevents parenthesized "use cache" expressions
+- `no-reexports-in-use-server` - Prevents re-exports in "use server" files
+- `no-request-access-in-use-cache` - Prevents request-time data access in "use cache" functions
+- `require-directive-first` - Requires directives to be the first statement in a file
 
 **React Patterns:**
 - `enforce-component-patterns` - Enforces consistent component patterns
+- `no-jsx-logical-and` - Prevents `&&` in JSX (use ternary instead)
+- `prefer-async-page-component` - Prefers async page components
+- `prefer-await-params-in-page` - Requires await for params in page components
 - `prefer-react-destructured-imports` - Use destructured React imports
 - `suggest-server-component-pages` - Suggests server components for pages
 
 **Next.js Navigation:**
-- `prefer-next-navigation` - Use Next.js navigation over window.location
 - `prefer-link-over-router-push` - Use Link component over router.push
+- `prefer-next-navigation` - Use Next.js navigation over window.location
+- `prefer-search-params-over-state` - Use URL search params over component state for shareable UI state
 
 **Data Fetching:**
-- `prefer-use-swr-over-fetch` - Use SWR for data fetching
+- `no-sequential-data-fetching` - Warns against sequential data fetching
+- `no-waterfall-chains` - Prevents waterfall request chains
+- `prefer-cache-api` - Use Next.js Cache API
 - `prefer-reusable-swr-hooks` - Create reusable SWR hooks
 - `prefer-ui-promise-handling` - Handle promises properly in UI
+- `prefer-use-hook-for-promise-props` - Use hooks for promise props
+- `prefer-use-swr-over-fetch` - Use SWR for data fetching
+- `use-after-for-non-blocking` - Use `after()` for non-blocking operations
+
+**Re-render and Bundle Optimization:**
+- `no-lazy-state-init` - Flags `useState(fn())` — should be `useState(() => fn())` (auto-fixable)
+- `no-usememo-for-primitives` - Flags `useMemo` returning a provably-primitive value
+- `prefer-dynamic-import-for-heavy-libs` - Suggests `next/dynamic` for heavy packages
+- `prefer-start-transition-for-server-actions` - Use `startTransition` for server action calls
+
+**Serialization and Props:**
+- `no-non-serializable-props` - Prevents non-serializable props across the server/client boundary
 
 **Code Quality:**
-- `no-unstable-math-random` - Prevents Math.random() in React components
 - `no-dynamic-tailwind-classes` - Prevents dynamic Tailwind class generation (auto-fixable)
-  - Detects template literals, concatenation, ternary operators in className
-  - Configuration: `allowedDynamicClasses: string[]`, `allowConditionalClasses: boolean`
-  - Auto-fixes to use clsx/cn utilities when possible
+- `no-unstable-math-random` - Prevents Math.random() in React components
 
 ### General Plugin
 
@@ -261,11 +292,22 @@ export default [
 }
 ```
 
-#### Available Rules
+#### Available Rules (14 rules)
 
-- `enforce-import-order` - Enforces consistent import ordering (external → internal → relative)
 - `enforce-file-naming` - Enforces consistent file naming conventions
-- `prefer-date-fns-over-date-operations` - Use date-fns for date operations
+- `enforce-import-order` - Enforces consistent import ordering (external → internal → relative)
+- `no-debug-comments` - Flags TODO, FIXME, HACK, and other debug comments
+- `no-deprecated-declarations` - Warns on usage of deprecated APIs and patterns
+- `no-import-type-queries` - Prevents `import type` queries (strict only)
+- `no-long-relative-imports` - Warns against deeply nested relative imports
+- `prefer-date-fns` - Prefer date-fns library over native Date methods
+- `prefer-date-fns-over-date-operations` - Use date-fns for date arithmetic and formatting
+- `prefer-direct-imports` - Prefer direct module imports over barrel file re-exports
+- `prefer-lodash-es-imports` - Prefer lodash-es imports over lodash for tree-shaking
+- `prefer-lodash-uniq-over-set` - Use lodash uniq over Set for array deduplication
+- `prefer-ufo-with-query` - Use ufo library's `withQuery` for URL query manipulation
+- `prefer-zod-default-with-catch` - Use `.default().catch()` pattern for Zod defaults
+- `prefer-zod-url` - Use `z.string().url()` for URL validation
 
 ### Security Plugin
 
@@ -299,14 +341,28 @@ export default [
 {
   "plugins": ["@mherod/security"],
   "rules": {
-    "@mherod/security/enforce-security-patterns": "error"
+    "@mherod/security/enforce-security-patterns": "error",
+    "@mherod/security/no-hardcoded-secrets": "error",
+    "@mherod/security/no-sql-injection": "error",
+    "@mherod/security/no-unsafe-eval": "error"
   }
 }
 ```
 
-#### Available Rules
+#### Available Rules (12 rules)
 
-- `enforce-security-patterns` - Comprehensive security pattern enforcement (checks for eval, innerHTML, SQL injection patterns, etc.)
+- `enforce-security-patterns` - Comprehensive security pattern enforcement
+- `no-hardcoded-secrets` - Prevents hardcoded API keys, tokens, and passwords
+- `no-log-secrets` - Prevents logging sensitive data
+- `no-sql-injection` - Detects SQL injection vulnerabilities
+- `no-unsafe-eval` - Prevents use of `eval()` and `Function()` constructor
+- `no-unsafe-innerHTML` - Prevents use of `dangerouslySetInnerHTML` and `innerHTML`
+- `no-unsafe-redirect` - Prevents open redirect vulnerabilities
+- `no-unsafe-template-literals` - Warns against unsafe template literal interpolation
+- `no-unstable-math-random` - Prevents Math.random() for security-sensitive operations
+- `no-weak-crypto` - Prevents use of weak cryptographic algorithms
+- `require-auth-validation` - Requires authentication validation in protected routes
+- `require-rate-limiting` - Requires rate limiting on API endpoints
 
 ### Vue.js Plugin
 
