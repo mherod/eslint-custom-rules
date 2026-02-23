@@ -1,4 +1,8 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
 
 export const RULE_NAME = "prefer-search-params-over-state";
 
@@ -32,7 +36,7 @@ function isSearchQueryName(name: string): boolean {
 function getStateVariableName(
   declarator: TSESTree.VariableDeclarator
 ): string | null {
-  if (declarator.id.type !== "ArrayPattern") {
+  if (declarator.id.type !== AST_NODE_TYPES.ArrayPattern) {
     return null;
   }
   const elements = declarator.id.elements;
@@ -40,7 +44,7 @@ function getStateVariableName(
     return null;
   }
   const first = elements[0];
-  if (!first || first.type !== "Identifier") {
+  if (!first || first.type !== AST_NODE_TYPES.Identifier) {
     return null;
   }
   return first.name;
@@ -60,14 +64,16 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context): {
+    VariableDeclarator(node: TSESTree.VariableDeclarator): void;
+  } {
     return {
-      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+      VariableDeclarator(node: TSESTree.VariableDeclarator): void {
         // Must be: const [x, setX] = useState(...)
         if (!node.init) {
           return;
         }
-        if (node.init.type !== "CallExpression") {
+        if (node.init.type !== AST_NODE_TYPES.CallExpression) {
           return;
         }
 
@@ -75,11 +81,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         // Match `useState(...)` and `React.useState(...)`
         const isUseStateCall =
-          (callee.type === "Identifier" && callee.name === "useState") ||
-          (callee.type === "MemberExpression" &&
-            callee.object.type === "Identifier" &&
+          (callee.type === AST_NODE_TYPES.Identifier &&
+            callee.name === "useState") ||
+          (callee.type === AST_NODE_TYPES.MemberExpression &&
+            callee.object.type === AST_NODE_TYPES.Identifier &&
             callee.object.name === "React" &&
-            callee.property.type === "Identifier" &&
+            callee.property.type === AST_NODE_TYPES.Identifier &&
             callee.property.name === "useState");
 
         if (!isUseStateCall) {
