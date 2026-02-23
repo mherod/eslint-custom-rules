@@ -3,17 +3,37 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import {
+  hasUseClientDirective,
+  isClientComponent,
+  isClientOnlyHook,
+  isClientOnlyModule,
+  isServerComponent,
+  isServerEnvVar,
+  isServerOnlyModule,
+  isUseCacheModule,
+} from "../utils/component-type-utils";
+import { isActionModule } from "../utils/server-action-utils";
 
 export const RULE_NAME = "enforce-server-client-separation";
+
+/**
+ * This rule enforces server/client boundaries by checking imports and API usage.
+ *
+ * This rule checks:
+ * - Clients importing server modules (except action files which are callable from clients)
+ * - Clients importing "use cache" modules (creates unwanted network boundaries)
+ * - Servers importing client modules
+ * - Servers using client-only hooks
+ * - Clients accessing server environment variables
+ */
 
 type MessageIds =
   | "clientImportingServerModule"
   | "serverImportingClientModule"
-  | "clientUsingServerAction"
   | "serverUsingClientHook"
   | "clientAccessingServerEnv"
-  | "missingUseServerDirective"
-  | "missingUseClientDirective";
+  | "clientImportingUseCacheFunction";
 
 type Options = [];
 
@@ -22,103 +42,92 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     type: "problem",
     docs: {
       description:
-        "Enforce proper server/client code separation in Next.js applications",
+        "Enforce server/client code boundary separation in Next.js applications. " +
+        "Action files can be imported by clients, but server-only modules cannot.",
     },
     schema: [],
     messages: {
       clientImportingServerModule:
-        "Client component cannot import server-only module '{{module}}'. Move to server component or use server action.",
+        "Client component cannot import server-only module '{{module}}'. " +
+        "Use server actions for server functionality or move to server component.",
       serverImportingClientModule:
-        "Server component cannot import client-only module '{{module}}'. Move to client component or use different approach.",
-      clientUsingServerAction:
-        "Client component is using server action '{{action}}' without proper server action import.",
+        "Server component cannot import client-only module '{{module}}'. " +
+        "Move to client component or find a framework-agnostic alternative.",
       serverUsingClientHook:
-        "Server component cannot use client-only hook '{{hook}}'. Move to client component or use server-side alternative.",
+        "Server component cannot use client-only hook '{{hook}}'. " +
+        "Move this to a client component or use a server-compatible alternative.",
       clientAccessingServerEnv:
-        "Client component cannot access server environment variable '{{variable}}'. Use public environment variables or server actions.",
-      missingUseServerDirective:
-        "File contains server-only code but is missing 'use server' directive.",
-      missingUseClientDirective:
-        "File contains client-only code but is missing 'use client' directive.",
+        "Client component cannot access server environment variable '{{variable}}'. " +
+        "Use public environment variables (NEXT_PUBLIC_*) or server actions.",
+      clientImportingUseCacheFunction:
+        "Client component cannot import '{{module}}' containing 'use cache' directive. " +
+        "This creates network boundaries, serialization requirements, and exposes internal data fetching as public endpoints. " +
+        "Remove 'use cache' directive to keep as secure server-side function.",
     },
   },
   defaultOptions: [],
   create(context) {
-    const filename = context.getFilename();
-    const sourceCode = context.getSourceCode();
-
-    let hasUseServerDirective = false;
-    let hasUseClientDirective = false;
-    let hasServerOnlyCode = false;
-    let hasClientOnlyCode = false;
-
-    // Check for directives at the top of the file
-    const firstToken = sourceCode.getFirstToken(sourceCode.ast);
-    const comments = sourceCode.getCommentsBefore(firstToken || sourceCode.ast);
-    const allComments = [...comments, ...sourceCode.getAllComments()];
-
-    for (const comment of allComments) {
-      if (
-        (comment.type as string) === "Line" &&
-        comment.value.trim() === "use server"
-      ) {
-        hasUseServerDirective = true;
-      }
-      if (
-        (comment.type as string) === "Line" &&
-        comment.value.trim() === "use client"
-      ) {
-        hasUseClientDirective = true;
-      }
-    }
-
-    // Also check for string literals
-    const program = sourceCode.ast;
-    if (program.body.length > 0) {
-      const firstStatement = program.body[0];
-      if (
-        firstStatement &&
-        firstStatement.type === AST_NODE_TYPES.ExpressionStatement &&
-        "expression" in firstStatement &&
-        firstStatement.expression.type === AST_NODE_TYPES.Literal &&
-        typeof firstStatement.expression.value === "string"
-      ) {
-        if (firstStatement.expression.value === "use server") {
-          hasUseServerDirective = true;
-        }
-        if (firstStatement.expression.value === "use client") {
-          hasUseClientDirective = true;
-        }
-      }
-    }
+    const filename = context.filename;
+    const sourceCode = context.sourceCode;
 
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration): void {
         const importedModule = node.source.value;
-
         if (typeof importedModule !== "string") {
           return;
         }
 
-        // Check client importing server modules
-        if (
-          (hasUseClientDirective || isClientComponent(filename)) &&
-          isServerOnlyModule(importedModule)
-        ) {
-          hasServerOnlyCode = true;
+        // Skip type-only imports - they are completely erased at compile time
+        // and never end up in the client bundle. This is safe because TypeScript
+        // removes these during compilation before bundling.
+        // Examples: `import type { User } from "firebase-admin"`
+        if (node.importKind === "type") {
+          return;
+        }
+
+        // Also check if ALL specifiers are type-only (handles mixed imports)
+        // Example: `import { type User, type Post } from "firebase-admin"`
+        const allSpecifiersAreTypeOnly = node.specifiers.every((specifier) => {
+          if (specifier.type === AST_NODE_TYPES.ImportSpecifier) {
+            return specifier.importKind === "type";
+          }
+          // Default and namespace imports are value imports
+          return false;
+        });
+
+        if (allSpecifiersAreTypeOnly && node.specifiers.length > 0) {
+          return;
+        }
+
+        // Determine if this is a client component
+        const isClientFile =
+          hasUseClientDirective(sourceCode) ||
+          isClientComponent(filename, sourceCode);
+        const isServerFile = isServerComponent(filename, sourceCode);
+
+        // Client importing server modules
+        if (isClientFile && isServerOnlyModule(importedModule)) {
+          // Allow action files - clients can call server actions
+          if (!isActionModule(importedModule)) {
+            context.report({
+              node,
+              messageId: "clientImportingServerModule",
+              data: { module: importedModule },
+            });
+          }
+        }
+
+        // Client importing "use cache" functions - BLOCKED (creates network boundaries)
+        if (isClientFile && isUseCacheModule(importedModule)) {
           context.report({
             node,
-            messageId: "clientImportingServerModule",
+            messageId: "clientImportingUseCacheFunction",
             data: { module: importedModule },
           });
         }
 
-        // Check server importing client modules
-        if (
-          (hasUseServerDirective || isServerComponent(filename)) &&
-          isClientOnlyModule(importedModule)
-        ) {
-          hasClientOnlyCode = true;
+        // Server importing client modules
+        if (isServerFile && isClientOnlyModule(importedModule)) {
           context.report({
             node,
             messageId: "serverImportingClientModule",
@@ -131,16 +140,16 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         if (node.callee.type === AST_NODE_TYPES.Identifier) {
           const functionName = node.callee.name;
 
-          // Check for client-only hooks in server components
-          if (isClientOnlyHook(functionName)) {
-            hasClientOnlyCode = true;
-            if (hasUseServerDirective || isServerComponent(filename)) {
-              context.report({
-                node,
-                messageId: "serverUsingClientHook",
-                data: { hook: functionName },
-              });
-            }
+          // Server using client-only hook
+          if (
+            isClientOnlyHook(functionName) &&
+            isServerComponent(filename, sourceCode)
+          ) {
+            context.report({
+              node,
+              messageId: "serverUsingClientHook",
+              data: { hook: functionName },
+            });
           }
         }
       },
@@ -157,263 +166,20 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         ) {
           const envVar = node.property.name;
 
-          if (isServerEnvVar(envVar)) {
-            hasServerOnlyCode = true;
-            if (hasUseClientDirective || isClientComponent(filename)) {
-              context.report({
-                node,
-                messageId: "clientAccessingServerEnv",
-                data: { variable: envVar },
-              });
-            }
+          // Client accessing server environment variable
+          if (
+            isServerEnvVar(envVar) &&
+            (hasUseClientDirective(sourceCode) ||
+              isClientComponent(filename, sourceCode))
+          ) {
+            context.report({
+              node,
+              messageId: "clientAccessingServerEnv",
+              data: { variable: envVar },
+            });
           }
-        }
-      },
-
-      "Program:exit"(): void {
-        // Check for missing directives
-        if (
-          hasServerOnlyCode &&
-          !hasUseServerDirective &&
-          !isServerComponent(filename)
-        ) {
-          context.report({
-            node: sourceCode.ast,
-            messageId: "missingUseServerDirective",
-          });
-        }
-
-        if (
-          hasClientOnlyCode &&
-          !hasUseClientDirective &&
-          !isClientComponent(filename)
-        ) {
-          context.report({
-            node: sourceCode.ast,
-            messageId: "missingUseClientDirective",
-          });
         }
       },
     };
   },
 });
-
-function isClientComponent(filename: string): boolean {
-  // Check if it's in a client-specific directory or follows client naming pattern
-  return (
-    filename.includes("/components/") &&
-    !filename.includes("/server/") &&
-    !filename.includes("/api/")
-  );
-}
-
-function isServerComponent(filename: string): boolean {
-  // Check if it's in server-specific locations
-  return (
-    filename.includes("/api/") ||
-    filename.includes("/server/") ||
-    filename.includes("/lib/server") ||
-    filename.includes("/actions/")
-  );
-}
-
-function isServerOnlyModule(moduleName: string): boolean {
-  const serverOnlyModules = [
-    // Node.js built-ins
-    "fs",
-    "path",
-    "os",
-    "crypto",
-    "util",
-    "stream",
-    "buffer",
-    "events",
-    "url",
-    "querystring",
-    "http",
-    "https",
-    "net",
-    "tls",
-    "dgram",
-    "dns",
-    "cluster",
-    "child_process",
-    "worker_threads",
-    "perf_hooks",
-    "inspector",
-    "vm",
-    "module",
-    "repl",
-    "readline",
-    "tty",
-    "zlib",
-
-    // Next.js server-only
-    "next/server",
-    "next/headers",
-    "next/cookies",
-    "next/cache",
-    "server-only",
-
-    // Database and server tools
-    "firebase-admin",
-    "mysql",
-    "mysql2",
-    "pg",
-    "sqlite3",
-    "mongodb",
-    "mongoose",
-    "prisma",
-    "@prisma/client",
-    "bcrypt",
-    "bcryptjs",
-    "jsonwebtoken",
-    "nodemailer",
-    "sharp",
-    "jimp",
-
-    // Environment
-    "dotenv",
-    "@next/env",
-  ];
-
-  return serverOnlyModules.includes(moduleName);
-}
-
-function isClientOnlyModule(moduleName: string): boolean {
-  const clientOnlyModules = [
-    // DOM and browser APIs
-    "react-dom",
-    "react-dom/client",
-
-    // Client-only libraries
-    "framer-motion",
-    "react-spring",
-    "react-transition-group",
-    "react-player",
-    "react-chartjs-2",
-    "recharts",
-    "react-map-gl",
-    "leaflet",
-    "mapbox-gl",
-
-    // Browser storage
-    "localforage",
-    "idb",
-
-    // Client-only utilities
-    "client-only",
-    "use-debounce",
-    "use-throttle",
-
-    // Analytics and tracking
-    "mixpanel-browser",
-    "hotjar",
-    "google-analytics",
-
-    // UI libraries that require DOM
-    "react-modal",
-    "react-tooltip",
-    "react-select",
-    "react-datepicker",
-    "react-color",
-    "react-dropzone",
-  ];
-
-  return clientOnlyModules.includes(moduleName);
-}
-
-function isClientOnlyHook(hookName: string): boolean {
-  const clientOnlyHooks = [
-    // DOM manipulation
-    "useEventListener",
-    "useClickOutside",
-    "useKeyPress",
-    "useScroll",
-    "useWindowSize",
-    "useViewport",
-    "usePageVisibility",
-    "useDocumentTitle",
-    "useFullscreen",
-    "useClipboard",
-    "useInView",
-    "useIntersectionObserver",
-
-    // Browser storage
-    "useLocalStorage",
-    "useSessionStorage",
-    "useCookie",
-    "useIndexedDB",
-
-    // Navigation (client-side)
-    "useHistory",
-    "useLocation",
-    "useNavigate",
-    "useSearchParams",
-
-    // Media queries and responsive
-    "useMedia",
-    "useMediaQuery",
-    "useBreakpoint",
-    "useOrientation",
-
-    // Device APIs
-    "useGeolocation",
-    "useBattery",
-    "useNetworkState",
-    "useOnlineStatus",
-    "usePermission",
-    "useNotification",
-    "useCamera",
-    "useMicrophone",
-
-    // Interaction
-    "useDrag",
-    "useDrop",
-    "useGesture",
-    "useTouch",
-    "useMouse",
-    "useHover",
-    "useFocus",
-    "useActive",
-
-    // Performance
-    "usePerformance",
-    "useWebVitals",
-
-    // Theme
-    "useDarkMode",
-    "useTheme",
-    "useColorScheme",
-  ];
-
-  return clientOnlyHooks.includes(hookName);
-}
-
-function isServerEnvVar(envVarName: string): boolean {
-  // Check if it's a server-side environment variable
-  const serverEnvPatterns = [
-    /.*SECRET.*/i,
-    /.*KEY.*/i,
-    /.*TOKEN.*/i,
-    /.*PASSWORD.*/i,
-    /.*PRIVATE.*/i,
-    /.*DATABASE_URL.*/i,
-    /.*API_KEY.*/i,
-    /.*WEBHOOK_SECRET.*/i,
-  ];
-
-  // Skip public environment variables
-  const publicPatterns = [
-    /.*PUBLIC.*/i,
-    /.*NEXT_PUBLIC.*/i,
-    /.*REACT_APP.*/i,
-    /.*VITE.*/i,
-  ];
-
-  if (publicPatterns.some((pattern) => pattern.test(envVarName))) {
-    return false;
-  }
-
-  return serverEnvPatterns.some((pattern) => pattern.test(envVarName));
-}
