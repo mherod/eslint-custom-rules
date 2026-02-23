@@ -22,6 +22,7 @@ import noSequentialDataFetching from "./rules/react/no-sequential-data-fetching"
 import noUseClientInLayout from "./rules/react/no-use-client-in-layout";
 import noUseClientInPage from "./rules/react/no-use-client-in-page";
 import noUseParamsInClientComponent from "./rules/react/no-use-params-in-client-component";
+import noUseSearchParamsAsInitialState from "./rules/react/no-use-search-params-as-initial-state";
 import noUseStateInAsyncComponent from "./rules/react/no-use-state-in-async-component";
 import noUseMemoForPrimitives from "./rules/react/no-usememo-for-primitives";
 import noWaterfallChains from "./rules/react/no-waterfall-chains";
@@ -31,6 +32,7 @@ import preferCacheApi from "./rules/react/prefer-cache-api";
 import preferDynamicImportForHeavyLibs from "./rules/react/prefer-dynamic-import-for-heavy-libs";
 import preferLinkOverRouterPush from "./rules/react/prefer-link-over-router-push";
 import preferNextNavigation from "./rules/react/prefer-next-navigation";
+import preferPromiseAllForParallelFetching from "./rules/react/prefer-promise-all-for-parallel-fetching";
 import preferReactDestructuredImports from "./rules/react/prefer-react-destructured-imports";
 import preferReusableSwrHooks from "./rules/react/prefer-reusable-swr-hooks";
 import preferSearchParamsOverState from "./rules/react/prefer-search-params-over-state";
@@ -68,6 +70,7 @@ export const REACT_RECOMMENDED_SEVERITIES = {
   "no-use-client-in-layout": "error",
   "no-use-client-in-page": "error",
   "no-use-params-in-client-component": "error",
+  "no-use-search-params-as-initial-state": "error",
   "no-use-state-in-async-component": "error",
   "no-waterfall-chains": "warn",
   "prefer-async-page-component": "warn",
@@ -87,6 +90,7 @@ export const REACT_STRICT_SEVERITIES = {
   "no-dynamic-tailwind-classes": "error",
   "no-force-dynamic": "warn",
   "no-jsx-logical-and": "warn",
+  "prefer-promise-all-for-parallel-fetching": "warn",
   "no-unstable-math-random": "error",
   "no-usememo-for-primitives": "warn",
   "prefer-dynamic-import-for-heavy-libs": "warn",
@@ -129,11 +133,14 @@ export const reactRules = {
   "no-use-client-in-layout": noUseClientInLayout,
   "no-use-client-in-page": noUseClientInPage,
   "no-use-params-in-client-component": noUseParamsInClientComponent,
+  "no-use-search-params-as-initial-state": noUseSearchParamsAsInitialState,
   "no-use-state-in-async-component": noUseStateInAsyncComponent,
   "no-waterfall-chains": noWaterfallChains,
   "prefer-async-page-component": preferAsyncPageComponent,
   "prefer-await-params-in-page": preferAwaitParamsInPage,
   "prefer-cache-api": preferCacheApi,
+  "prefer-promise-all-for-parallel-fetching":
+    preferPromiseAllForParallelFetching,
   "prefer-link-over-router-push": preferLinkOverRouterPush,
   "prefer-next-navigation": preferNextNavigation,
   "prefer-react-destructured-imports": preferReactDestructuredImports,

@@ -38,6 +38,7 @@ import noSequentialDataFetching from "./react/no-sequential-data-fetching";
 import noUseClientInLayout from "./react/no-use-client-in-layout";
 import noUseClientInPage from "./react/no-use-client-in-page";
 import noUseParamsInClientComponent from "./react/no-use-params-in-client-component";
+import noUseSearchParamsAsInitialState from "./react/no-use-search-params-as-initial-state";
 import noUseStateInAsyncComponent from "./react/no-use-state-in-async-component";
 import noUseMemoForPrimitives from "./react/no-usememo-for-primitives";
 import noWaterfallChains from "./react/no-waterfall-chains";
@@ -47,6 +48,7 @@ import preferCacheApi from "./react/prefer-cache-api";
 import preferDynamicImportForHeavyLibs from "./react/prefer-dynamic-import-for-heavy-libs";
 import preferLinkOverRouterPush from "./react/prefer-link-over-router-push";
 import preferNextNavigation from "./react/prefer-next-navigation";
+import preferPromiseAllForParallelFetching from "./react/prefer-promise-all-for-parallel-fetching";
 import preferReactDestructuredImports from "./react/prefer-react-destructured-imports";
 import preferReusableSwrHooks from "./react/prefer-reusable-swr-hooks";
 import preferSearchParamsOverState from "./react/prefer-search-params-over-state";
@@ -108,11 +110,14 @@ export const rules = {
   "no-use-client-in-layout": noUseClientInLayout,
   "no-use-client-in-page": noUseClientInPage,
   "no-use-params-in-client-component": noUseParamsInClientComponent,
+  "no-use-search-params-as-initial-state": noUseSearchParamsAsInitialState,
   "no-use-state-in-async-component": noUseStateInAsyncComponent,
   "no-waterfall-chains": noWaterfallChains,
   "prefer-async-page-component": preferAsyncPageComponent,
   "prefer-await-params-in-page": preferAwaitParamsInPage,
   "prefer-cache-api": preferCacheApi,
+  "prefer-promise-all-for-parallel-fetching":
+    preferPromiseAllForParallelFetching,
   "prefer-date-fns": preferDateFns,
   "prefer-date-fns-over-date-operations": preferDateFnsOverDateOperations,
   "prefer-direct-imports": preferDirectImports,
