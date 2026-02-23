@@ -63,7 +63,8 @@
             "useFilenamingConvention": "off"
           },
           "correctness": {
-            "noNodejsModules": "off"
+            "noNodejsModules": "off",
+            "noGlobalDirnameFilename": "off"
           }
         }
       }
