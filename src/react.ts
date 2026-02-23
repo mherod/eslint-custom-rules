@@ -11,6 +11,7 @@ import noEventHandlersToClientProps from "./rules/react/no-event-handlers-to-cli
 import noForceDynamic from "./rules/react/no-force-dynamic";
 import noInternalFetchInServerComponent from "./rules/react/no-internal-fetch-in-server-component";
 import noJsxLogicalAnd from "./rules/react/no-jsx-logical-and";
+import noLazyStateInit from "./rules/react/no-lazy-state-init";
 import noNonSerializableProps from "./rules/react/no-non-serializable-props";
 import noParenthesizedUseCache from "./rules/react/no-parenthesized-use-cache";
 import noReactHooksInServerComponent from "./rules/react/no-react-hooks-in-server-component";
@@ -22,10 +23,12 @@ import noUseClientInLayout from "./rules/react/no-use-client-in-layout";
 import noUseClientInPage from "./rules/react/no-use-client-in-page";
 import noUseParamsInClientComponent from "./rules/react/no-use-params-in-client-component";
 import noUseStateInAsyncComponent from "./rules/react/no-use-state-in-async-component";
+import noUseMemoForPrimitives from "./rules/react/no-usememo-for-primitives";
 import noWaterfallChains from "./rules/react/no-waterfall-chains";
 import preferAsyncPageComponent from "./rules/react/prefer-async-page-component";
 import preferAwaitParamsInPage from "./rules/react/prefer-await-params-in-page";
 import preferCacheApi from "./rules/react/prefer-cache-api";
+import preferDynamicImportForHeavyLibs from "./rules/react/prefer-dynamic-import-for-heavy-libs";
 import preferLinkOverRouterPush from "./rules/react/prefer-link-over-router-push";
 import preferNextNavigation from "./rules/react/prefer-next-navigation";
 import preferReactDestructuredImports from "./rules/react/prefer-react-destructured-imports";
@@ -55,6 +58,9 @@ export const reactRules = {
   "no-force-dynamic": noForceDynamic,
   "no-internal-fetch-in-server-component": noInternalFetchInServerComponent,
   "no-jsx-logical-and": noJsxLogicalAnd,
+  "no-lazy-state-init": noLazyStateInit,
+  "no-usememo-for-primitives": noUseMemoForPrimitives,
+  "prefer-dynamic-import-for-heavy-libs": preferDynamicImportForHeavyLibs,
   "no-non-serializable-props": noNonSerializableProps,
   "no-parenthesized-use-cache": noParenthesizedUseCache,
   "no-react-hooks-in-server-component": noReactHooksInServerComponent,

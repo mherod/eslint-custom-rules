@@ -28,6 +28,7 @@ import noEventHandlersToClientProps from "./react/no-event-handlers-to-client-pr
 import noForceDynamic from "./react/no-force-dynamic";
 import noInternalFetchInServerComponent from "./react/no-internal-fetch-in-server-component";
 import noJsxLogicalAnd from "./react/no-jsx-logical-and";
+import noLazyStateInit from "./react/no-lazy-state-init";
 import noNonSerializableProps from "./react/no-non-serializable-props";
 import noParenthesizedUseCache from "./react/no-parenthesized-use-cache";
 import noReactHooksInServerComponent from "./react/no-react-hooks-in-server-component";
@@ -39,10 +40,12 @@ import noUseClientInLayout from "./react/no-use-client-in-layout";
 import noUseClientInPage from "./react/no-use-client-in-page";
 import noUseParamsInClientComponent from "./react/no-use-params-in-client-component";
 import noUseStateInAsyncComponent from "./react/no-use-state-in-async-component";
+import noUseMemoForPrimitives from "./react/no-usememo-for-primitives";
 import noWaterfallChains from "./react/no-waterfall-chains";
 import preferAsyncPageComponent from "./react/prefer-async-page-component";
 import preferAwaitParamsInPage from "./react/prefer-await-params-in-page";
 import preferCacheApi from "./react/prefer-cache-api";
+import preferDynamicImportForHeavyLibs from "./react/prefer-dynamic-import-for-heavy-libs";
 import preferLinkOverRouterPush from "./react/prefer-link-over-router-push";
 import preferNextNavigation from "./react/prefer-next-navigation";
 import preferReactDestructuredImports from "./react/prefer-react-destructured-imports";
@@ -82,6 +85,9 @@ export const rules = {
   "no-force-dynamic": noForceDynamic,
   "no-internal-fetch-in-server-component": noInternalFetchInServerComponent,
   "no-jsx-logical-and": noJsxLogicalAnd,
+  "no-lazy-state-init": noLazyStateInit,
+  "no-usememo-for-primitives": noUseMemoForPrimitives,
+  "prefer-dynamic-import-for-heavy-libs": preferDynamicImportForHeavyLibs,
   "no-non-serializable-props": noNonSerializableProps,
   "no-parenthesized-use-cache": noParenthesizedUseCache,
   "no-react-hooks-in-server-component": noReactHooksInServerComponent,
