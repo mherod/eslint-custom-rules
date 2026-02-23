@@ -153,6 +153,40 @@ ruleTester.run(RULE_NAME, rule, {
       `,
     },
     {
+      name: "Nested async function — inner awaits must not bleed into outer scope count",
+      filename: "/actions/favorites.ts",
+      code: `
+        export type FavoritesResponse = {
+          images: Array<{ sbaName: string; eventName: string; path: string }>;
+          videos: Array<{ sbaName: string; eventName: string; path: string }>;
+        };
+
+        export async function getFavorites(userId: string) {
+          const a = await fetchA(userId);
+          const b = await fetchB(userId);
+          // Only 2 awaits in the outer function — no waterfall.
+          // The inner helper only has 2 awaits as well — no waterfall there either.
+          const process = async () => {
+            const x = await stepX();
+            const y = await stepY();
+            return { x, y };
+          };
+          return { a, b };
+        }
+      `,
+    },
+    {
+      name: "Outer function with 2 awaits is fine even when inner async has 3",
+      filename: "/actions/favorites.ts",
+      code: `
+        export async function outer() {
+          const a = await fetchA();
+          const b = await fetchB();
+          return { a, b };
+        }
+      `,
+    },
+    {
       name: "Server action with Promise.all",
       filename: "/actions/user-actions.ts",
       code: `
