@@ -1,4 +1,4 @@
-import { AST_NODE_TYPES, ESLintUtils } from "@typescript-eslint/utils";
+import { ESLintUtils } from "@typescript-eslint/utils";
 
 export const RULE_NAME = "no-debug-comments";
 
@@ -98,7 +98,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         for (const comment of comments) {
           // Only check line comments (not block comments in JSDoc)
-          if (comment.type !== AST_NODE_TYPES.Line) {
+          if ((comment.type as string) !== "Line") {
             continue;
           }
 

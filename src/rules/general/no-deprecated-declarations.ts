@@ -124,7 +124,7 @@ function hasDeprecatedTag(
     const comments = source.getCommentsBefore(subject);
     return comments.some(
       (comment: TSESTree.Comment) =>
-        comment.type === AST_NODE_TYPES.Block &&
+        (comment.type as string) === "Block" &&
         comment.value.trimStart().startsWith("*") &&
         DEPRECATED_TAG_REGEX.test(comment.value)
     );
