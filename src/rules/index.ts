@@ -83,6 +83,7 @@ import enforceDocumentation from "./typescript/enforce-documentation";
 import enforceTypescriptPatterns from "./typescript/enforce-typescript-patterns";
 import enforceZodSchemaNaming from "./typescript/enforce-zod-schema-naming";
 import noEmptyFunctionImplementations from "./typescript/no-empty-function-implementations";
+import noUnsafeTypeAssertion from "./typescript/no-unsafe-type-assertion";
 
 export const rules = {
   // General rules
@@ -97,6 +98,7 @@ export const rules = {
   "no-conflicting-directives": noConflictingDirectives,
   "no-context-provider-in-server-component": noContextProviderInServerComponent,
   "no-empty-function-implementations": noEmptyFunctionImplementations,
+  "no-unsafe-type-assertion": noUnsafeTypeAssertion,
   "no-event-handlers-to-client-props": noEventHandlersToClientProps,
   "no-force-dynamic": noForceDynamic,
   "no-internal-fetch-in-server-component": noInternalFetchInServerComponent,

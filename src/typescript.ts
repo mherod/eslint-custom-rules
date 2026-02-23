@@ -5,12 +5,14 @@ import enforceDocumentation from "./rules/typescript/enforce-documentation";
 import enforceTypescriptPatterns from "./rules/typescript/enforce-typescript-patterns";
 import enforceZodSchemaNaming from "./rules/typescript/enforce-zod-schema-naming";
 import noEmptyFunctionImplementations from "./rules/typescript/no-empty-function-implementations";
+import noUnsafeTypeAssertion from "./rules/typescript/no-unsafe-type-assertion";
 
 // Rule severity maps -- single source of truth for both legacy and flat configs
 export const TYPESCRIPT_RECOMMENDED_SEVERITIES = {
   "enforce-typescript-patterns": "warn",
   "enforce-zod-schema-naming": "warn",
   "no-empty-function-implementations": "warn",
+  "no-unsafe-type-assertion": "warn",
 } as const;
 
 export const TYPESCRIPT_STRICT_SEVERITIES = {
@@ -28,6 +30,7 @@ export const typescriptRules = {
   "enforce-typescript-patterns": enforceTypescriptPatterns,
   "enforce-zod-schema-naming": enforceZodSchemaNaming,
   "no-empty-function-implementations": noEmptyFunctionImplementations,
+  "no-unsafe-type-assertion": noUnsafeTypeAssertion,
 };
 
 const TYPESCRIPT_PREFIX = "@mherod/typescript";
