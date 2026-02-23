@@ -12,7 +12,7 @@ This is a custom ESLint plugin (`@mherod/eslint-plugin-custom`) containing custo
 - **Auto-fixable Rules**: Many rules provide automatic fixes
 - **Framework Support**: Specialized rules for React/Next.js and Vue.js
 - **ESLint 9 Support**: Both flat config and legacy config formats supported
-- **Comprehensive Testing**: 20 test suites with 315 tests covering major rules
+- **Comprehensive Testing**: 44 test suites with 731 tests covering major rules
 
 ## Quick Start for New Developers
 
@@ -52,35 +52,38 @@ Install recommended extensions:
 
 ```bash
 # Build the plugin
-npm run build
+pnpm build
 
 # Development mode with watch
-npm run dev
+pnpm dev
 
 # Run tests
-npm test
+pnpm test
 
 # Run tests in watch mode
-npm run test:watch
+pnpm test:watch
 
 # Type checking
-npm run typecheck
+pnpm typecheck
 
 # Linting
-npm run lint         # Check for linting issues
-npm run lint:fix     # Auto-fix linting issues
+pnpm lint         # Check for linting issues
+pnpm lint:fix     # Auto-fix linting issues
 
 # Clean build output
-npm run clean
+pnpm clean
 
 # Commit linting (checks commit messages)
-npm run commitlint
+pnpm commitlint
 
 # Prepare for publishing (runs clean, build, typecheck, and tests)
-npm run prepublishOnly
+pnpm prepublishOnly
 
-# Run a specific test file
-npx jest src/rules/__tests__/[rule-name].test.ts
+# Run a specific test file — use pnpm exec jest, NOT npx jest
+pnpm exec jest src/rules/__tests__/[rule-name].test.ts
+
+# List all test files jest can discover
+pnpm exec jest --listTests
 ```
 
 ## Architecture
@@ -424,6 +427,14 @@ This pattern allows:
 - Test with different parser options if needed
 - Use descriptive test case names
 
+**DO**: Use `pnpm exec jest --listTests` to verify jest discovers your test file before debugging discovery issues. Jest finds files by `testMatch` glob, not by `--testPathPattern` — if a file doesn't show in `--listTests`, the file path or glob doesn't match.
+
+**DON'T**: Use `pnpm test -- --testPathPattern="a|b"` with a pipe to run multiple patterns — the shell may interpret `|` as a pipe operator. Instead run `pnpm exec jest --listTests` first, then run `pnpm test` for the full suite.
+
+**DON'T**: Add JSX test cases to a `RuleTester` configured without `ecmaFeatures: { jsx: true }`. Tests with `<Component />` syntax will fail with "Parsing error: '>' expected". Either add JSX parser options or remove JSX test cases from rules that don't need JSX parsing.
+
+**DON'T**: Write `invalid` test cases where the rule logic cannot statically prove the condition. For example, a rule that flags `useMemo` returning a provably-primitive value cannot flag `useMemo(() => a || b, [])` when `a` and `b` are plain `Identifier` nodes — their types are unknown at parse time. Move such cases to `valid` with a comment explaining the limitation.
+
 Example test structure:
 ```typescript
 ruleTester.run('rule-name', rule, {
@@ -721,6 +732,11 @@ All rules available in the `@mherod/react` plugin:
 - `no-sequential-data-fetching` - Warns against sequential data fetching (warn)
 - `prefer-use-hook-for-promise-props` - Use hooks for promise props (warn)
 - `no-non-serializable-props` - Prevents non-serializable props (error)
+
+**Re-render & Bundle Optimization:**
+- `no-lazy-state-init` - Flags `useState(fn())` — should be `useState(() => fn())` to avoid re-running on every render (auto-fixable)
+- `no-usememo-for-primitives` - Flags `useMemo` returning a provably-primitive value (number/string/boolean arithmetic) where memoisation overhead exceeds gains
+- `prefer-dynamic-import-for-heavy-libs` - Flags static imports of known-heavy packages (recharts, monaco, leaflet, mapbox, d3, react-pdf, etc.) and suggests `next/dynamic`
 
 **Code Quality:**
 - `no-dynamic-tailwind-classes` - Prevents dynamic Tailwind class generation (warn/error, auto-fixable)
