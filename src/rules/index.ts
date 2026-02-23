@@ -3,6 +3,7 @@
 // General rules
 import enforceFileNaming from "./general/enforce-file-naming";
 import enforceImportOrder from "./general/enforce-import-order";
+import noBarrelFileImports from "./general/no-barrel-file-imports";
 import noDebugComments from "./general/no-debug-comments";
 import noDeprecatedDeclarations from "./general/no-deprecated-declarations";
 import noImportTypeQueries from "./general/no-import-type-queries";
@@ -46,8 +47,10 @@ import preferAsyncPageComponent from "./react/prefer-async-page-component";
 import preferAwaitParamsInPage from "./react/prefer-await-params-in-page";
 import preferCacheApi from "./react/prefer-cache-api";
 import preferDynamicImportForHeavyLibs from "./react/prefer-dynamic-import-for-heavy-libs";
+import preferFunctionalSetstate from "./react/prefer-functional-setstate";
 import preferLinkOverRouterPush from "./react/prefer-link-over-router-push";
 import preferNextNavigation from "./react/prefer-next-navigation";
+import preferPassiveEventListeners from "./react/prefer-passive-event-listeners";
 import preferPromiseAllForParallelFetching from "./react/prefer-promise-all-for-parallel-fetching";
 import preferReactDestructuredImports from "./react/prefer-react-destructured-imports";
 import preferReusableSwrHooks from "./react/prefer-reusable-swr-hooks";
@@ -83,6 +86,7 @@ import noEmptyFunctionImplementations from "./typescript/no-empty-function-imple
 
 export const rules = {
   // General rules
+  "no-barrel-file-imports": noBarrelFileImports,
   "no-debug-comments": noDebugComments,
   "no-deprecated-declarations": noDeprecatedDeclarations,
   "no-dynamic-tailwind-classes": noDynamicTailwindClasses,
@@ -116,6 +120,8 @@ export const rules = {
   "prefer-async-page-component": preferAsyncPageComponent,
   "prefer-await-params-in-page": preferAwaitParamsInPage,
   "prefer-cache-api": preferCacheApi,
+  "prefer-functional-setstate": preferFunctionalSetstate,
+  "prefer-passive-event-listeners": preferPassiveEventListeners,
   "prefer-promise-all-for-parallel-fetching":
     preferPromiseAllForParallelFetching,
   "prefer-date-fns": preferDateFns,

@@ -30,8 +30,10 @@ import preferAsyncPageComponent from "./rules/react/prefer-async-page-component"
 import preferAwaitParamsInPage from "./rules/react/prefer-await-params-in-page";
 import preferCacheApi from "./rules/react/prefer-cache-api";
 import preferDynamicImportForHeavyLibs from "./rules/react/prefer-dynamic-import-for-heavy-libs";
+import preferFunctionalSetstate from "./rules/react/prefer-functional-setstate";
 import preferLinkOverRouterPush from "./rules/react/prefer-link-over-router-push";
 import preferNextNavigation from "./rules/react/prefer-next-navigation";
+import preferPassiveEventListeners from "./rules/react/prefer-passive-event-listeners";
 import preferPromiseAllForParallelFetching from "./rules/react/prefer-promise-all-for-parallel-fetching";
 import preferReactDestructuredImports from "./rules/react/prefer-react-destructured-imports";
 import preferReusableSwrHooks from "./rules/react/prefer-reusable-swr-hooks";
@@ -74,6 +76,7 @@ export const REACT_RECOMMENDED_SEVERITIES = {
   "no-use-state-in-async-component": "error",
   "no-waterfall-chains": "warn",
   "prefer-async-page-component": "warn",
+  "prefer-passive-event-listeners": "warn",
   "prefer-await-params-in-page": "error",
   "prefer-cache-api": "error",
   "prefer-react-destructured-imports": "warn",
@@ -90,6 +93,7 @@ export const REACT_STRICT_SEVERITIES = {
   "no-dynamic-tailwind-classes": "error",
   "no-force-dynamic": "warn",
   "no-jsx-logical-and": "warn",
+  "prefer-functional-setstate": "warn",
   "prefer-promise-all-for-parallel-fetching": "warn",
   "no-unstable-math-random": "error",
   "no-usememo-for-primitives": "warn",
@@ -149,6 +153,8 @@ export const reactRules = {
   "prefer-start-transition-for-server-actions":
     preferStartTransitionForServerActions,
   "prefer-ui-promise-handling": preferUiPromiseHandling,
+  "prefer-functional-setstate": preferFunctionalSetstate,
+  "prefer-passive-event-listeners": preferPassiveEventListeners,
   "prefer-use-swr-over-fetch": preferUseSwrOverFetch,
   "prefer-use-hook-for-promise-props": preferUseHookForPromiseProps,
   "prevent-environment-poisoning": preventEnvironmentPoisoning,

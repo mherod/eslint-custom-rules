@@ -2,6 +2,7 @@
 import { prefixRules } from "./config-utils";
 import enforceFileNaming from "./rules/general/enforce-file-naming";
 import enforceImportOrder from "./rules/general/enforce-import-order";
+import noBarrelFileImports from "./rules/general/no-barrel-file-imports";
 import noDebugComments from "./rules/general/no-debug-comments";
 import noDeprecatedDeclarations from "./rules/general/no-deprecated-declarations";
 import noImportTypeQueries from "./rules/general/no-import-type-queries";
@@ -19,6 +20,7 @@ import preferZodUrl from "./rules/general/prefer-zod-url";
 export const GENERAL_RECOMMENDED_SEVERITIES = {
   "enforce-file-naming": "warn",
   "enforce-import-order": "warn",
+  "no-barrel-file-imports": "warn",
   "no-debug-comments": "warn",
   "no-deprecated-declarations": "warn",
   "no-long-relative-imports": "warn",
@@ -44,6 +46,7 @@ export const GENERAL_STRICT_SEVERITIES = {
 
 export const generalRules = {
   "enforce-file-naming": enforceFileNaming,
+  "no-barrel-file-imports": noBarrelFileImports,
   "enforce-import-order": enforceImportOrder,
   "no-debug-comments": noDebugComments,
   "no-deprecated-declarations": noDeprecatedDeclarations,
