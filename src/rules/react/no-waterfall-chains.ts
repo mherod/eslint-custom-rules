@@ -20,7 +20,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     schema: [],
     messages: {
       noWaterfallChains:
-        "Avoid waterfall chains by starting independent async operations immediately. Use Promise.all() for parallel operations or assign promises to variables to start them early.",
+        "Waterfall chain detected: this is the 3rd sequential await in a function where earlier awaits are independent. " +
+        "Each sequential await blocks the next, adding all wait times together. " +
+        "Fix: wrap independent fetches in Promise.all() — " +
+        "`const [a, b, c] = await Promise.all([fetchA(), fetchB(), fetchC()]);` — " +
+        "or assign promises to variables before awaiting them together. " +
+        "If each await depends on the result of the previous one, the sequential order is intentional and this warning does not apply.",
     },
   },
   defaultOptions: [],
@@ -53,12 +58,17 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         if (node.async && functionStack.at(-1) === node) {
           functionStack.pop();
 
-          // Check for potential waterfalls (3+ awaits without Promise.all)
+          // Report on the third await — the first one that makes it a waterfall.
+          // Targeting the await node (not the function declaration) means inline
+          // suppression comments on that line take effect correctly.
           if (awaitExpressions.length >= 3 && !hasPromiseAll) {
-            context.report({
-              node,
-              messageId: "noWaterfallChains",
-            });
+            const thirdAwait = awaitExpressions[2];
+            if (thirdAwait !== undefined) {
+              context.report({
+                node: thirdAwait,
+                messageId: "noWaterfallChains",
+              });
+            }
           }
 
           awaitExpressions = [];
@@ -79,12 +89,14 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         if (node.async && functionStack.at(-1) === node) {
           functionStack.pop();
 
-          // Check for potential waterfalls (3+ awaits without Promise.all)
           if (awaitExpressions.length >= 3 && !hasPromiseAll) {
-            context.report({
-              node,
-              messageId: "noWaterfallChains",
-            });
+            const thirdAwait = awaitExpressions[2];
+            if (thirdAwait !== undefined) {
+              context.report({
+                node: thirdAwait,
+                messageId: "noWaterfallChains",
+              });
+            }
           }
 
           awaitExpressions = [];
@@ -103,12 +115,14 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         if (node.async && functionStack.at(-1) === node) {
           functionStack.pop();
 
-          // Check for potential waterfalls (3+ awaits without Promise.all)
           if (awaitExpressions.length >= 3 && !hasPromiseAll) {
-            context.report({
-              node,
-              messageId: "noWaterfallChains",
-            });
+            const thirdAwait = awaitExpressions[2];
+            if (thirdAwait !== undefined) {
+              context.report({
+                node: thirdAwait,
+                messageId: "noWaterfallChains",
+              });
+            }
           }
 
           awaitExpressions = [];
@@ -143,13 +157,24 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 });
 
 function isAsyncHandler(filename: string): boolean {
-  // API routes
-  if (filename.includes("/api/") || filename.includes("/route.")) {
+  const normalized = filename.replace(/\\/g, "/");
+
+  // API routes: /api/ directory segment or route handler files
+  if (
+    normalized.includes("/api/") ||
+    /\/route\.[cm]?[jt]sx?$/.test(normalized)
+  ) {
     return true;
   }
 
-  // Server actions (functions ending with Action)
-  if (filename.includes("action") || filename.includes("Action")) {
+  // Server action files: must be in an /actions/ directory segment, or named
+  // with an explicit -action. / .action. boundary to avoid false positives on
+  // files like "activities.ts", "transactions.ts", "interactions.ts", etc.
+  if (
+    /\/actions\//.test(normalized) ||
+    /[.-]action[s]?\.[cm]?[jt]sx?$/.test(normalized) ||
+    /[.-]actions?\.[cm]?[jt]sx?$/.test(normalized)
+  ) {
     return true;
   }
 

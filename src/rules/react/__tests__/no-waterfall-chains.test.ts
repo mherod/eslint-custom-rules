@@ -86,6 +86,73 @@ ruleTester.run(RULE_NAME, rule, {
       `,
     },
     {
+      name: "File with 'action' substring in name but not in /actions/ path",
+      filename: "/app/activities.ts",
+      code: `
+        export async function loadActivities() {
+          const a = await fetchA();
+          const b = await fetchB();
+          const c = await fetchC();
+          return { a, b, c };
+        }
+      `,
+    },
+    {
+      name: "File with 'action' substring: interactions.ts",
+      filename: "/features/interactions.ts",
+      code: `
+        export async function trackInteractions() {
+          const a = await fetchA();
+          const b = await fetchB();
+          const c = await fetchC();
+          return { a, b, c };
+        }
+      `,
+    },
+    {
+      name: "File with 'action' substring: transactions.ts",
+      filename: "/services/transactions.ts",
+      code: `
+        export async function getTransactions() {
+          const a = await fetchA();
+          const b = await fetchB();
+          const c = await fetchC();
+          return { a, b, c };
+        }
+      `,
+    },
+    {
+      name: "Type-only file in /actions/ path should not trigger",
+      filename: "/app/actions/favorites.ts",
+      code: `
+        export type FavoritesResponse = {
+          images: Array<{
+            sbaName: string;
+            eventName: string;
+            eventDate: string;
+            path: string;
+          }>;
+          videos: Array<{
+            sbaName: string;
+            eventName: string;
+            eventDate: string;
+            path: string;
+          }>;
+        };
+      `,
+    },
+    {
+      name: "Server action file named with -action suffix",
+      filename: "/lib/submit-action.ts",
+      code: `
+        export async function submitAction() {
+          const a = await fetchA();
+          const b = await fetchB();
+          return { a, b };
+        }
+      `,
+    },
+    {
       name: "Server action with Promise.all",
       filename: "/actions/user-actions.ts",
       code: `
