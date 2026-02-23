@@ -42,7 +42,8 @@
             "noTemplateCurlyInString": "off"
           },
           "correctness": {
-            "noUndeclaredVariables": "off"
+            "noUndeclaredVariables": "off",
+            "noGlobalDirnameFilename": "off"
           },
           "style": {
             "noExportedImports": "off"

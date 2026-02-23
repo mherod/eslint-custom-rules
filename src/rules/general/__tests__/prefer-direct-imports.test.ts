@@ -4,12 +4,8 @@ import { RuleTester } from "@typescript-eslint/rule-tester";
 import rule, { RULE_NAME } from "../prefer-direct-imports";
 
 // Fixture root: contains tsconfig.json so findProjectRoot() resolves here
-// eslint-disable-next-line no-undef
-const FIXTURE_ROOT = path.join(
-  import.meta.dirname,
-  "fixtures",
-  "prefer-direct-imports"
-);
+// ts-jest runs in CommonJS so we use __dirname (import.meta.dirname is ESM-only)
+const FIXTURE_ROOT = path.join(__dirname, "fixtures", "prefer-direct-imports");
 // A fake source file inside the fixture root (used as `filename` in test cases)
 const FIXTURE_FILE = path.join(FIXTURE_ROOT, "app", "page.tsx");
 
