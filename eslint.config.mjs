@@ -5,7 +5,13 @@ import { defineConfig } from "eslint/config";
 
 export default defineConfig([
   {
-    ignores: ["dist/**", "node_modules/**", "**/*.js", "**/*.mjs", "**/__tests__/**"],
+    ignores: [
+      "dist/**",
+      "node_modules/**",
+      "**/*.js",
+      "**/*.mjs",
+      "**/__tests__/**",
+    ],
   },
   {
     files: ["src/**/*.ts", "src/**/*.tsx"],
@@ -43,7 +49,10 @@ export default defineConfig([
     },
     rules: {
       ...tseslint.configs.recommended.rules,
-      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_" },
+      ],
       "@typescript-eslint/explicit-module-boundary-types": "error",
       "@typescript-eslint/explicit-function-return-type": "error",
       "@typescript-eslint/no-explicit-any": "error",
