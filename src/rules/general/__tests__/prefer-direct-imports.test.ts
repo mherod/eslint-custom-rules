@@ -4,6 +4,7 @@ import { RuleTester } from "@typescript-eslint/rule-tester";
 import rule, { RULE_NAME } from "../prefer-direct-imports";
 
 // Fixture root: contains tsconfig.json so findProjectRoot() resolves here
+// eslint-disable-next-line no-undef
 const FIXTURE_ROOT = path.join(
   import.meta.dirname,
   "fixtures",
