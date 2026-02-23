@@ -31,6 +31,7 @@ import preferLinkOverRouterPush from "./react/prefer-link-over-router-push";
 import preferNextNavigation from "./react/prefer-next-navigation";
 import preferReactDestructuredImports from "./react/prefer-react-destructured-imports";
 import preferReusableSwrHooks from "./react/prefer-reusable-swr-hooks";
+import preferSearchParamsOverState from "./react/prefer-search-params-over-state";
 import preferUiPromiseHandling from "./react/prefer-ui-promise-handling";
 import preferUseHookForPromiseProps from "./react/prefer-use-hook-for-promise-props";
 import preferUseSwrOverFetch from "./react/prefer-use-swr-over-fetch";
@@ -66,6 +67,7 @@ export const rules = {
   "prefer-lodash-uniq-over-set": preferLodashUniqOverSet,
   "prefer-next-navigation": preferNextNavigation,
   "prefer-react-destructured-imports": preferReactDestructuredImports,
+  "prefer-search-params-over-state": preferSearchParamsOverState,
   "prefer-reusable-swr-hooks": preferReusableSwrHooks,
   "prefer-use-swr-over-fetch": preferUseSwrOverFetch,
   "prefer-ui-promise-handling": preferUiPromiseHandling,

@@ -13,6 +13,7 @@ import preferLinkOverRouterPush from "./rules/react/prefer-link-over-router-push
 import preferNextNavigation from "./rules/react/prefer-next-navigation";
 import preferReactDestructuredImports from "./rules/react/prefer-react-destructured-imports";
 import preferReusableSwrHooks from "./rules/react/prefer-reusable-swr-hooks";
+import preferSearchParamsOverState from "./rules/react/prefer-search-params-over-state";
 import preferUiPromiseHandling from "./rules/react/prefer-ui-promise-handling";
 import preferUseHookForPromiseProps from "./rules/react/prefer-use-hook-for-promise-props";
 import preferUseSwrOverFetch from "./rules/react/prefer-use-swr-over-fetch";
@@ -33,6 +34,7 @@ export const reactRules = {
   "prefer-link-over-router-push": preferLinkOverRouterPush,
   "prefer-next-navigation": preferNextNavigation,
   "prefer-react-destructured-imports": preferReactDestructuredImports,
+  "prefer-search-params-over-state": preferSearchParamsOverState,
   "prefer-reusable-swr-hooks": preferReusableSwrHooks,
   "prefer-ui-promise-handling": preferUiPromiseHandling,
   "prefer-use-swr-over-fetch": preferUseSwrOverFetch,
@@ -58,6 +60,7 @@ export const reactPlugin = {
         "@mherod/react/enforce-server-client-separation": "error",
         "@mherod/react/enforce-component-patterns": "warn",
         "@mherod/react/prefer-react-destructured-imports": "warn",
+        "@mherod/react/prefer-search-params-over-state": "warn",
         "@mherod/react/prefer-use-hook-for-promise-props": "warn",
       },
     },
@@ -83,6 +86,7 @@ export const reactPlugin = {
         "@mherod/react/prefer-use-hook-for-promise-props": "warn",
         "@mherod/react/prevent-environment-poisoning": "error",
         "@mherod/react/suggest-server-component-pages": "warn",
+        "@mherod/react/prefer-search-params-over-state": "warn",
       },
     },
   },
@@ -106,6 +110,7 @@ export const reactConfigs = {
       "@mherod/react/enforce-server-client-separation": "error",
       "@mherod/react/enforce-component-patterns": "warn",
       "@mherod/react/prefer-react-destructured-imports": "warn",
+      "@mherod/react/prefer-search-params-over-state": "warn",
       "@mherod/react/prefer-use-hook-for-promise-props": "warn",
     },
   },
@@ -128,6 +133,7 @@ export const reactConfigs = {
       "@mherod/react/prefer-next-navigation": "warn",
       "@mherod/react/prefer-react-destructured-imports": "error",
       "@mherod/react/prefer-reusable-swr-hooks": "warn",
+      "@mherod/react/prefer-search-params-over-state": "warn",
       "@mherod/react/prefer-ui-promise-handling": "warn",
       "@mherod/react/prefer-use-swr-over-fetch": "warn",
       "@mherod/react/prefer-use-hook-for-promise-props": "warn",
