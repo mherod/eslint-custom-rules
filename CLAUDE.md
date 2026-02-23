@@ -12,7 +12,7 @@ This is a custom ESLint plugin (`@mherod/eslint-plugin-custom`) containing custo
 - **Auto-fixable Rules**: Many rules provide automatic fixes
 - **Framework Support**: Specialized rules for React/Next.js and Vue.js
 - **ESLint 9 Support**: Both flat config and legacy config formats supported
-- **Comprehensive Testing**: 44 test suites with 731 tests covering major rules
+- **Comprehensive Testing**: 44 test suites with 731 tests
 
 ## Quick Start for New Developers
 
@@ -164,15 +164,29 @@ src/rules/
 │   ├── prefer-lodash-uniq-over-set.ts
 │   ├── prefer-ufo-with-query.ts
 │   └── __tests__/  # Test files for general rules
-├── security/      # Security-focused rules (1 rule)
+├── security/      # Security-focused rules (11 rules)
 │   ├── enforce-security-patterns.ts
+│   ├── no-hardcoded-secrets.ts
+│   ├── no-log-secrets.ts
+│   ├── no-sql-injection.ts
+│   ├── no-unsafe-eval.ts
+│   ├── no-unsafe-inner-html.ts
+│   ├── no-unsafe-redirect.ts
+│   ├── no-unsafe-template-literals.ts
+│   ├── no-weak-crypto.ts
+│   ├── require-auth-validation.ts
+│   ├── require-rate-limiting.ts
 │   └── __tests__/  # Test files for security rules
+├── shared/        # Shared rules used by multiple plugins (1 rule)
+│   ├── no-unstable-math-random.ts
+│   └── __tests__/
 ├── vue/          # Vue.js rules (1 rule)
 │   ├── prefer-to-value.ts
 │   └── __tests__/  # Test files for Vue rules
 ├── utils/        # Shared utility functions
-│   ├── ast-helpers.ts    # AST traversal and node checking utilities
-│   └── common.ts         # Common patterns, naming conventions, file patterns
+│   ├── common.ts                # Common patterns, naming conventions, file patterns
+│   ├── component-type-utils.ts  # Server/client detection, directives, path normalization
+│   └── server-action-utils.ts   # Server action detection utilities
 └── index.ts      # Central export for all rules
 ```
 
@@ -180,24 +194,22 @@ src/rules/
 
 The project includes shared utility modules in `src/rules/utils/`:
 
-#### AST Helpers (`ast-helpers.ts`)
-Utility functions for working with AST nodes:
-- `isReactHookCall(node)` - Check if a node is a React hook call
-- `isCallingFunction(node, functionName)` - Check if calling a specific function
-- `isMethodCall(node, objectName, methodName)` - Check if calling a method on an object
-- `isPropertyAccess(node, objectName, propertyName)` - Check property access
-- `getFunctionName(node)` - Get function name from various declaration types
-- `hasDecorator(node, decoratorName)` - Check for specific decorators
-- `getLiteralValue(node)` - Extract literal values from nodes
-- `hasReturnStatement(node)` - Check if function has return statement
-- `getVariableDeclarations(node)` - Get all variable declarations in scope
-- `isInsideNode(node, parentType, maxDepth)` - Check if inside specific parent
-- `getParentOfType(node, parentType, maxDepth)` - Get closest parent of type
-- `isImportFrom(node, moduleName)` - Check if import is from specific module
-- `getImportedNames(node)` - Get imported names from import declaration
-- `isDynamicTemplateLiteral(node)` - Check if template literal has expressions
-- `getIdentifiers(node)` - Get all identifiers in an expression
-- `isFunctionEmpty(node)` - Check if function body is empty
+#### Component Type Utils (`component-type-utils.ts`)
+Server/client component detection and directive handling:
+- `normalizePath(filename)` - Normalize file paths to forward slashes (handles Windows backslashes). Use this instead of inline `filename.replace(/\\/g, "/")`.
+- `hasDirective(sourceCode, directive)` - Check if a file has a specific directive (`"use client"`, `"use server"`, `"use cache"`). Parameterized — use this instead of inline AST checks for directives.
+- `hasUseClientDirective(sourceCode)` - Convenience wrapper for `hasDirective(sourceCode, "use client")`
+- `isClientComponent(filename, sourceCode?)` - Check if file is a client component (via directive or naming convention)
+- `isServerComponent(filename, sourceCode?)` - Check if file is a server component
+- `isAppRouterComponent(filename)` - Check if file is an App Router component (page, layout, etc.)
+- `hasAsyncExport(program)` - Check if AST contains async exports
+- `isServerOnlyModule(moduleName)` - Check if module is server-only (Node.js builtins, database, auth)
+- `isClientOnlyModule(moduleName)` - Check if module is client-only (framer-motion, react-dom/client, etc.)
+- `isClientOnlyHook(hookName)` - Check if hook is client-only (useEventListener, useLocalStorage, etc.)
+- `isServerEnvVar(envVarName)` - Check if env var is server-only (contains SECRET, KEY, TOKEN, etc.)
+
+#### Server Action Utils (`server-action-utils.ts`)
+Server action detection utilities for React/Next.js rules.
 
 #### Common Utilities (`common.ts`)
 Common patterns and helpers:
@@ -403,20 +415,6 @@ This pattern allows:
 - Category-specific plugins with their own namespaces
 - Combined plugin (all rules) for backward compatibility
 - Both legacy and flat config support automatically
-
-### Rule Export Pattern
-
-Rules follow a consistent export pattern:
-1. **Rule files** use default export: `export default createRule({ ... })`
-2. **Rules index** imports and re-exports all rules in a single object
-3. **Category plugins** import from rules directory and create plugin objects with configs
-4. **Main index** re-exports all category plugins for backward compatibility
-
-This pattern allows:
-- Individual rule usage (if needed)
-- Category-specific plugins
-- Combined plugin (all rules)
-- Both legacy and flat config support
 
 ### Testing Best Practices
 
@@ -682,6 +680,14 @@ npm publish --otp=$(op item get Npmjs --otp)
 6. **Document edge cases** - In tests and rule descriptions
 7. **Use existing utilities** - Check @typescript-eslint/utils for helpers
 
+**DO**: When refactoring to use a shared utility across multiple files, add the import and replace the usage in the same edit per file. Splitting these into separate passes (replace all usages, then add all imports) causes TypeScript errors across every file.
+
+**DO**: Use `normalizePath()` from `component-type-utils.ts` instead of inline `filename.replace(/\\/g, "/")`. Use `hasDirective(sourceCode, "use client")` instead of inline AST checks for directive detection.
+
+**DON'T**: Create new rule files with camelCase in filenames (e.g., `no-unsafe-innerHTML.ts`). Biome enforces `useFilenamingConvention` with **kebab-case** — the correct name is `no-unsafe-inner-html.ts`. Run `pnpm lint` before committing new files to catch this early.
+
+**DO**: Run `pnpm lint` proactively after creating new files or renaming files. The pre-commit hook (`npx ultracite fix`) catches filename convention violations, but discovering them at commit time wastes a round-trip.
+
 ## Available Rules
 
 ### TypeScript Rules (`@mherod/typescript`)
@@ -764,12 +770,22 @@ All rules available in the `@mherod/general` plugin:
 ### Security Rules (`@mherod/security`)
 All rules available in the `@mherod/security` plugin:
 
-- `enforce-security-patterns` - Comprehensive security pattern enforcement (checks for eval, innerHTML, SQL injection patterns, etc.) (error)
+- `enforce-security-patterns` - Comprehensive security pattern enforcement (error)
+- `no-hardcoded-secrets` - Detects hardcoded API keys, tokens, and secrets (error)
+- `no-log-secrets` - Prevents logging sensitive data (error)
+- `no-sql-injection` - Detects SQL injection vulnerabilities (error)
+- `no-unsafe-eval` - Prevents use of eval() and similar (error)
+- `no-unsafe-innerHTML` - Prevents unsafe innerHTML usage (error)
+- `no-unsafe-redirect` - Prevents open redirect vulnerabilities (error)
+- `no-unsafe-template-literals` - Warns about unsafe template literal usage (warn/error)
 - `no-unstable-math-random` - Prevents Math.random() for security-sensitive operations (warn/error)
+- `no-weak-crypto` - Prevents weak cryptographic algorithms (error)
+- `require-auth-validation` - Requires authentication validation in API routes (error)
+- `require-rate-limiting` - Requires rate limiting on API endpoints (warn/error)
 
 **Configuration Presets:**
-- `recommended`: `enforce-security-patterns` as error, `no-unstable-math-random` as warn
-- `strict`: Both rules as error
+- `recommended`: Most rules as error; `no-unsafe-template-literals`, `no-unstable-math-random`, `require-rate-limiting` as warn
+- `strict`: All rules as error
 
 ### Vue.js Rules (`@mherod/vue`)
 All rules available in the `@mherod/vue` plugin:
@@ -781,58 +797,19 @@ All rules available in the `@mherod/vue` plugin:
 - `strict`: `prefer-to-value` as error
 
 ### Complete Rule List (All Categories)
-Total: **42 rules** across 5 categories
+Total: **75 rules** registered in `src/rules/index.ts` across 5 categories + 1 shared
 
-**TypeScript (5 rules):**
-1. enforce-api-patterns
-2. enforce-documentation
-3. enforce-typescript-patterns
-4. enforce-zod-schema-naming
-5. no-empty-function-implementations
+**TypeScript (5 rules):** enforce-api-patterns, enforce-documentation, enforce-typescript-patterns, enforce-zod-schema-naming, no-empty-function-implementations
 
-**React/Next.js (25 rules):**
-1. enforce-admin-separation
-2. enforce-component-patterns
-3. enforce-server-client-separation
-4. no-context-provider-in-server-component
-5. no-dynamic-tailwind-classes
-6. no-event-handlers-to-client-props
-7. no-internal-fetch-in-server-component
-8. no-non-serializable-props
-9. no-react-hooks-in-server-component
-10. no-sequential-data-fetching
-11. no-unstable-math-random
-12. no-use-client-in-layout
-13. no-use-client-in-page
-14. no-use-params-in-client-component
-15. no-use-state-in-async-component
-16. prefer-async-page-component
-17. prefer-await-params-in-page
-18. prefer-cache-api
-19. prefer-link-over-router-push
-20. prefer-next-navigation
-21. prefer-react-destructured-imports
-22. prefer-reusable-swr-hooks
-23. prefer-ui-promise-handling
-24. prefer-use-hook-for-promise-props
-25. prefer-use-swr-over-fetch
-26. prevent-environment-poisoning
-27. suggest-server-component-pages
+**React/Next.js (44 rule files):** See `src/rules/react/` for the full list. Key rules include enforce-admin-separation, enforce-component-patterns, enforce-server-client-separation, enforce-use-server-vs-server-only, no-conflicting-directives, no-context-provider-in-server-component, no-dynamic-tailwind-classes, no-event-handlers-to-client-props, no-force-dynamic, no-jsx-logical-and, no-lazy-state-init, no-non-serializable-props, no-parenthesized-use-cache, no-react-hooks-in-server-component, no-reexports-in-use-server, no-request-access-in-use-cache, no-sequential-data-fetching, no-use-client-in-layout, no-use-client-in-page, no-usememo-for-primitives, no-waterfall-chains, prefer-async-page-component, prefer-await-params-in-page, prefer-cache-api, prefer-dynamic-import-for-heavy-libs, prefer-link-over-router-push, prefer-next-navigation, prefer-react-destructured-imports, prefer-reusable-swr-hooks, prefer-search-params-over-state, prefer-start-transition-for-server-actions, prefer-use-swr-over-fetch, prevent-environment-poisoning, require-directive-first, require-use-client-for-client-named-files, require-use-client-for-react-hooks, suggest-server-component-pages, use-after-for-non-blocking
 
-**General (7 rules):**
-1. enforce-file-naming
-2. enforce-import-order
-3. prefer-date-fns
-4. prefer-date-fns-over-date-operations
-5. prefer-lodash-es-imports
-6. prefer-lodash-uniq-over-set
-7. prefer-ufo-with-query
+**General (14 rule files):** enforce-file-naming, enforce-import-order, no-debug-comments, no-deprecated-declarations, no-import-type-queries, no-long-relative-imports, prefer-date-fns, prefer-date-fns-over-date-operations, prefer-direct-imports, prefer-lodash-es-imports, prefer-lodash-uniq-over-set, prefer-ufo-with-query, prefer-zod-default-with-catch, prefer-zod-url
 
-**Security (1 rule):**
-1. enforce-security-patterns
+**Security (11 rules):** enforce-security-patterns, no-hardcoded-secrets, no-log-secrets, no-sql-injection, no-unsafe-eval, no-unsafe-innerHTML, no-unsafe-redirect, no-unsafe-template-literals, no-weak-crypto, require-auth-validation, require-rate-limiting
 
-**Vue.js (1 rule):**
-1. prefer-to-value
+**Shared (1 rule):** no-unstable-math-random (used by both react and security plugins)
+
+**Vue.js (1 rule):** prefer-to-value
 
 ## Dependencies
 
@@ -926,16 +903,15 @@ dist/
 
 ## Test Coverage
 
-Current test files (20 test suites, 315 tests total):
-- **TypeScript**: 2 test files (enforce-zod-schema-naming, no-empty-function-implementations)
-- **React**: 10 test files (no-dynamic-tailwind-classes, no-event-handlers-to-client-props, no-unstable-math-random, no-use-state-in-async-component, prefer-link-over-router-push, prefer-next-navigation, prefer-react-destructured-imports, prefer-reusable-swr-hooks, prefer-use-swr-over-fetch, suggest-server-component-pages)
-- **General**: 6 test files (enforce-file-naming, enforce-import-order, prefer-date-fns, prefer-date-fns-over-date-operations, prefer-lodash-es-imports, prefer-lodash-uniq-over-set, prefer-ufo-with-query)
+Current test files (44 test suites, 731 tests total):
+- **React**: 26 test files
+- **General**: 14 test files
+- **TypeScript**: 2 test files
+- **Shared**: 1 test file (no-unstable-math-random)
 - **Vue**: 1 test file (prefer-to-value)
+- **Security**: 0 test files
 
-**Note**: Many rules still don't have test files yet. When creating new rules, always include comprehensive tests. Remaining rules needing tests:
-- **React**: 17 rules (enforce-admin-separation, enforce-component-patterns, enforce-server-client-separation, no-context-provider-in-server-component, no-internal-fetch-in-server-component, no-non-serializable-props, no-react-hooks-in-server-component, no-sequential-data-fetching, no-use-client-in-layout, no-use-client-in-page, no-use-params-in-client-component, prefer-async-page-component, prefer-await-params-in-page, prefer-cache-api, prefer-ui-promise-handling, prefer-use-hook-for-promise-props, prevent-environment-poisoning)
-- **TypeScript**: 3 rules (enforce-api-patterns, enforce-documentation, enforce-typescript-patterns)
-- **Security**: 1 rule (enforce-security-patterns)
+**Note**: Security rules have no test files yet. When creating new rules, always include comprehensive tests.
 
 ## Common Patterns & Conventions
 
