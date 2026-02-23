@@ -15,10 +15,10 @@ type MessageIds =
 type Options = [];
 
 interface ImportGroup {
-  type: "external" | "internal" | "relative";
+  endLine: number;
   imports: TSESTree.ImportDeclaration[];
   startLine: number;
-  endLine: number;
+  type: "external" | "internal" | "relative";
 }
 
 export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
