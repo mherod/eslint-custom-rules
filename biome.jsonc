@@ -51,11 +51,19 @@
       }
     },
     {
-      "includes": [".eslintrc.js", "test-examples/.eslintrc.js"],
+      "includes": [
+        ".eslintrc.js",
+        "test-examples/.eslintrc.js",
+        "*.config.js",
+        "commitlint.config.js"
+      ],
       "linter": {
         "rules": {
           "style": {
             "useFilenamingConvention": "off"
+          },
+          "correctness": {
+            "noNodejsModules": "off"
           }
         }
       }
