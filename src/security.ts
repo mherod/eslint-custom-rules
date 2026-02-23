@@ -1,8 +1,11 @@
 // Security-specific rules plugin
+
+import noUnstableMathRandom from "./rules/react/no-unstable-math-random";
 import enforceSecurityPatterns from "./rules/security/enforce-security-patterns";
 
 export const securityRules = {
   "enforce-security-patterns": enforceSecurityPatterns,
+  "no-unstable-math-random": noUnstableMathRandom,
 };
 
 export const securityPlugin = {
