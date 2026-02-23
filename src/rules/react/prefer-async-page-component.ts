@@ -1,5 +1,6 @@
 import { AST_NODE_TYPES, ESLintUtils } from "@typescript-eslint/utils";
 import { getFilename } from "../utils/common";
+import { hasUseClientDirective } from "../utils/component-type-utils";
 
 export const RULE_NAME = "prefer-async-page-component";
 
@@ -30,22 +31,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     }
 
     // Check if it's a Client Component
-    let isClientComponent = false;
+    const isClientComponent = hasUseClientDirective(context.getSourceCode());
 
     return {
-      Program(node): void {
-        if (node.body.length > 0) {
-          const firstStatement = node.body[0];
-          if (
-            firstStatement &&
-            firstStatement.type === AST_NODE_TYPES.ExpressionStatement &&
-            firstStatement.expression.type === AST_NODE_TYPES.Literal &&
-            firstStatement.expression.value === "use client"
-          ) {
-            isClientComponent = true;
-          }
-        }
-      },
       ExportDefaultDeclaration(node): void {
         if (isClientComponent) {
           return;

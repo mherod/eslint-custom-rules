@@ -27,7 +27,6 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     docs: {
       description: "Enforce consistent import ordering and grouping",
     },
-    fixable: "code",
     schema: [],
     messages: {
       wrongOrder:

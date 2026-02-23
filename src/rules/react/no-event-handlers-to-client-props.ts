@@ -33,7 +33,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     let isServerComponent = false;
     let hasUseClientDirective = false;
 
-    // Check for "use client" directive
+    // Check for "use client" and "use server" directives
+    let hasUseServerDirective = false;
     const firstToken = sourceCode.getFirstToken(sourceCode.ast);
     const comments = sourceCode.getCommentsBefore(firstToken || sourceCode.ast);
     const allComments = [...comments, ...sourceCode.getAllComments()];
@@ -58,7 +59,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       ) {
         if (statement.expression.value === "use client") {
           hasUseClientDirective = true;
-          break;
+        }
+        if (statement.expression.value === "use server") {
+          hasUseServerDirective = true;
         }
         // Continue checking other string literals (like "use strict")
       } else {
@@ -106,8 +109,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
                 isFunction(expression)
               ) {
                 // Skip Server Actions - they are legitimate to pass as props
-                if (isServerAction(expression, sourceCode)) {
-                  return; // Allow Server Actions
+                if (
+                  isServerAction(expression, sourceCode, hasUseServerDirective)
+                ) {
+                  continue; // Allow Server Actions, check remaining attributes
                 }
 
                 const handlerName = getFunctionName(expression);
@@ -236,10 +241,16 @@ function getFunctionName(
  */
 function isServerAction(
   expression: TSESTree.Expression | TSESTree.JSXEmptyExpression,
-  sourceCode: SourceCode
+  sourceCode: SourceCode,
+  hasUseServerDirective: boolean
 ): boolean {
   if (expression.type === AST_NODE_TYPES.JSXEmptyExpression) {
     return false;
+  }
+
+  // If the entire file has "use server" directive, all exported functions are server actions
+  if (hasUseServerDirective) {
+    return true;
   }
 
   switch (expression.type) {
@@ -249,7 +260,7 @@ function isServerAction(
       return containsUseServerDirective(expression, sourceCode);
 
     case AST_NODE_TYPES.Identifier:
-      // For function references, try to find the function definition
+      // For function references, resolve to the definition and check for "use server"
       return isFunctionIdentifierServerAction(expression, sourceCode);
 
     default:
@@ -291,40 +302,83 @@ function containsUseServerDirective(
 }
 
 /**
- * Check if a function identifier refers to a Server Action
+ * Check if a function identifier refers to a Server Action by resolving the
+ * identifier to its declaration and checking for a "use server" directive in
+ * the function body. This replaces the previous name-based heuristic approach
+ * which caused false negatives (e.g. handleUpdate being silently allowed).
  */
 function isFunctionIdentifierServerAction(
   identifier: TSESTree.Identifier,
   _sourceCode: SourceCode
 ): boolean {
-  // Simple heuristic approach: check for common Server Action patterns
-  // This is more reliable than complex AST traversal for an ESLint rule
+  // Walk up the AST to find the scope that contains this identifier's definition.
+  // We look for a FunctionDeclaration, VariableDeclarator, or similar node whose
+  // name matches and whose body contains "use server".
+  let current: TSESTree.Node | undefined = identifier.parent;
 
-  const functionName = identifier.name.toLowerCase();
-
-  // Common patterns that suggest this might be a Server Action
-  // Be conservative - better to allow some false negatives than flag real Server Actions
-  const serverActionIndicators = [
-    "submit", // handleSubmit, onSubmit, submitForm
-    "action", // formAction, submitAction
-    "server", // serverAction, handleServer
-    "register", // registerUser, handleRegister
-    "login", // loginUser, handleLogin
-    "signup", // signupUser, handleSignup
-    "auth", // authenticate, handleAuth
-    "save", // saveData, handleSave (often server actions)
-    "create", // createItem, handleCreate
-    "update", // updateItem, handleUpdate
-    "delete", // deleteItem, handleDelete
-    "send", // sendEmail, handleSend
-  ];
-
-  // If the function name contains any server action indicators, treat it as potentially valid
-  if (
-    serverActionIndicators.some((indicator) => functionName.includes(indicator))
+  // First, find the enclosing block/program to search for the declaration
+  while (
+    current &&
+    current.type !== AST_NODE_TYPES.Program &&
+    current.type !== AST_NODE_TYPES.BlockStatement
   ) {
-    return true;
+    current = current.parent;
+  }
+
+  if (!current) {
+    return false;
+  }
+
+  const block =
+    current.type === AST_NODE_TYPES.Program
+      ? current.body
+      : current.type === AST_NODE_TYPES.BlockStatement
+        ? current.body
+        : [];
+
+  for (const statement of block) {
+    // Check FunctionDeclaration: function handleSubmit() { "use server"; ... }
+    if (
+      statement.type === AST_NODE_TYPES.FunctionDeclaration &&
+      statement.id?.name === identifier.name &&
+      statement.body.type === AST_NODE_TYPES.BlockStatement
+    ) {
+      return hasUseServerInBody(statement.body);
+    }
+
+    // Check VariableDeclaration: const handleSubmit = async () => { "use server"; ... }
+    if (statement.type === AST_NODE_TYPES.VariableDeclaration) {
+      for (const declarator of statement.declarations) {
+        if (
+          declarator.id.type === AST_NODE_TYPES.Identifier &&
+          declarator.id.name === identifier.name &&
+          declarator.init
+        ) {
+          const init = declarator.init;
+          if (
+            (init.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+              init.type === AST_NODE_TYPES.FunctionExpression) &&
+            init.body.type === AST_NODE_TYPES.BlockStatement
+          ) {
+            return hasUseServerInBody(init.body);
+          }
+        }
+      }
+    }
   }
 
   return false;
+}
+
+/**
+ * Check if a block statement starts with "use server" directive
+ */
+function hasUseServerInBody(body: TSESTree.BlockStatement): boolean {
+  const firstStatement = body.body[0];
+  return (
+    firstStatement !== undefined &&
+    firstStatement.type === AST_NODE_TYPES.ExpressionStatement &&
+    firstStatement.expression.type === AST_NODE_TYPES.Literal &&
+    firstStatement.expression.value === "use server"
+  );
 }

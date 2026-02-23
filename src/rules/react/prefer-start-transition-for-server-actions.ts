@@ -3,6 +3,7 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import { hasUseClientDirective } from "../utils/component-type-utils";
 import {
   getActionName,
   isServerActionCall,
@@ -29,39 +30,11 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   defaultOptions: [],
   create(context) {
     const sourceCode = context.sourceCode;
-    let hasUseClientDirective = false;
+    const isClientComponent = hasUseClientDirective(sourceCode);
 
     return {
-      Program(node: TSESTree.Program): void {
-        const comments = sourceCode.getAllComments();
-        const firstLine = sourceCode.lines[0];
-
-        hasUseClientDirective =
-          (firstLine?.includes('"use client"') ||
-            firstLine?.includes("'use client'") ||
-            comments.some(
-              (comment) =>
-                comment.loc?.start.line === 1 &&
-                (comment.value.includes('"use client"') ||
-                  comment.value.includes("'use client'"))
-            )) ??
-          false;
-
-        if (!hasUseClientDirective && node.body.length > 0) {
-          const firstNode = node.body[0];
-          if (
-            firstNode &&
-            firstNode.type === AST_NODE_TYPES.ExpressionStatement &&
-            firstNode.expression.type === AST_NODE_TYPES.Literal &&
-            firstNode.expression.value === "use client"
-          ) {
-            hasUseClientDirective = true;
-          }
-        }
-      },
-
       CallExpression(node: TSESTree.CallExpression): void {
-        if (!hasUseClientDirective) {
+        if (!isClientComponent) {
           return;
         }
         if (isInsideStartTransition(node)) {

@@ -3,6 +3,7 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import { hasUseClientDirective } from "../utils/component-type-utils";
 
 export const RULE_NAME = "prefer-use-swr-over-fetch";
 
@@ -28,26 +29,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   create(context) {
     // Track context information
     let isInCustomHook = false;
-    let hasUseClientDirective = false;
+    const hasUseClient = hasUseClientDirective(context.getSourceCode());
     let componentOrHookContext = false; // Track if we're anywhere inside a component or hook
-
-    // Check if we're in a file with "use client" directive
-    function checkForUseClientDirective(node: TSESTree.Program): void {
-      // Check the first few statements for "use client" directive
-      for (const statement of node.body.slice(0, 3)) {
-        if (
-          statement.type === AST_NODE_TYPES.ExpressionStatement &&
-          statement.expression.type === AST_NODE_TYPES.Literal &&
-          typeof statement.expression.value === "string"
-        ) {
-          const value = statement.expression.value;
-          if (value === "use client" || value === "use client") {
-            hasUseClientDirective = true;
-            return;
-          }
-        }
-      }
-    }
 
     // Check if a function name looks like a React component
     function isReactComponent(name: string | undefined): boolean {
@@ -65,7 +48,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     function shouldSuggestUseSwr(): boolean {
       // Only suggest in files with "use client" directive
       // And we're anywhere inside a React component or custom hook
-      return hasUseClientDirective && componentOrHookContext;
+      return hasUseClient && componentOrHookContext;
     }
 
     // Check if a fetch call looks like data fetching (GET request)
@@ -224,11 +207,6 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     }
 
     return {
-      // Check for "use client" directive at the top of the file
-      Program(node: TSESTree.Program): void {
-        checkForUseClientDirective(node);
-      },
-
       // Track when we enter/exit functions to know context
       FunctionDeclaration(node: TSESTree.FunctionDeclaration): void {
         if (node.id?.name) {

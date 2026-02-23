@@ -3,6 +3,10 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import {
+  hasUseClientDirective,
+  normalizePath,
+} from "../utils/component-type-utils";
 
 export const RULE_NAME = "suggest-server-component-pages";
 
@@ -36,45 +40,29 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       return {};
     }
 
-    let hasUseClientDirective = false;
-    let useClientNode: TSESTree.Node | null = null;
+    const hasUseClient = hasUseClientDirective(sourceCode);
 
-    // Check for "use client" directive at the top of the file
-    const program = sourceCode.ast;
-    if (program.body.length > 0) {
+    // Find the node to report on (the "use client" directive statement or the program node)
+    let useClientNode: TSESTree.Node | null = null;
+    if (hasUseClient) {
+      const program = sourceCode.ast;
       const firstStatement = program.body[0];
       if (
         firstStatement &&
         firstStatement.type === AST_NODE_TYPES.ExpressionStatement &&
-        "expression" in firstStatement &&
         firstStatement.expression.type === AST_NODE_TYPES.Literal &&
-        typeof firstStatement.expression.value === "string" &&
         firstStatement.expression.value === "use client"
       ) {
-        hasUseClientDirective = true;
         useClientNode = firstStatement;
-      }
-    }
-
-    // Also check for "use client" in comments (less common but possible)
-    const firstToken = sourceCode.getFirstToken(program);
-    const comments = sourceCode.getCommentsBefore(firstToken || program);
-
-    for (const comment of comments) {
-      if (
-        (comment.type as string) === "Line" &&
-        comment.value.trim() === "use client"
-      ) {
-        hasUseClientDirective = true;
-        // For comments, we'll report on the program node since we can't report on comments directly
+      } else {
+        // Detected via comment — report on the program node
         useClientNode = program;
-        break;
       }
     }
 
     return {
       "Program:exit"(): void {
-        if (hasUseClientDirective && useClientNode) {
+        if (hasUseClient && useClientNode) {
           context.report({
             node: useClientNode,
             messageId: "useClientInPageFile",
@@ -118,7 +106,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 function isAppRouterPageFile(filename: string): boolean {
   // Check if it's a page.tsx file in the App Router structure
   // App Router pages are typically in app/ directory and named page.tsx
-  const normalizedPath = filename.replace(/\\/g, "/");
+  const normalizedPath = normalizePath(filename);
 
   return (
     normalizedPath.includes("/app/") && normalizedPath.endsWith("/page.tsx")

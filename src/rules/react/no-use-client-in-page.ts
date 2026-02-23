@@ -1,5 +1,9 @@
 import { AST_NODE_TYPES, ESLintUtils } from "@typescript-eslint/utils";
 import { getFilename } from "../utils/common";
+import {
+  hasUseClientDirective,
+  normalizePath,
+} from "../utils/component-type-utils";
 
 export const RULE_NAME = "no-use-client-in-page";
 
@@ -27,7 +31,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     if (
       !(
         /page\.(tsx|jsx|js|ts)$/.test(filename) &&
-        filename.replace(/\\/g, "/").includes("/app/")
+        normalizePath(filename).includes("/app/")
       )
     ) {
       return {};
@@ -35,20 +39,27 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     return {
       Program(node): void {
-        // Check for "use client" directive
-        if (node.body.length > 0) {
-          const firstStatement = node.body[0];
-          if (
-            firstStatement &&
-            firstStatement.type === AST_NODE_TYPES.ExpressionStatement &&
-            firstStatement.expression.type === AST_NODE_TYPES.Literal &&
-            firstStatement.expression.value === "use client"
-          ) {
-            context.report({
-              node: firstStatement,
-              messageId: "useClientInPage",
-            });
-          }
+        if (!hasUseClientDirective(context.getSourceCode())) {
+          return;
+        }
+        // Report on the "use client" directive statement if found
+        const firstStatement = node.body[0];
+        if (
+          firstStatement &&
+          firstStatement.type === AST_NODE_TYPES.ExpressionStatement &&
+          firstStatement.expression.type === AST_NODE_TYPES.Literal &&
+          firstStatement.expression.value === "use client"
+        ) {
+          context.report({
+            node: firstStatement,
+            messageId: "useClientInPage",
+          });
+        } else {
+          // Detected via comment or first line — report on the program node
+          context.report({
+            node,
+            messageId: "useClientInPage",
+          });
         }
       },
     };

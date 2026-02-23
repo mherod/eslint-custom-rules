@@ -14,7 +14,6 @@ export default createRule({
       description:
         "Forbid navigation via window.location assignments, prefer Next.js router or Link components",
     },
-    fixable: "code",
     schema: [],
     messages: {
       windowLocationAssignment:

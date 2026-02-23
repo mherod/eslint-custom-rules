@@ -1,4 +1,5 @@
 import { AST_NODE_TYPES, type TSESTree } from "@typescript-eslint/utils";
+import { normalizePath } from "./component-type-utils";
 
 /**
  * Utility functions for detecting and working with Next.js Server Actions.
@@ -10,7 +11,7 @@ import { AST_NODE_TYPES, type TSESTree } from "@typescript-eslint/utils";
  * These modules contain server actions that are callable from client components.
  */
 export function isActionModule(moduleName: string): boolean {
-  const normalizedName = moduleName.replace(/\\/g, "/").toLowerCase();
+  const normalizedName = normalizePath(moduleName).toLowerCase();
 
   return (
     // Files with .action. in the name
@@ -27,7 +28,7 @@ export function isActionModule(moduleName: string): boolean {
  * These files typically export server actions that can be called from client components.
  */
 export function isActionFile(filename: string): boolean {
-  const normalizedPath = filename.replace(/\\/g, "/").toLowerCase();
+  const normalizedPath = normalizePath(filename).toLowerCase();
 
   return (
     // Files in /actions/ directories
@@ -54,7 +55,7 @@ export function isActionFile(filename: string): boolean {
  * These files contain sensitive server-side code that should never be imported by clients.
  */
 export function isDataFile(filename: string): boolean {
-  const normalizedPath = filename.replace(/\\/g, "/").toLowerCase();
+  const normalizedPath = normalizePath(filename).toLowerCase();
 
   // Action files should never be considered data files
   if (isActionFile(filename)) {

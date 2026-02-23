@@ -3,6 +3,7 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import { hasUseClientDirective } from "../utils/component-type-utils";
 
 export const RULE_NAME = "prefer-use-hook-for-promise-props";
 
@@ -25,22 +26,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    let isClientComponent = false;
+    const isClientComponent = hasUseClientDirective(context.getSourceCode());
 
     return {
-      Program(node): void {
-        if (node.body.length > 0) {
-          const firstStatement = node.body[0];
-          if (
-            firstStatement &&
-            firstStatement.type === AST_NODE_TYPES.ExpressionStatement &&
-            firstStatement.expression.type === AST_NODE_TYPES.Literal &&
-            firstStatement.expression.value === "use client"
-          ) {
-            isClientComponent = true;
-          }
-        }
-      },
       FunctionDeclaration(node): void {
         if (!isClientComponent) {
           return;

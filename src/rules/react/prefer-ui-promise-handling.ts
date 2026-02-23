@@ -3,6 +3,7 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import { hasUseClientDirective } from "../utils/component-type-utils";
 
 export const RULE_NAME = "prefer-ui-promise-handling";
 
@@ -26,22 +27,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    let hasUseClientDirective = false;
+    const hasUseClient = hasUseClientDirective(context.getSourceCode());
     let isInReactComponent = false;
-
-    // Check if we're in a file with "use client" directive
-    function checkForUseClientDirective(node: TSESTree.Program): void {
-      for (const statement of node.body.slice(0, 3)) {
-        if (
-          statement.type === AST_NODE_TYPES.ExpressionStatement &&
-          statement.expression.type === AST_NODE_TYPES.Literal &&
-          statement.expression.value === "use client"
-        ) {
-          hasUseClientDirective = true;
-          return;
-        }
-      }
-    }
 
     // Check if a function name looks like a React component
     function isReactComponent(name: string | undefined): boolean {
@@ -55,7 +42,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     // Check if we're in a UI component context where promise handling matters
     function shouldCheckPromiseHandling(): boolean {
-      return hasUseClientDirective && isInReactComponent;
+      return hasUseClient && isInReactComponent;
     }
 
     // Check if this is a void expression suppressing a promise
@@ -158,10 +145,6 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     }
 
     return {
-      Program(node: TSESTree.Program): void {
-        checkForUseClientDirective(node);
-      },
-
       FunctionDeclaration(node: TSESTree.FunctionDeclaration): void {
         if (node.id?.name && isReactComponent(node.id.name)) {
           isInReactComponent = true;

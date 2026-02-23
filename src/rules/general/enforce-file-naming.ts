@@ -4,11 +4,11 @@ import {
   type TSESLint,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import { isPascalCase } from "../utils/common";
 
 export const RULE_NAME = "enforce-file-naming";
 
 // Constants for regex patterns
-const PASCAL_CASE_REGEX = /^[A-Z][a-zA-Z0-9]*$/;
 const KEBAB_CASE_REGEX = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 const HOOK_NAMING_REGEX = /^use[A-Z][a-zA-Z0-9]*$/;
 
@@ -166,11 +166,6 @@ function validateFilename(
     }
     return;
   }
-}
-
-function isPascalCase(name: string): boolean {
-  // PascalCase: starts with uppercase, can contain numbers
-  return PASCAL_CASE_REGEX.test(name);
 }
 
 function isKebabCase(name: string): boolean {

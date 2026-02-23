@@ -1,4 +1,5 @@
 import { AST_NODE_TYPES, ESLintUtils } from "@typescript-eslint/utils";
+import { isServerComponent } from "../utils/component-type-utils";
 
 export const RULE_NAME = "no-react-hooks-in-server-component";
 
@@ -39,27 +40,18 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    let isClientComponent = false;
+    const filename = context.getFilename();
+    const sourceCode = context.getSourceCode();
+
+    // Only apply this rule to files that are actually Server Components.
+    // Files without "use client" are NOT necessarily server components —
+    // they could be utility files, hook files, test files, or non-Next.js code.
+    if (!isServerComponent(filename, sourceCode)) {
+      return {};
+    }
 
     return {
-      Program(node): void {
-        if (node.body.length > 0) {
-          const firstStatement = node.body[0];
-          if (
-            firstStatement &&
-            firstStatement.type === AST_NODE_TYPES.ExpressionStatement &&
-            firstStatement.expression.type === AST_NODE_TYPES.Literal &&
-            firstStatement.expression.value === "use client"
-          ) {
-            isClientComponent = true;
-          }
-        }
-      },
       CallExpression(node): void {
-        if (isClientComponent) {
-          return;
-        }
-
         if (node.callee.type === AST_NODE_TYPES.Identifier) {
           if (CLIENT_HOOKS.has(node.callee.name)) {
             context.report({

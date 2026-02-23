@@ -3,7 +3,7 @@ import { AST_NODE_TYPES, type TSESTree } from "@typescript-eslint/utils";
 /**
  * Regular expressions for common naming patterns
  */
-export const NAMING_PATTERNS = {
+const NAMING_PATTERNS = {
   COMPONENT: /^[A-Z][a-zA-Z0-9]*$/,
   HOOK: /^use[A-Z][a-zA-Z0-9]*$/,
   CAMEL_CASE: /^[a-z][a-zA-Z0-9]*$/,
@@ -15,7 +15,7 @@ export const NAMING_PATTERNS = {
 /**
  * Common file path patterns for different types of files
  */
-export const FILE_PATTERNS = {
+const FILE_PATTERNS = {
   COMPONENT: ["/components/", "/pages/", "/app/"],
   HOOK: ["/hooks/"],
   API: ["/api/", "/route.ts", "/route.js"],
@@ -27,7 +27,7 @@ export const FILE_PATTERNS = {
 /**
  * HTTP method names
  */
-export const HTTP_METHODS = [
+const HTTP_METHODS = [
   "GET",
   "POST",
   "PUT",
@@ -40,7 +40,7 @@ export const HTTP_METHODS = [
 /**
  * Database-related object names
  */
-export const DATABASE_OBJECTS = [
+const DATABASE_OBJECTS = [
   "db",
   "database",
   "collection",
@@ -59,7 +59,7 @@ export const DATABASE_OBJECTS = [
 /**
  * Protected route patterns that typically require authentication
  */
-export const PROTECTED_ROUTE_PATTERNS = [
+const PROTECTED_ROUTE_PATTERNS = [
   "/admin",
   "/dashboard",
   "/profile",
@@ -76,6 +76,13 @@ export const PROTECTED_ROUTE_PATTERNS = [
   "/update",
   "/create",
 ] as const;
+
+/**
+ * Check if a name follows PascalCase convention
+ */
+export function isPascalCase(name: string): boolean {
+  return NAMING_PATTERNS.PASCAL_CASE.test(name);
+}
 
 /**
  * Check if a name follows the component naming convention (PascalCase)
@@ -116,20 +123,6 @@ export function isHookPath(filename: string): boolean {
  */
 export function isApiRoute(filename: string): boolean {
   return FILE_PATTERNS.API.some((pattern) => filename.includes(pattern));
-}
-
-/**
- * Check if a file path is likely a utility/library file
- */
-export function isUtilityFile(filename: string): boolean {
-  return FILE_PATTERNS.UTIL.some((pattern) => filename.includes(pattern));
-}
-
-/**
- * Check if a file path is a test file
- */
-export function isTestFile(filename: string): boolean {
-  return FILE_PATTERNS.TEST.some((pattern) => filename.includes(pattern));
 }
 
 /**
@@ -214,7 +207,7 @@ export function isComplexType(typeAnnotation: TSESTree.TypeNode): boolean {
     typeAnnotation.type === AST_NODE_TYPES.TSMappedType ||
     typeAnnotation.type === AST_NODE_TYPES.TSConditionalType ||
     (typeAnnotation.type === AST_NODE_TYPES.TSTypeLiteral &&
-      typeAnnotation.members.length > 2)
+      typeAnnotation.members.length > 3)
   );
 }
 

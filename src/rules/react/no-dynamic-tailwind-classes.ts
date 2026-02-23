@@ -95,7 +95,6 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         additionalProperties: false,
       },
     ],
-    fixable: "code",
   },
   defaultOptions: [
     {

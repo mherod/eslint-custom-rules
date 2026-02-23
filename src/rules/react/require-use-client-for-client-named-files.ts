@@ -1,12 +1,13 @@
 import {
-  AST_NODE_TYPES,
   ESLintUtils,
   type TSESLint,
   type TSESTree,
 } from "@typescript-eslint/utils";
 import {
+  hasDirective,
   hasUseClientDirective,
   isClientComponent,
+  normalizePath,
 } from "../utils/component-type-utils";
 
 export const RULE_NAME = "require-use-client-for-client-named-files";
@@ -33,7 +34,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   create(context) {
     const sourceCode = context.sourceCode;
     const filename = context.filename;
-    const normalizedPath = filename.replace(/\\/g, "/");
+    const normalizedPath = normalizePath(filename);
 
     if (!/\.(tsx|jsx)$/.test(normalizedPath)) {
       return {};
@@ -47,17 +48,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     return {
       Program(node: TSESTree.Program): void {
-        const program = sourceCode.ast;
-        const firstStatement = program.body[0];
-        const hasUseServerDirective =
-          firstStatement?.type === AST_NODE_TYPES.ExpressionStatement &&
-          firstStatement.expression.type === AST_NODE_TYPES.Literal &&
-          firstStatement.expression.value === "use server";
+        const hasUseServer = hasDirective(sourceCode, "use server");
 
         context.report({
           node,
           messageId: "missingUseClientDirective",
-          fix: hasUseServerDirective
+          fix: hasUseServer
             ? null
             : (fixer: TSESLint.RuleFixer): TSESLint.RuleFix =>
                 fixer.insertTextBeforeRange([0, 0], `"use client";\n\n`),

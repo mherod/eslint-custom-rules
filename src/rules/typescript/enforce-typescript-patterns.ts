@@ -3,6 +3,7 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import { isComplexType, isPascalCase } from "../utils/common";
 
 export const RULE_NAME = "enforce-typescript-patterns";
 
@@ -268,22 +269,6 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     };
   },
 });
-
-function isPascalCase(name: string): boolean {
-  return /^[A-Z][a-zA-Z0-9]*$/.test(name);
-}
-
-function isComplexType(typeAnnotation: TSESTree.TypeNode): boolean {
-  // Consider union types, intersection types, mapped types as complex
-  return (
-    typeAnnotation.type === AST_NODE_TYPES.TSUnionType ||
-    typeAnnotation.type === AST_NODE_TYPES.TSIntersectionType ||
-    typeAnnotation.type === AST_NODE_TYPES.TSMappedType ||
-    typeAnnotation.type === AST_NODE_TYPES.TSConditionalType ||
-    (typeAnnotation.type === AST_NODE_TYPES.TSTypeLiteral &&
-      typeAnnotation.members.length > 3)
-  );
-}
 
 function shouldBeInterface(typeAnnotation: TSESTree.TypeNode): boolean {
   // Object types with multiple properties should be interfaces

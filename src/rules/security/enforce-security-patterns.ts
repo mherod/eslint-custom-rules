@@ -191,7 +191,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       FunctionDeclaration(node: TSESTree.FunctionDeclaration): void {
         if (isApiFile && node.id) {
           // Check for missing authentication in protected routes
-          if (isProtectedRoute(filename) && !hasAuthValidation(node)) {
+          if (
+            isProtectedRoute(filename) &&
+            !hasAuthValidation(node, sourceCode)
+          ) {
             context.report({
               node,
               messageId: "requireAuthValidation",
@@ -199,7 +202,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           }
 
           // Check for missing rate limiting in public routes
-          if (isPublicApiRoute(filename) && !hasRateLimit(node)) {
+          if (isPublicApiRoute(filename) && !hasRateLimit(node, sourceCode)) {
             context.report({
               node,
               messageId: "requireRateLimit",
@@ -592,25 +595,28 @@ function isPublicApiRoute(filename: string): boolean {
   return filename.includes("/api/") && !isProtectedRoute(filename);
 }
 
-function hasAuthValidation(node: TSESTree.FunctionDeclaration): boolean {
-  // Simple check for auth-related function calls in the function body
-  // In a real implementation, you'd do a more thorough AST traversal
-  const bodyString = node.body.body.toString();
+function hasAuthValidation(
+  node: TSESTree.FunctionDeclaration,
+  sourceCode: { getText(node: TSESTree.Node): string }
+): boolean {
+  const bodyText = sourceCode.getText(node.body);
   return (
-    bodyString.includes("auth") ||
-    bodyString.includes("verify") ||
-    bodyString.includes("authenticate") ||
-    bodyString.includes("authorize")
+    bodyText.includes("auth") ||
+    bodyText.includes("verify") ||
+    bodyText.includes("authenticate") ||
+    bodyText.includes("authorize")
   );
 }
 
-function hasRateLimit(node: TSESTree.FunctionDeclaration): boolean {
-  // Simple check for rate limiting patterns
-  const bodyString = node.body.body.toString();
+function hasRateLimit(
+  node: TSESTree.FunctionDeclaration,
+  sourceCode: { getText(node: TSESTree.Node): string }
+): boolean {
+  const bodyText = sourceCode.getText(node.body);
   return (
-    bodyString.includes("rateLimit") ||
-    bodyString.includes("throttle") ||
-    bodyString.includes("limit")
+    bodyText.includes("rateLimit") ||
+    bodyText.includes("throttle") ||
+    bodyText.includes("limit")
   );
 }
 

@@ -1,4 +1,5 @@
 // React/Next.js-specific rules plugin
+import { prefixRules } from "./config-utils";
 import enforceAdminSeparation from "./rules/react/enforce-admin-separation";
 import enforceComponentPatterns from "./rules/react/enforce-component-patterns";
 import enforceServerClientSeparation from "./rules/react/enforce-server-client-separation";
@@ -18,7 +19,6 @@ import noReactHooksInServerComponent from "./rules/react/no-react-hooks-in-serve
 import noReexportsInUseServer from "./rules/react/no-reexports-in-use-server";
 import noRequestAccessInUseCache from "./rules/react/no-request-access-in-use-cache";
 import noSequentialDataFetching from "./rules/react/no-sequential-data-fetching";
-import noUnstableMathRandom from "./rules/react/no-unstable-math-random";
 import noUseClientInLayout from "./rules/react/no-use-client-in-layout";
 import noUseClientInPage from "./rules/react/no-use-client-in-page";
 import noUseParamsInClientComponent from "./rules/react/no-use-params-in-client-component";
@@ -44,6 +44,64 @@ import requireUseClientForClientNamedFiles from "./rules/react/require-use-clien
 import requireUseClientForReactHooks from "./rules/react/require-use-client-for-react-hooks";
 import suggestServerComponentPages from "./rules/react/suggest-server-component-pages";
 import useAfterForNonBlocking from "./rules/react/use-after-for-non-blocking";
+import noUnstableMathRandom from "./rules/shared/no-unstable-math-random";
+
+// Rule severity maps -- single source of truth for both legacy and flat configs
+export const REACT_RECOMMENDED_SEVERITIES = {
+  "enforce-component-patterns": "warn",
+  "enforce-server-client-separation": "error",
+  "enforce-use-server-vs-server-only": "warn",
+  "no-async-server-component-in-client": "error",
+  "no-conflicting-directives": "error",
+  "no-context-provider-in-server-component": "error",
+  "no-dynamic-tailwind-classes": "warn",
+  "no-event-handlers-to-client-props": "error",
+  "no-internal-fetch-in-server-component": "warn",
+  "no-lazy-state-init": "warn",
+  "no-non-serializable-props": "error",
+  "no-parenthesized-use-cache": "error",
+  "no-react-hooks-in-server-component": "error",
+  "no-reexports-in-use-server": "error",
+  "no-request-access-in-use-cache": "error",
+  "no-sequential-data-fetching": "warn",
+  "no-unstable-math-random": "warn",
+  "no-use-client-in-layout": "error",
+  "no-use-client-in-page": "error",
+  "no-use-params-in-client-component": "error",
+  "no-use-state-in-async-component": "error",
+  "no-waterfall-chains": "warn",
+  "prefer-async-page-component": "warn",
+  "prefer-await-params-in-page": "error",
+  "prefer-cache-api": "error",
+  "prefer-react-destructured-imports": "warn",
+  "prefer-search-params-over-state": "warn",
+  "prefer-use-hook-for-promise-props": "warn",
+  "prevent-environment-poisoning": "error",
+  "require-directive-first": "error",
+} as const;
+
+export const REACT_STRICT_SEVERITIES = {
+  ...REACT_RECOMMENDED_SEVERITIES,
+  "enforce-admin-separation": "error",
+  "enforce-component-patterns": "error",
+  "no-dynamic-tailwind-classes": "error",
+  "no-force-dynamic": "warn",
+  "no-jsx-logical-and": "warn",
+  "no-unstable-math-random": "error",
+  "no-usememo-for-primitives": "warn",
+  "prefer-dynamic-import-for-heavy-libs": "warn",
+  "prefer-link-over-router-push": "warn",
+  "prefer-next-navigation": "warn",
+  "prefer-react-destructured-imports": "error",
+  "prefer-reusable-swr-hooks": "warn",
+  "prefer-start-transition-for-server-actions": "warn",
+  "prefer-ui-promise-handling": "warn",
+  "prefer-use-swr-over-fetch": "warn",
+  "require-use-client-for-client-named-files": "warn",
+  "require-use-client-for-react-hooks": "warn",
+  "suggest-server-component-pages": "warn",
+  "use-after-for-non-blocking": "warn",
+} as const;
 
 export const reactRules = {
   "enforce-admin-separation": enforceAdminSeparation,
@@ -95,51 +153,18 @@ export const reactRules = {
   "use-after-for-non-blocking": useAfterForNonBlocking,
 };
 
+const REACT_PREFIX = "@mherod/react";
+
 export const reactPlugin = {
   rules: reactRules,
   configs: {
     recommended: {
-      plugins: ["@mherod/react"],
-      rules: {
-        "@mherod/react/no-dynamic-tailwind-classes": "warn",
-        "@mherod/react/no-event-handlers-to-client-props": "error",
-        "@mherod/react/no-unstable-math-random": "warn",
-        "@mherod/react/no-use-state-in-async-component": "error",
-        "@mherod/react/no-non-serializable-props": "error",
-        "@mherod/react/no-sequential-data-fetching": "warn",
-        "@mherod/react/prefer-cache-api": "error",
-        "@mherod/react/prevent-environment-poisoning": "error",
-        "@mherod/react/enforce-server-client-separation": "error",
-        "@mherod/react/enforce-component-patterns": "warn",
-        "@mherod/react/prefer-react-destructured-imports": "warn",
-        "@mherod/react/prefer-search-params-over-state": "warn",
-        "@mherod/react/prefer-use-hook-for-promise-props": "warn",
-      },
+      plugins: [REACT_PREFIX],
+      rules: prefixRules(REACT_RECOMMENDED_SEVERITIES, REACT_PREFIX),
     },
     strict: {
-      plugins: ["@mherod/react"],
-      rules: {
-        "@mherod/react/enforce-admin-separation": "error",
-        "@mherod/react/enforce-component-patterns": "error",
-        "@mherod/react/enforce-server-client-separation": "error",
-        "@mherod/react/no-dynamic-tailwind-classes": "error",
-        "@mherod/react/no-event-handlers-to-client-props": "error",
-        "@mherod/react/no-unstable-math-random": "error",
-        "@mherod/react/no-use-state-in-async-component": "error",
-        "@mherod/react/no-non-serializable-props": "error",
-        "@mherod/react/no-sequential-data-fetching": "warn",
-        "@mherod/react/prefer-cache-api": "error",
-        "@mherod/react/prefer-link-over-router-push": "warn",
-        "@mherod/react/prefer-next-navigation": "warn",
-        "@mherod/react/prefer-react-destructured-imports": "error",
-        "@mherod/react/prefer-reusable-swr-hooks": "warn",
-        "@mherod/react/prefer-ui-promise-handling": "warn",
-        "@mherod/react/prefer-use-swr-over-fetch": "warn",
-        "@mherod/react/prefer-use-hook-for-promise-props": "warn",
-        "@mherod/react/prevent-environment-poisoning": "error",
-        "@mherod/react/suggest-server-component-pages": "warn",
-        "@mherod/react/prefer-search-params-over-state": "warn",
-      },
+      plugins: [REACT_PREFIX],
+      rules: prefixRules(REACT_STRICT_SEVERITIES, REACT_PREFIX),
     },
   },
 };
@@ -147,51 +172,12 @@ export const reactPlugin = {
 // Support for flat config
 export const reactConfigs = {
   recommended: {
-    plugins: {
-      "@mherod/react": reactPlugin,
-    },
-    rules: {
-      "@mherod/react/no-dynamic-tailwind-classes": "warn",
-      "@mherod/react/no-event-handlers-to-client-props": "error",
-      "@mherod/react/no-unstable-math-random": "warn",
-      "@mherod/react/no-use-state-in-async-component": "error",
-      "@mherod/react/no-non-serializable-props": "error",
-      "@mherod/react/no-sequential-data-fetching": "warn",
-      "@mherod/react/prefer-cache-api": "error",
-      "@mherod/react/prevent-environment-poisoning": "error",
-      "@mherod/react/enforce-server-client-separation": "error",
-      "@mherod/react/enforce-component-patterns": "warn",
-      "@mherod/react/prefer-react-destructured-imports": "warn",
-      "@mherod/react/prefer-search-params-over-state": "warn",
-      "@mherod/react/prefer-use-hook-for-promise-props": "warn",
-    },
+    plugins: { [REACT_PREFIX]: reactPlugin },
+    rules: prefixRules(REACT_RECOMMENDED_SEVERITIES, REACT_PREFIX),
   },
   strict: {
-    plugins: {
-      "@mherod/react": reactPlugin,
-    },
-    rules: {
-      "@mherod/react/enforce-admin-separation": "error",
-      "@mherod/react/enforce-component-patterns": "error",
-      "@mherod/react/enforce-server-client-separation": "error",
-      "@mherod/react/no-dynamic-tailwind-classes": "error",
-      "@mherod/react/no-event-handlers-to-client-props": "error",
-      "@mherod/react/no-unstable-math-random": "error",
-      "@mherod/react/no-use-state-in-async-component": "error",
-      "@mherod/react/no-non-serializable-props": "error",
-      "@mherod/react/no-sequential-data-fetching": "warn",
-      "@mherod/react/prefer-cache-api": "error",
-      "@mherod/react/prefer-link-over-router-push": "warn",
-      "@mherod/react/prefer-next-navigation": "warn",
-      "@mherod/react/prefer-react-destructured-imports": "error",
-      "@mherod/react/prefer-reusable-swr-hooks": "warn",
-      "@mherod/react/prefer-search-params-over-state": "warn",
-      "@mherod/react/prefer-ui-promise-handling": "warn",
-      "@mherod/react/prefer-use-swr-over-fetch": "warn",
-      "@mherod/react/prefer-use-hook-for-promise-props": "warn",
-      "@mherod/react/prevent-environment-poisoning": "error",
-      "@mherod/react/suggest-server-component-pages": "warn",
-    },
+    plugins: { [REACT_PREFIX]: reactPlugin },
+    rules: prefixRules(REACT_STRICT_SEVERITIES, REACT_PREFIX),
   },
 };
 

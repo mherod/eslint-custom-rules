@@ -1,14 +1,26 @@
 import { AST_NODE_TYPES, type TSESTree } from "@typescript-eslint/utils";
 
-/**
- * Checks if a file has a "use client" directive.
- * Checks both the first statement (standard) and top-level comments (less common but valid).
- */
-export function hasUseClientDirective(sourceCode: {
+interface SourceCodeLike {
   ast: TSESTree.Program;
   getAllComments: () => TSESTree.Comment[];
   lines: string[];
-}): boolean {
+}
+
+/**
+ * Normalize a file path to use forward slashes (handles Windows backslashes).
+ */
+export function normalizePath(filename: string): string {
+  return filename.replace(/\\/g, "/");
+}
+
+/**
+ * Checks if a file has a specific directive ("use client", "use server", "use cache").
+ * Checks both the first statement (standard) and top-level comments/lines (less common but valid).
+ */
+export function hasDirective(
+  sourceCode: SourceCodeLike,
+  directive: "use client" | "use server" | "use cache"
+): boolean {
   const program = sourceCode.ast;
 
   // Check first statement
@@ -19,7 +31,7 @@ export function hasUseClientDirective(sourceCode: {
       firstStatement.type === AST_NODE_TYPES.ExpressionStatement &&
       "expression" in firstStatement &&
       firstStatement.expression.type === AST_NODE_TYPES.Literal &&
-      firstStatement.expression.value === "use client"
+      firstStatement.expression.value === directive
     ) {
       return true;
     }
@@ -31,8 +43,8 @@ export function hasUseClientDirective(sourceCode: {
 
   // Simple string check for the first line
   if (
-    firstLine?.includes('"use client"') ||
-    firstLine?.includes("'use client'")
+    firstLine?.includes(`"${directive}"`) ||
+    firstLine?.includes(`'${directive}'`)
   ) {
     return true;
   }
@@ -41,9 +53,17 @@ export function hasUseClientDirective(sourceCode: {
   return comments.some(
     (comment: TSESTree.Comment) =>
       comment.loc?.start.line === 1 &&
-      (comment.value.includes('"use client"') ||
-        comment.value.includes("'use client'"))
+      (comment.value.includes(`"${directive}"`) ||
+        comment.value.includes(`'${directive}'`))
   );
+}
+
+/**
+ * Checks if a file has a "use client" directive.
+ * Convenience wrapper around hasDirective().
+ */
+export function hasUseClientDirective(sourceCode: SourceCodeLike): boolean {
+  return hasDirective(sourceCode, "use client");
 }
 
 /**
@@ -62,8 +82,8 @@ export function isClientComponent(
     return true;
   }
 
-  const normalizedPath = filename.replace(/\\/g, "/").toLowerCase();
-  const originalPath = filename.replace(/\\/g, "/");
+  const normalizedPath = normalizePath(filename).toLowerCase();
+  const originalPath = normalizePath(filename);
 
   // Explicit client naming convention
   if (
@@ -105,7 +125,7 @@ export function isServerComponent(
     return false;
   }
 
-  const normalizedPath = filename.replace(/\\/g, "/").toLowerCase();
+  const normalizedPath = normalizePath(filename).toLowerCase();
 
   // Exclude explicit client-side logic files (hooks, etc.)
   if (
@@ -159,7 +179,7 @@ export function isServerComponent(
  * Checks if a file is a standard App Router component file (page, layout, etc.)
  */
 export function isAppRouterComponent(filename: string): boolean {
-  const normalizedPath = filename.replace(/\\/g, "/").toLowerCase();
+  const normalizedPath = normalizePath(filename).toLowerCase();
 
   // Must be in app directory
   if (!normalizedPath.includes("/app/")) {

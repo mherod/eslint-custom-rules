@@ -3,7 +3,10 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
-import { hasUseClientDirective } from "../utils/component-type-utils";
+import {
+  hasUseClientDirective,
+  normalizePath,
+} from "../utils/component-type-utils";
 
 export const RULE_NAME = "require-use-client-for-react-hooks";
 
@@ -45,7 +48,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   create(context) {
     const sourceCode = context.sourceCode;
     const filename = context.filename;
-    const normalizedPath = filename.replace(/\\/g, "/");
+    const normalizedPath = normalizePath(filename);
 
     if (!/\.(tsx|jsx)$/.test(normalizedPath)) {
       return {};

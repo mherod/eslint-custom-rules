@@ -35,7 +35,6 @@ import noReactHooksInServerComponent from "./react/no-react-hooks-in-server-comp
 import noReexportsInUseServer from "./react/no-reexports-in-use-server";
 import noRequestAccessInUseCache from "./react/no-request-access-in-use-cache";
 import noSequentialDataFetching from "./react/no-sequential-data-fetching";
-import noUnstableMathRandom from "./react/no-unstable-math-random";
 import noUseClientInLayout from "./react/no-use-client-in-layout";
 import noUseClientInPage from "./react/no-use-client-in-page";
 import noUseParamsInClientComponent from "./react/no-use-params-in-client-component";
@@ -63,6 +62,17 @@ import suggestServerComponentPages from "./react/suggest-server-component-pages"
 import useAfterForNonBlocking from "./react/use-after-for-non-blocking";
 // Security rules
 import enforceSecurityPatterns from "./security/enforce-security-patterns";
+import noHardcodedSecrets from "./security/no-hardcoded-secrets";
+import noLogSecrets from "./security/no-log-secrets";
+import noSqlInjection from "./security/no-sql-injection";
+import noUnsafeEval from "./security/no-unsafe-eval";
+import noUnsafeInnerHTML from "./security/no-unsafe-inner-html";
+import noUnsafeRedirect from "./security/no-unsafe-redirect";
+import noUnsafeTemplateLiterals from "./security/no-unsafe-template-literals";
+import noWeakCrypto from "./security/no-weak-crypto";
+import requireAuthValidation from "./security/require-auth-validation";
+import requireRateLimiting from "./security/require-rate-limiting";
+import noUnstableMathRandom from "./shared/no-unstable-math-random";
 import enforceApiPatterns from "./typescript/enforce-api-patterns";
 import enforceDocumentation from "./typescript/enforce-documentation";
 import enforceTypescriptPatterns from "./typescript/enforce-typescript-patterns";
@@ -134,6 +144,16 @@ export const rules = {
   "enforce-file-naming": enforceFileNaming,
   "enforce-import-order": enforceImportOrder,
   "enforce-security-patterns": enforceSecurityPatterns,
+  "no-hardcoded-secrets": noHardcodedSecrets,
+  "no-log-secrets": noLogSecrets,
+  "no-sql-injection": noSqlInjection,
+  "no-unsafe-eval": noUnsafeEval,
+  "no-unsafe-innerHTML": noUnsafeInnerHTML,
+  "no-unsafe-redirect": noUnsafeRedirect,
+  "no-unsafe-template-literals": noUnsafeTemplateLiterals,
+  "no-weak-crypto": noWeakCrypto,
+  "require-auth-validation": requireAuthValidation,
+  "require-rate-limiting": requireRateLimiting,
   "enforce-server-client-separation": enforceServerClientSeparation,
   "enforce-typescript-patterns": enforceTypescriptPatterns,
   "enforce-use-server-vs-server-only": enforceUseServerVsServerOnly,

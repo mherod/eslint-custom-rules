@@ -20,56 +20,53 @@ export {
 export { default as vuePlugin, vueConfigs, vueRules } from "./vue";
 
 // Import for internal use
+import { prefixRules } from "./config-utils";
+import {
+  GENERAL_RECOMMENDED_SEVERITIES,
+  GENERAL_STRICT_SEVERITIES,
+} from "./general";
+import { REACT_RECOMMENDED_SEVERITIES, REACT_STRICT_SEVERITIES } from "./react";
 import { rules } from "./rules";
+import {
+  SECURITY_RECOMMENDED_SEVERITIES,
+  SECURITY_STRICT_SEVERITIES,
+} from "./security";
+import {
+  TYPESCRIPT_RECOMMENDED_SEVERITIES,
+  TYPESCRIPT_STRICT_SEVERITIES,
+} from "./typescript";
+import { VUE_RECOMMENDED_SEVERITIES, VUE_STRICT_SEVERITIES } from "./vue";
+
+// Combined severity maps for the main plugin (all categories under @mherod/custom)
+const CUSTOM_PREFIX = "@mherod/custom";
+
+const COMBINED_RECOMMENDED_SEVERITIES: Record<string, string> = {
+  ...REACT_RECOMMENDED_SEVERITIES,
+  ...GENERAL_RECOMMENDED_SEVERITIES,
+  ...TYPESCRIPT_RECOMMENDED_SEVERITIES,
+  ...SECURITY_RECOMMENDED_SEVERITIES,
+  ...VUE_RECOMMENDED_SEVERITIES,
+};
+
+const COMBINED_STRICT_SEVERITIES: Record<string, string> = {
+  ...REACT_STRICT_SEVERITIES,
+  ...GENERAL_STRICT_SEVERITIES,
+  ...TYPESCRIPT_STRICT_SEVERITIES,
+  ...SECURITY_STRICT_SEVERITIES,
+  ...VUE_STRICT_SEVERITIES,
+};
 
 // Main plugin that combines all rules (backward compatibility)
 export const plugin = {
   rules,
   configs: {
     recommended: {
-      plugins: ["@mherod/custom"],
-      rules: {
-        "@mherod/custom/no-event-handlers-to-client-props": "error",
-        "@mherod/custom/no-use-state-in-async-component": "error",
-        "@mherod/custom/prevent-environment-poisoning": "error",
-        "@mherod/custom/prefer-date-fns-over-date-operations": "warn",
-        "@mherod/custom/enforce-import-order": "warn",
-        "@mherod/custom/enforce-file-naming": "warn",
-        "@mherod/custom/enforce-server-client-separation": "error",
-        "@mherod/custom/enforce-admin-separation": "error",
-        "@mherod/custom/enforce-component-patterns": "warn",
-        "@mherod/custom/enforce-security-patterns": "error",
-        "@mherod/custom/prefer-cache-api": "error",
-        "@mherod/custom/no-sequential-data-fetching": "warn",
-        "@mherod/custom/no-non-serializable-props": "error",
-        "@mherod/custom/prefer-lodash-es-imports": "error",
-        "@mherod/custom/prefer-date-fns": "warn",
-        "@mherod/custom/prefer-ufo-with-query": "warn",
-      },
+      plugins: [CUSTOM_PREFIX],
+      rules: prefixRules(COMBINED_RECOMMENDED_SEVERITIES, CUSTOM_PREFIX),
     },
     strict: {
-      plugins: ["@mherod/custom"],
-      rules: {
-        "@mherod/custom/no-event-handlers-to-client-props": "error",
-        "@mherod/custom/no-use-state-in-async-component": "error",
-        "@mherod/custom/prevent-environment-poisoning": "error",
-        "@mherod/custom/prefer-date-fns-over-date-operations": "warn",
-        "@mherod/custom/enforce-import-order": "error",
-        "@mherod/custom/enforce-file-naming": "error",
-        "@mherod/custom/enforce-server-client-separation": "error",
-        "@mherod/custom/enforce-admin-separation": "error",
-        "@mherod/custom/enforce-component-patterns": "error",
-        "@mherod/custom/enforce-api-patterns": "error",
-        "@mherod/custom/enforce-typescript-patterns": "error",
-        "@mherod/custom/enforce-security-patterns": "error",
-        "@mherod/custom/enforce-documentation": "warn",
-        "@mherod/custom/prefer-cache-api": "error",
-        "@mherod/custom/no-sequential-data-fetching": "warn",
-        "@mherod/custom/no-non-serializable-props": "error",
-        "@mherod/custom/prefer-lodash-es-imports": "error",
-        "@mherod/custom/prefer-date-fns": "error",
-        "@mherod/custom/prefer-ufo-with-query": "error",
-      },
+      plugins: [CUSTOM_PREFIX],
+      rules: prefixRules(COMBINED_STRICT_SEVERITIES, CUSTOM_PREFIX),
     },
   },
 };
@@ -77,64 +74,14 @@ export const plugin = {
 // Support for flat config (backward compatibility)
 export const configs = {
   recommended: {
-    plugins: {
-      "@mherod/custom": plugin,
-    },
-    rules: {
-      "@mherod/custom/no-event-handlers-to-client-props": "error",
-      "@mherod/custom/no-use-state-in-async-component": "error",
-      "@mherod/custom/prevent-environment-poisoning": "error",
-      "@mherod/custom/prefer-date-fns-over-date-operations": "warn",
-      "@mherod/custom/enforce-import-order": "warn",
-      "@mherod/custom/enforce-file-naming": "warn",
-      "@mherod/custom/enforce-server-client-separation": "error",
-      "@mherod/custom/enforce-admin-separation": "error",
-      "@mherod/custom/enforce-component-patterns": "warn",
-      "@mherod/custom/enforce-security-patterns": "error",
-      "@mherod/custom/prefer-cache-api": "error",
-      "@mherod/custom/no-sequential-data-fetching": "warn",
-      "@mherod/custom/no-non-serializable-props": "error",
-      "@mherod/custom/prefer-lodash-es-imports": "error",
-      "@mherod/custom/prefer-date-fns": "warn",
-      "@mherod/custom/prefer-ufo-with-query": "warn",
-    },
+    plugins: { [CUSTOM_PREFIX]: plugin },
+    rules: prefixRules(COMBINED_RECOMMENDED_SEVERITIES, CUSTOM_PREFIX),
   },
   strict: {
-    plugins: {
-      "@mherod/custom": plugin,
-    },
-    rules: {
-      "@mherod/custom/no-event-handlers-to-client-props": "error",
-      "@mherod/custom/no-use-state-in-async-component": "error",
-      "@mherod/custom/prevent-environment-poisoning": "error",
-      "@mherod/custom/prefer-date-fns-over-date-operations": "warn",
-      "@mherod/custom/enforce-import-order": "error",
-      "@mherod/custom/enforce-file-naming": "error",
-      "@mherod/custom/enforce-server-client-separation": "error",
-      "@mherod/custom/enforce-admin-separation": "error",
-      "@mherod/custom/enforce-component-patterns": "error",
-      "@mherod/custom/enforce-api-patterns": "error",
-      "@mherod/custom/enforce-typescript-patterns": "error",
-      "@mherod/custom/enforce-security-patterns": "error",
-      "@mherod/custom/enforce-documentation": "warn",
-      "@mherod/custom/prefer-cache-api": "error",
-      "@mherod/custom/no-sequential-data-fetching": "warn",
-      "@mherod/custom/no-non-serializable-props": "error",
-      "@mherod/custom/no-use-client-in-layout": "error",
-      "@mherod/custom/no-use-client-in-page": "error",
-      "@mherod/custom/prefer-async-page-component": "warn",
-      "@mherod/custom/prefer-await-params-in-page": "error",
-      "@mherod/custom/no-use-params-in-client-component": "error",
-      "@mherod/custom/no-internal-fetch-in-server-component": "warn",
-      "@mherod/custom/prefer-use-hook-for-promise-props": "warn",
-      "@mherod/custom/prefer-lodash-es-imports": "error",
-      "@mherod/custom/prefer-date-fns": "warn",
-      "@mherod/custom/prefer-ufo-with-query": "warn",
-    },
+    plugins: { [CUSTOM_PREFIX]: plugin },
+    rules: prefixRules(COMBINED_STRICT_SEVERITIES, CUSTOM_PREFIX),
   },
 };
-
-// Category-specific plugins and rules are exported above using export from syntax
 
 // Default export (backward compatibility)
 export default plugin;
