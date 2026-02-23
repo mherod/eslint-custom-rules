@@ -28,12 +28,15 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    function isInClickHandler(node: TSESTree.CallExpression): boolean {
-      // Walk up the AST to find if we're inside a click handler
+    function getClosestClickHandler(
+      node: TSESTree.CallExpression
+    ):
+      | TSESTree.FunctionExpression
+      | TSESTree.ArrowFunctionExpression
+      | undefined {
       let current: TSESTree.Node | undefined = node;
 
       while (current) {
-        // Check if we're inside a function that's used as a click handler
         if (
           (current.type === AST_NODE_TYPES.FunctionExpression ||
             current.type === AST_NODE_TYPES.ArrowFunctionExpression) &&
@@ -51,7 +54,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               attrName === "onPress" ||
               attrName.startsWith("on")
             ) {
-              return true;
+              return current as
+                | TSESTree.FunctionExpression
+                | TSESTree.ArrowFunctionExpression;
             }
           }
 
@@ -66,7 +71,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               propName === "onPress" ||
               propName.startsWith("on")
             ) {
-              return true;
+              return current as
+                | TSESTree.FunctionExpression
+                | TSESTree.ArrowFunctionExpression;
             }
           }
         }
@@ -74,7 +81,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         current = current.parent;
       }
 
-      return false;
+      return undefined;
     }
 
     return {
@@ -95,12 +102,46 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               node.callee.object.callee.type === AST_NODE_TYPES.Identifier &&
               node.callee.object.callee.name === "useRouter");
 
-          if (isRouterCall && isInClickHandler(node)) {
-            // We're inside a click handler
-            context.report({
-              node,
-              messageId: "preferLinkOverRouterPushInHandler",
-            });
+          if (isRouterCall) {
+            const handler = getClosestClickHandler(node);
+            if (handler) {
+              // Only report when router.push is the sole statement —
+              // if there is additional logic, it's likely justified.
+              let isSoleStatement = false;
+
+              if (handler.body.type === AST_NODE_TYPES.CallExpression) {
+                // implicit return: () => router.push(...)
+                if (handler.body === node) {
+                  isSoleStatement = true;
+                }
+              } else if (handler.body.type === AST_NODE_TYPES.BlockStatement) {
+                if (handler.body.body.length === 1) {
+                  const statement = handler.body.body[0];
+                  if (
+                    statement &&
+                    statement.type === AST_NODE_TYPES.ExpressionStatement
+                  ) {
+                    if (statement.expression === node) {
+                      isSoleStatement = true;
+                    }
+                  } else if (
+                    statement &&
+                    statement.type === AST_NODE_TYPES.ReturnStatement
+                  ) {
+                    if (statement.argument === node) {
+                      isSoleStatement = true;
+                    }
+                  }
+                }
+              }
+
+              if (isSoleStatement) {
+                context.report({
+                  node,
+                  messageId: "preferLinkOverRouterPushInHandler",
+                });
+              }
+            }
           }
         }
       },

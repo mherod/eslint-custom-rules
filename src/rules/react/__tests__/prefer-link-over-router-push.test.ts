@@ -92,6 +92,23 @@ ruleTester.run("prefer-link-over-router-push", rule, {
         }
       `,
     },
+    // Multiple router.push calls in same handler - not sole statement, so allowed
+    {
+      code: `
+        function MyComponent() {
+          const router = useRouter();
+
+          return (
+            <button onClick={() => {
+              router.push('/first');
+              router.push('/second');
+            }}>
+              Navigate
+            </button>
+          );
+        }
+      `,
+    },
   ],
   invalid: [
     // router.push in onClick handler (arrow function) - should error
@@ -163,31 +180,6 @@ ruleTester.run("prefer-link-over-router-push", rule, {
         }
       `,
       errors: [
-        {
-          messageId: "preferLinkOverRouterPushInHandler",
-        },
-      ],
-    },
-    // Multiple router.push calls in same handler - should error on each
-    {
-      code: `
-        function MyComponent() {
-          const router = useRouter();
-          
-          return (
-            <button onClick={() => {
-              router.push('/first');
-              router.push('/second');
-            }}>
-              Navigate
-            </button>
-          );
-        }
-      `,
-      errors: [
-        {
-          messageId: "preferLinkOverRouterPushInHandler",
-        },
         {
           messageId: "preferLinkOverRouterPushInHandler",
         },

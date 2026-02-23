@@ -45,10 +45,6 @@ ruleTester.run("prefer-next-navigation", preferNextNavigation, {
     `
       console.log(location.origin);
     `,
-    // Valid history API usage
-    `
-      window.history.pushState({}, '', '/new-path');
-    `,
     // Other valid patterns
     `
       const config = { location: '/api/endpoint' };
@@ -180,6 +176,19 @@ ruleTester.run("prefer-next-navigation", preferNextNavigation, {
           messageId: "locationAssignment",
         },
       ],
+    },
+    // window.history methods
+    {
+      code: `window.history.pushState({}, '', '/new-path');`,
+      errors: [{ messageId: "windowHistoryMethod" }],
+    },
+    {
+      code: `window.history.replaceState({}, '', '/new-path');`,
+      errors: [{ messageId: "windowHistoryMethod" }],
+    },
+    {
+      code: `history.pushState({}, '', '/new-path');`,
+      errors: [{ messageId: "historyMethod" }],
     },
     // Complex expressions
     {

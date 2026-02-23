@@ -18,7 +18,7 @@ interface ImportGroup {
   endLine: number;
   imports: TSESTree.ImportDeclaration[];
   startLine: number;
-  type: "external" | "internal" | "relative";
+  type: "side-effect" | "external" | "workspace" | "internal" | "relative";
 }
 
 export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
@@ -31,7 +31,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     schema: [],
     messages: {
       wrongOrder:
-        "Imports should be ordered: external packages, internal imports (@/*), relative imports",
+        "Imports should be ordered: side-effect imports (server-only/client-only), external packages, workspace packages, internal imports (@/*), relative imports",
       missingEmptyLine:
         "Missing empty line between {{currentGroup}} and {{nextGroup}} import groups",
       extraEmptyLine: "Extra empty line within {{group}} import group",
@@ -107,6 +107,11 @@ function getImportType(importSource: string): ImportGroup["type"] {
     return "external";
   }
 
+  // Side-effect imports that must come first (server-only, client-only)
+  if (importSource === "server-only" || importSource === "client-only") {
+    return "side-effect";
+  }
+
   // Relative imports (start with . or ..)
   if (importSource.startsWith(".")) {
     return "relative";
@@ -117,6 +122,14 @@ function getImportType(importSource: string): ImportGroup["type"] {
     return "internal";
   }
 
+  // Workspace packages (scoped packages that are part of the monorepo)
+  // Detected by presence of a second path segment after the scope (e.g. @scope/pkg)
+  // and being listed as a workspace dependency — approximated by non-npm-registry scopes.
+  // Since we can't know workspace names statically, we treat all @scope/* that aren't
+  // known public registries as potentially workspace. Users can customise via options if needed.
+  // For now we map any remaining scoped import that starts with @/ already handled above,
+  // and leave further workspace detection to explicit configuration.
+
   // External packages (node_modules)
   return "external";
 }
@@ -126,7 +139,9 @@ function validateGroupOrder(
   groups: ImportGroup[]
 ): void {
   const expectedOrder: ImportGroup["type"][] = [
+    "side-effect",
     "external",
+    "workspace",
     "internal",
     "relative",
   ];

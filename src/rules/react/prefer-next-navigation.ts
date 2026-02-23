@@ -110,9 +110,6 @@ export default createRule({
         }
       },
 
-      // Note: History API methods are allowed as they might be needed for specific use cases
-      // If you want to disallow them, uncomment the CallExpression visitor below
-      /*
       CallExpression(node: TSESTree.CallExpression): void {
         if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
           const { object, property } = node.callee;
@@ -126,7 +123,7 @@ export default createRule({
             object.property.name === "history" &&
             property.type === AST_NODE_TYPES.Identifier &&
             ["pushState", "replaceState", "back", "forward", "go"].includes(
-              property.name,
+              property.name
             )
           ) {
             context.report({
@@ -142,7 +139,7 @@ export default createRule({
             object.name === "history" &&
             property.type === AST_NODE_TYPES.Identifier &&
             ["pushState", "replaceState", "back", "forward", "go"].includes(
-              property.name,
+              property.name
             )
           ) {
             context.report({
@@ -153,7 +150,6 @@ export default createRule({
           }
         }
       },
-      */
     };
   },
 });
