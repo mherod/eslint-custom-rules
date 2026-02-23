@@ -109,7 +109,7 @@ function checkPageProps(
       const propsName = propsParam.name;
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
       const sourceCode = context.getSourceCode();
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
       const text: string = sourceCode.getText(node.body) as string;
       if (
         text.includes(`${propsName}.params`) ||
