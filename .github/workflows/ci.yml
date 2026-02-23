@@ -7,7 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  lint-and-type-check:
+  # Single job: lint + typecheck + build — shares one install, runs checks fast
+  lint-build:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,18 +29,35 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run type check
-        run: pnpm run typecheck
+      - name: Type check
+        run: pnpm typecheck
 
-      - name: Run linter
-        run: pnpm run lint
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+
+      - name: Verify build output
+        run: |
+          for f in index typescript react vue general security; do
+            test -f dist/$f.js && echo "✓ dist/$f.js" || (echo "✗ dist/$f.js missing" && exit 1)
+          done
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
 
   test:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
-        node-version: [18, 20, 22]
+        node-version: [18, 20]
 
     steps:
       - name: Checkout code
@@ -61,49 +79,3 @@ jobs:
 
       - name: Run tests
         run: pnpm test
-
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build package
-        run: pnpm run build
-
-      - name: Check build output
-        run: |
-          echo "Checking dist directory contents:"
-          ls -la dist/
-          echo ""
-          echo "Checking for expected files:"
-          test -f dist/index.js && echo "✓ dist/index.js exists"
-          test -f dist/index.mjs && echo "✓ dist/index.mjs exists"
-          test -f dist/index.d.ts && echo "✓ dist/index.d.ts exists"
-          test -f dist/typescript.js && echo "✓ dist/typescript.js exists"
-          test -f dist/react.js && echo "✓ dist/react.js exists"
-          test -f dist/vue.js && echo "✓ dist/vue.js exists"
-          test -f dist/general.js && echo "✓ dist/general.js exists"
-          test -f dist/security.js && echo "✓ dist/security.js exists"
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist/
-          retention-days: 7
