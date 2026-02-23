@@ -16,9 +16,6 @@
         },
         "noForEach": "off"
       },
-      "nursery": {
-        "useMaxParams": "off"
-      },
       "suspicious": {
         "noExplicitAny": "error",
         "noTemplateCurlyInString": "off"
