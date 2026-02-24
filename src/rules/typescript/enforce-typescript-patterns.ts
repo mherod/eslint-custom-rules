@@ -42,7 +42,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       enumMustBePascalCase:
         "Enum '{{name}}' must use PascalCase naming convention",
       typeAliasShouldEndWithType:
-        "Type alias '{{name}}' should end with 'Type', 'Props', or 'Return' suffix for clarity",
+        "Type alias '{{name}}' should end with a descriptive suffix such as 'Type', 'Props', 'Return', 'State', 'Config', 'Options', 'Params', 'Payload', 'Context', 'Result', 'Error', 'Response', or 'Request'",
       interfaceShouldEndWithInterface:
         "Interface '{{name}}' should end with 'Interface' suffix for clarity",
       enumShouldEndWithEnum:
@@ -83,12 +83,25 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           });
         }
 
-        // Check if complex types should end with 'Type', 'Props', or 'Return'
+        // Check if complex types should end with a recognised role suffix
+        const ALLOWED_TYPE_SUFFIXES = [
+          "Type",
+          "Props",
+          "Return",
+          "State",
+          "Config",
+          "Options",
+          "Params",
+          "Payload",
+          "Context",
+          "Result",
+          "Error",
+          "Response",
+          "Request",
+        ];
         if (
           isComplexType(node.typeAnnotation) &&
-          !typeName.endsWith("Type") &&
-          !typeName.endsWith("Props") &&
-          !typeName.endsWith("Return")
+          !ALLOWED_TYPE_SUFFIXES.some((suffix) => typeName.endsWith(suffix))
         ) {
           context.report({
             node,
