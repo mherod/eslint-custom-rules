@@ -13,7 +13,7 @@ const KEBAB_CASE_REGEX = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 const HOOK_NAMING_REGEX = /^use[A-Z][a-zA-Z0-9]*$/;
 
 type MessageIds =
-  | "componentShouldBePascalCase"
+  | "componentShouldBePascalCaseOrKebabCase"
   | "utilsShouldBeKebabCase"
   | "apiShouldBeKebabCase"
   | "hooksShouldBeCamelCase"
@@ -32,8 +32,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     },
     schema: [],
     messages: {
-      componentShouldBePascalCase:
-        "Component files should use PascalCase naming (e.g., 'UserProfile.tsx')",
+      componentShouldBePascalCaseOrKebabCase:
+        "Component files should use PascalCase (e.g., 'UserProfile.tsx') or kebab-case (e.g., 'user-profile.tsx') naming",
       utilsShouldBeKebabCase:
         "Utility files should use kebab-case naming (e.g., 'string-utils.ts')",
       apiShouldBeKebabCase:
@@ -54,7 +54,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   create(context) {
     return {
       Program(_node: TSESTree.Program): void {
-        const filename = context.getFilename();
+        const filename = context.filename;
         validateFilename(context, filename);
       },
     };
@@ -79,12 +79,14 @@ function validateFilename(
     return;
   }
 
-  // Components directory
+  const ast = context.sourceCode.ast;
+
+  // Components directory — accept PascalCase or kebab-case (both are common conventions)
   if (normalizedPath.includes("/components/")) {
-    if (!isPascalCase(nameWithoutExt)) {
+    if (!(isPascalCase(nameWithoutExt) || isKebabCase(nameWithoutExt))) {
       context.report({
-        node: context.getSourceCode().ast,
-        messageId: "componentShouldBePascalCase",
+        node: ast,
+        messageId: "componentShouldBePascalCaseOrKebabCase",
       });
     }
     return;
@@ -94,7 +96,7 @@ function validateFilename(
   if (normalizedPath.includes("/utils/")) {
     if (!isKebabCase(nameWithoutExt)) {
       context.report({
-        node: context.getSourceCode().ast,
+        node: ast,
         messageId: "utilsShouldBeKebabCase",
       });
     }
@@ -105,7 +107,7 @@ function validateFilename(
   if (normalizedPath.includes("/api/")) {
     if (!isKebabCase(nameWithoutExt)) {
       context.report({
-        node: context.getSourceCode().ast,
+        node: ast,
         messageId: "apiShouldBeKebabCase",
       });
     }
@@ -116,7 +118,7 @@ function validateFilename(
   if (normalizedPath.includes("/hooks/")) {
     if (!isHookNaming(nameWithoutExt)) {
       context.report({
-        node: context.getSourceCode().ast,
+        node: ast,
         messageId: "hooksShouldBeCamelCase",
       });
     }
@@ -127,7 +129,7 @@ function validateFilename(
   if (normalizedPath.includes("/pages/") && !normalizedPath.includes("/app/")) {
     if (!isKebabCase(nameWithoutExt)) {
       context.report({
-        node: context.getSourceCode().ast,
+        node: ast,
         messageId: "pagesShouldBeKebabCase",
       });
     }
@@ -138,7 +140,7 @@ function validateFilename(
   if (normalizedPath.includes("/lib/")) {
     if (!isKebabCase(nameWithoutExt)) {
       context.report({
-        node: context.getSourceCode().ast,
+        node: ast,
         messageId: "libShouldBeKebabCase",
       });
     }
@@ -149,7 +151,7 @@ function validateFilename(
   if (normalizedPath.includes("/actions/")) {
     if (!isKebabCase(nameWithoutExt)) {
       context.report({
-        node: context.getSourceCode().ast,
+        node: ast,
         messageId: "actionsShouldBeKebabCase",
       });
     }
@@ -160,7 +162,7 @@ function validateFilename(
   if (normalizedPath.includes("/types/")) {
     if (!isKebabCase(nameWithoutExt)) {
       context.report({
-        node: context.getSourceCode().ast,
+        node: ast,
         messageId: "typesShouldBeKebabCase",
       });
     }

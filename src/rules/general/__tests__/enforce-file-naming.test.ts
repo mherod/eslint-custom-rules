@@ -13,7 +13,7 @@ const ruleTester = new RuleTester({
 
 ruleTester.run(RULE_NAME, rule, {
   valid: [
-    // Components - PascalCase
+    // Components - PascalCase (traditional convention)
     {
       code: "export const Component = () => null;",
       filename: "/src/components/UserProfile.tsx",
@@ -25,6 +25,19 @@ ruleTester.run(RULE_NAME, rule, {
     {
       code: "export const Component = () => null;",
       filename: "components/Button.tsx",
+    },
+    // Components - kebab-case (Next.js / community convention)
+    {
+      code: "export const Component = () => null;",
+      filename: "/src/components/user-profile.tsx",
+    },
+    {
+      code: "export const Component = () => null;",
+      filename: "/components/admin/admin-sidebar.tsx",
+    },
+    {
+      code: "export const Component = () => null;",
+      filename: "/components/ui/brand-selector.tsx",
     },
     // Utils - kebab-case
     {
@@ -97,22 +110,13 @@ ruleTester.run(RULE_NAME, rule, {
     },
   ],
   invalid: [
-    // Components - invalid naming
-    {
-      code: "export const Component = () => null;",
-      filename: "/src/components/user-profile.tsx",
-      errors: [
-        {
-          messageId: "componentShouldBePascalCase",
-        },
-      ],
-    },
+    // Components - invalid naming (camelCase is neither PascalCase nor kebab-case)
     {
       code: "export const Component = () => null;",
       filename: "/src/components/userProfile.tsx",
       errors: [
         {
-          messageId: "componentShouldBePascalCase",
+          messageId: "componentShouldBePascalCaseOrKebabCase",
         },
       ],
     },
