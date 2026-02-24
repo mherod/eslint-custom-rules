@@ -684,9 +684,17 @@ npm publish --otp=$(op item get Npmjs --otp)
 
 **DO**: Use `normalizePath()` from `component-type-utils.ts` instead of inline `filename.replace(/\\/g, "/")`. Use `hasDirective(sourceCode, "use client")` instead of inline AST checks for directive detection.
 
+**DO**: Use `context.filename` and `context.sourceCode` — not the deprecated `context.getFilename()` and `context.getSourceCode()`. Both deprecated forms still compile but emit TypeScript warnings and will be removed in a future `@typescript-eslint/utils` version.
+
+**DO**: Use a scope stack (`FunctionScope[]`) for rules that need to track per-function state across nested async functions. A flat module-level variable bleeds counts from inner functions into the outer scope. The pattern is `pushScope(node)` on `FunctionDeclaration`/`ArrowFunctionExpression`/`FunctionExpression` entry, evaluate and `popScope(node)` on `:exit`. See `src/rules/react/no-waterfall-chains.ts` for the reference implementation.
+
 **DON'T**: Create new rule files with camelCase in filenames (e.g., `no-unsafe-innerHTML.ts`). Biome enforces `useFilenamingConvention` with **kebab-case** — the correct name is `no-unsafe-inner-html.ts`. Run `pnpm lint` before committing new files to catch this early.
 
 **DO**: Run `pnpm lint` proactively after creating new files or renaming files. The pre-commit hook (`npx ultracite fix`) catches filename convention violations, but discovering them at commit time wastes a round-trip.
+
+**DO**: When evaluating whether a package belongs in `BARREL_PACKAGES` in `no-barrel-file-imports.ts`, distinguish packages designed for tree-shaking at their root entry from genuine barrels. `lucide-react`, `@tabler/icons-react`, `@phosphor-icons/react`, and `@headlessui/react` are all explicitly designed for named root imports with modern bundlers (webpack 5, turbopack, vite, esbuild) — they do **not** belong in the list. Genuine barrels that should stay flagged: `@mui/material`, `@mui/icons-material`, `react-icons/*`, `ramda`, `rxjs`, `react-use`, and `@radix-ui/react-*`.
+
+**DO**: When a rule targets `/components/` directory naming, accept **both** PascalCase (`UserProfile.tsx`) and kebab-case (`user-profile.tsx`) — both are established conventions. Next.js official docs and the broader community use kebab-case; traditional React tooling uses PascalCase. camelCase (`userProfile.tsx`) remains invalid under both conventions.
 
 ## Available Rules
 
