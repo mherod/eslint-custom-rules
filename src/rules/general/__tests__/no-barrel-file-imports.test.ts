@@ -12,32 +12,25 @@ const ruleTester = new RuleTester({
 
 ruleTester.run("no-barrel-file-imports", rule, {
   valid: [
+    // Packages designed for tree-shaking at root — named imports are fine
+    `import { Check, X, ArrowRight } from 'lucide-react';`,
+    `import { IconHome } from '@tabler/icons-react';`,
+    `import { House, Star } from '@phosphor-icons/react';`,
     // Subpath imports are safe — only the root barrel is flagged
-    `import Check from 'lucide-react/dist/esm/icons/check';`,
     `import Button from '@mui/material/Button';`,
     `import { Dialog } from '@radix-ui/react-dialog/src/Dialog';`,
     // Type-only imports are always safe
-    `import type { LucideIcon } from 'lucide-react';`,
     `import type { ButtonProps } from '@mui/material';`,
     // Side-effect-only imports are a separate concern
-    `import 'lucide-react';`,
+    `import 'rxjs';`,
     // Unrelated packages
     `import { useState } from 'react';`,
     `import { clsx } from 'clsx';`,
     `import merge from 'lodash-es/merge';`,
-    // Default imports from barrel roots (not named specifiers)
-    `import lucide from 'lucide-react';`,
     // react-icons subpath that ends with a path separator is safe
     `import { FaArrowRight } from 'react-icons/fa/index';`,
   ],
   invalid: [
-    // lucide-react barrel
-    {
-      code: `import { Check, X, ArrowRight } from 'lucide-react';`,
-      errors: [
-        { messageId: "noBarrelImport", data: { package: "lucide-react" } },
-      ],
-    },
     // @mui/material barrel
     {
       code: `import { Button, TextField } from '@mui/material';`,
@@ -52,16 +45,6 @@ ruleTester.run("no-barrel-file-imports", rule, {
         {
           messageId: "noBarrelImport",
           data: { package: "@mui/icons-material" },
-        },
-      ],
-    },
-    // @tabler/icons-react barrel
-    {
-      code: `import { IconHome } from '@tabler/icons-react';`,
-      errors: [
-        {
-          messageId: "noBarrelImport",
-          data: { package: "@tabler/icons-react" },
         },
       ],
     },
@@ -107,16 +90,6 @@ ruleTester.run("no-barrel-file-imports", rule, {
     {
       code: `import { map, filter } from 'ramda';`,
       errors: [{ messageId: "noBarrelImport", data: { package: "ramda" } }],
-    },
-    // @phosphor-icons/react barrel
-    {
-      code: `import { House, Star } from '@phosphor-icons/react';`,
-      errors: [
-        {
-          messageId: "noBarrelImport",
-          data: { package: "@phosphor-icons/react" },
-        },
-      ],
     },
   ],
 });

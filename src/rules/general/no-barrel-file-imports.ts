@@ -13,16 +13,18 @@ type Options = [];
 /**
  * Packages whose root entry point is a barrel file with thousands of re-exports.
  * Importing from the root causes 200-800ms cold start overhead per import.
- * Each entry lists the package name and, where applicable, known safe subpath prefixes.
+ *
+ * Not included here: packages that are explicitly designed for tree-shaking at
+ * their root entry (e.g. lucide-react, @phosphor-icons/react, @headlessui/react,
+ * @tabler/icons-react) — modern bundlers handle those correctly without any
+ * special configuration.
  */
 const BARREL_PACKAGES: ReadonlySet<string> = new Set([
-  "lucide-react",
   "@mui/material",
   "@mui/icons-material",
   "@mui/lab",
   "@mui/system",
   "@mui/joy",
-  "@tabler/icons-react",
   "react-icons",
   "react-icons/ai",
   "react-icons/bi",
@@ -54,11 +56,9 @@ const BARREL_PACKAGES: ReadonlySet<string> = new Set([
   "react-icons/ti",
   "react-icons/vsc",
   "react-icons/wi",
-  "@headlessui/react",
   "ramda",
   "rxjs",
   "react-use",
-  "@phosphor-icons/react",
 ]);
 
 /**
