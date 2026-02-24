@@ -42,7 +42,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       enumMustBePascalCase:
         "Enum '{{name}}' must use PascalCase naming convention",
       typeAliasShouldEndWithType:
-        "Type alias '{{name}}' should end with 'Type' suffix for clarity",
+        "Type alias '{{name}}' should end with 'Type' or 'Props' suffix for clarity",
       interfaceShouldEndWithInterface:
         "Interface '{{name}}' should end with 'Interface' suffix for clarity",
       enumShouldEndWithEnum:
@@ -67,7 +67,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const sourceCode = context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     return {
       // Type alias declarations
@@ -83,8 +83,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           });
         }
 
-        // Check if complex types should end with 'Type'
-        if (isComplexType(node.typeAnnotation) && !typeName.endsWith("Type")) {
+        // Check if complex types should end with 'Type' or 'Props'
+        if (
+          isComplexType(node.typeAnnotation) &&
+          !typeName.endsWith("Type") &&
+          !typeName.endsWith("Props")
+        ) {
           context.report({
             node,
             messageId: "typeAliasShouldEndWithType",
