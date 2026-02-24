@@ -12,7 +12,7 @@ This is a custom ESLint plugin (`@mherod/eslint-plugin-custom`) containing custo
 - **Auto-fixable Rules**: Many rules provide automatic fixes
 - **Framework Support**: Specialized rules for React/Next.js and Vue.js
 - **ESLint 9 Support**: Both flat config and legacy config formats supported
-- **Comprehensive Testing**: 44 test suites with 731 tests
+- **Comprehensive Testing**: 48 test suites with 828 tests
 
 ## Quick Start for New Developers
 
@@ -642,13 +642,28 @@ npm run lint
 npm version patch|minor|major
 ```
 
-3. **Build and publish**:
+3. **Run security audit**:
+```bash
+pnpm audit --prod  # Only check production dependencies (zero expected)
+```
+**DO**: Use `pnpm audit --prod` not `pnpm audit`. The full audit reports `minimatch` vulnerabilities from dev dependencies (`@typescript-eslint/eslint-plugin`, `eslint`) which are never shipped. `--prod` confirms zero production vulnerabilities and is the correct gate for release decisions.
+
+4. **Build and publish**:
 **DO**: Use 1Password CLI to get the OTP for npm publishing.
 ```bash
-npm run prepublishOnly
+pnpm build
 # Get OTP from 1Password (item: Npmjs)
-npm publish --otp=$(op item get Npmjs --otp)
+pnpm publish --access public --otp=$(op item get Npmjs --otp)
 ```
+
+**GitHub Actions Release workflow** (`release.yml`) requires `secrets.NPM_TOKEN` to be set in the repository. If the workflow fails with `ENEEDAUTH`, the secret is missing or expired. To set it:
+```bash
+# Authenticate locally first (using 1Password non-interactive flow — see skill)
+# Then use the bearer token from ~/.npmrc as the GitHub secret:
+AUTH_TOKEN=$(cat ~/.npmrc | rg '_authToken=(.+)' -o -r '$1')
+gh secret set NPM_TOKEN --body "$AUTH_TOKEN"
+```
+**DON'T** try to create a granular npm token via the REST API (`POST /npm/v1/tokens` with `scopes`) — it always creates read-only tokens regardless of `readonly: false`. Use the bearer token from the login flow, or create an automation token via the npm website UI (npmjs.com → Account Settings → Access Tokens).
 
 ## Troubleshooting
 
@@ -911,7 +926,7 @@ dist/
 
 ## Test Coverage
 
-Current test files (44 test suites, 731 tests total):
+Current test files (48 test suites, 828 tests total):
 - **React**: 26 test files
 - **General**: 14 test files
 - **TypeScript**: 2 test files
