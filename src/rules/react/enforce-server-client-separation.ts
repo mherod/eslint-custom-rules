@@ -136,6 +136,49 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         }
       },
 
+      // Dynamic import() expressions
+      ImportExpression(node: TSESTree.ImportExpression): void {
+        const source = node.source;
+        if (
+          source.type !== AST_NODE_TYPES.Literal ||
+          typeof source.value !== "string"
+        ) {
+          return;
+        }
+
+        const importedModule = source.value;
+        const isClientFile =
+          hasUseClientDirective(sourceCode) ||
+          isClientComponent(filename, sourceCode);
+        const isServerFile = isServerComponent(filename, sourceCode);
+
+        if (isClientFile && isServerOnlyModule(importedModule)) {
+          if (!isActionModule(importedModule)) {
+            context.report({
+              node,
+              messageId: "clientImportingServerModule",
+              data: { module: importedModule },
+            });
+          }
+        }
+
+        if (isClientFile && isUseCacheModule(importedModule)) {
+          context.report({
+            node,
+            messageId: "clientImportingUseCacheFunction",
+            data: { module: importedModule },
+          });
+        }
+
+        if (isServerFile && isClientOnlyModule(importedModule)) {
+          context.report({
+            node,
+            messageId: "serverImportingClientModule",
+            data: { module: importedModule },
+          });
+        }
+      },
+
       CallExpression(node: TSESTree.CallExpression): void {
         if (node.callee.type === AST_NODE_TYPES.Identifier) {
           const functionName = node.callee.name;
