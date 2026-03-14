@@ -713,113 +713,9 @@ gh secret set NPM_TOKEN --body "$AUTH_TOKEN"
 
 ## Available Rules
 
-### TypeScript Rules (`@mherod/typescript`)
-All rules available in the `@mherod/typescript` plugin:
+All categories support `recommended` (warn) and `strict` (error) config presets.
 
-- `enforce-api-patterns` - Consistent API endpoint patterns and naming conventions
-- `enforce-documentation` - Requires JSDoc comments for public APIs and exported functions
-- `enforce-typescript-patterns` - General TypeScript best practices and patterns
-- `enforce-zod-schema-naming` - Consistent naming conventions for Zod schemas
-- `no-empty-function-implementations` - Prevents empty function bodies
-
-**Configuration Presets:**
-- `recommended`: `enforce-typescript-patterns`, `enforce-zod-schema-naming`, `no-empty-function-implementations` (all warn)
-- `strict`: All rules enabled (most as error, `enforce-documentation` as warn)
-
-### React/Next.js Rules (`@mherod/react`)
-All rules available in the `@mherod/react` plugin:
-
-**Server/Client Separation:**
-- `no-use-state-in-async-component` - Prevents useState in server components (error)
-- `no-event-handlers-to-client-props` - Prevents passing event handlers to client components (error)
-- `prevent-environment-poisoning` - Enforces proper server-only/client-only imports (error)
-- `enforce-server-client-separation` - Prevents server code in client components (error)
-- `enforce-admin-separation` - Isolates admin-only functionality (error)
-- `no-context-provider-in-server-component` - Prevents Context providers in server components
-- `no-react-hooks-in-server-component` - Prevents React hooks in server components
-- `no-internal-fetch-in-server-component` - Warns against internal fetch calls in server components
-- `no-use-client-in-layout` - Prevents "use client" directive in layout files (error)
-- `no-use-client-in-page` - Prevents "use client" directive in page files (error)
-- `no-use-params-in-client-component` - Prevents use of params in client components (error)
-
-**Component Patterns:**
-- `enforce-component-patterns` - Enforces consistent component patterns (warn/error)
-- `prefer-react-destructured-imports` - Use destructured React imports (warn/error)
-- `suggest-server-component-pages` - Suggests server components for pages (warn)
-- `prefer-async-page-component` - Prefers async page components (warn)
-- `prefer-await-params-in-page` - Requires await for params in page components (error)
-
-**Next.js Navigation:**
-- `prefer-next-navigation` - Use Next.js navigation over window.location (warn)
-- `prefer-link-over-router-push` - Use Link component over router.push (warn)
-
-**Data Fetching:**
-- `prefer-use-swr-over-fetch` - Use SWR for data fetching (warn)
-- `prefer-reusable-swr-hooks` - Create reusable SWR hooks (warn)
-- `prefer-ui-promise-handling` - Handle promises properly in UI (warn)
-- `prefer-cache-api` - Use Next.js Cache API (error)
-- `no-sequential-data-fetching` - Warns against sequential data fetching (warn)
-- `prefer-use-hook-for-promise-props` - Use hooks for promise props (warn)
-- `no-non-serializable-props` - Prevents non-serializable props (error)
-
-**Re-render & Bundle Optimization:**
-- `no-lazy-state-init` - Flags `useState(fn())` — should be `useState(() => fn())` to avoid re-running on every render (auto-fixable)
-- `no-usememo-for-primitives` - Flags `useMemo` returning a provably-primitive value (number/string/boolean arithmetic) where memoisation overhead exceeds gains
-- `prefer-dynamic-import-for-heavy-libs` - Flags static imports of known-heavy packages (recharts, monaco, leaflet, mapbox, d3, react-pdf, etc.) and suggests `next/dynamic`
-
-**Code Quality:**
-- `no-dynamic-tailwind-classes` - Prevents dynamic Tailwind class generation (warn/error, auto-fixable)
-- `no-unstable-math-random` - Prevents Math.random() in React components (warn/error)
-
-**Configuration Presets:**
-- `recommended`: Core rules for Next.js App Router (mostly error level)
-- `strict`: All rules enabled with stricter settings
-
-### General Rules (`@mherod/general`)
-All rules available in the `@mherod/general` plugin:
-
-- `enforce-import-order` - Consistent import ordering (external → internal → relative) (warn/error)
-- `enforce-file-naming` - File naming conventions (warn/error)
-- `prefer-date-fns-over-date-operations` - Use date-fns for date operations (warn)
-- `prefer-date-fns` - Prefer date-fns library over native Date (warn/error)
-- `prefer-lodash-es-imports` - Prefer lodash-es imports over lodash (error)
-- `prefer-lodash-uniq-over-set` - Use lodash uniq over Set for array deduplication (warn/error)
-- `prefer-ufo-with-query` - Use ufo library's `withQuery` for URL query manipulation (warn/error)
-
-**Configuration Presets:**
-- `recommended`: Most rules as warn, `prefer-lodash-es-imports` as error
-- `strict`: All rules as error except `prefer-date-fns-over-date-operations` (warn)
-
-### Security Rules (`@mherod/security`)
-All rules available in the `@mherod/security` plugin:
-
-- `enforce-security-patterns` - Comprehensive security pattern enforcement (error)
-- `no-hardcoded-secrets` - Detects hardcoded API keys, tokens, and secrets (error)
-- `no-log-secrets` - Prevents logging sensitive data (error)
-- `no-sql-injection` - Detects SQL injection vulnerabilities (error)
-- `no-unsafe-eval` - Prevents use of eval() and similar (error)
-- `no-unsafe-innerHTML` - Prevents unsafe innerHTML usage (error)
-- `no-unsafe-redirect` - Prevents open redirect vulnerabilities (error)
-- `no-unsafe-template-literals` - Warns about unsafe template literal usage (warn/error)
-- `no-unstable-math-random` - Prevents Math.random() for security-sensitive operations (warn/error)
-- `no-weak-crypto` - Prevents weak cryptographic algorithms (error)
-- `require-auth-validation` - Requires authentication validation in API routes (error)
-- `require-rate-limiting` - Requires rate limiting on API endpoints (warn/error)
-
-**Configuration Presets:**
-- `recommended`: Most rules as error; `no-unsafe-template-literals`, `no-unstable-math-random`, `require-rate-limiting` as warn
-- `strict`: All rules as error
-
-### Vue.js Rules (`@mherod/vue`)
-All rules available in the `@mherod/vue` plugin:
-
-- `prefer-to-value` - Prefer `toValue()` over `.value` or `unref()` for unwrapping refs (auto-fixable, optional auto-import) (warn/error)
-
-**Configuration Presets:**
-- `recommended`: `prefer-to-value` as warn
-- `strict`: `prefer-to-value` as error
-
-### Complete Rule List (All Categories)
+### Complete Rule List
 Total: **75 rules** registered in `src/rules/index.ts` across 5 categories + 1 shared
 
 **TypeScript (5 rules):** enforce-api-patterns, enforce-documentation, enforce-typescript-patterns, enforce-zod-schema-naming, no-empty-function-implementations
@@ -879,50 +775,9 @@ None - this is a dev dependency only plugin
 ### Engine Requirements
 - **Node.js**: >=18.0.0
 
-## Package Exports Structure
+## Package Exports & Build Output
 
-The package.json exports field provides multiple entry points:
-
-```javascript
-{
-  ".": {
-    types: "./dist/index.d.ts",
-    import: "./dist/index.mjs",
-    require: "./dist/index.js"
-  },
-  "./typescript": { /* ... */ },
-  "./react": { /* ... */ },
-  "./vue": { /* ... */ },
-  "./general": { /* ... */ },
-  "./security": { /* ... */ }
-}
-```
-
-Each entry point provides:
-- Type definitions (`.d.ts` for CommonJS, `.d.mts` for ESM)
-- CommonJS build (`.js`)
-- ES Module build (`.mjs`)
-- Source maps (`.js.map`, `.mjs.map`)
-
-## Build Output Structure
-
-After running `npm run build`, the `dist/` directory contains:
-
-```
-dist/
-├── index.{js,mjs,d.ts,d.mts}           # Main plugin (all rules)
-├── typescript.{js,mjs,d.ts,d.mts}      # TypeScript plugin
-├── react.{js,mjs,d.ts,d.mts}           # React plugin
-├── vue.{js,mjs,d.ts,d.mts}             # Vue plugin
-├── general.{js,mjs,d.ts,d.mts}         # General plugin
-├── security.{js,mjs,d.ts,d.mts}        # Security plugin
-└── rules/                               # Individual rule builds
-    ├── typescript/
-    ├── react/
-    ├── general/
-    ├── security/
-    └── vue/
-```
+See `package.json` exports field for entry points. Each exports CJS (`.js`), ESM (`.mjs`), types (`.d.ts`/`.d.mts`), and source maps. Build output goes to `dist/`.
 
 ## Test Coverage
 
