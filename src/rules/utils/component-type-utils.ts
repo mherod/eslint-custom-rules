@@ -315,8 +315,13 @@ export function isServerOnlyModule(moduleName: string): boolean {
     "next/cookies",
     "next/cache",
     "server-only",
-    // Database
+    // Firebase Admin SDK (server-only)
     "firebase-admin",
+    "firebase-admin/app",
+    "firebase-admin/auth",
+    "firebase-admin/firestore",
+    "firebase-admin/storage",
+    // Database drivers
     "mysql",
     "mysql2",
     "pg",
@@ -325,12 +330,21 @@ export function isServerOnlyModule(moduleName: string): boolean {
     "mongoose",
     "prisma",
     "@prisma/client",
+    // Server frameworks
+    "express",
+    "fastify",
+    "koa",
+    "hapi",
+    "cors",
+    "helmet",
     // Auth/crypto
     "bcrypt",
     "bcryptjs",
     "jsonwebtoken",
+    "passport",
     // Server tools
     "nodemailer",
+    "multer",
     "sharp",
     "jimp",
     "dotenv",

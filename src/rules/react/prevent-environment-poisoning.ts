@@ -4,6 +4,7 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import { isServerOnlyModule } from "../utils/component-type-utils";
 
 export const RULE_NAME = "prevent-environment-poisoning";
 
@@ -361,85 +362,6 @@ function isUtilityOrLibFile(filename: string): boolean {
   ];
 
   return utilityPatterns.some((pattern) => pattern.test(normalizedPath));
-}
-
-function isServerOnlyModule(moduleName: string): boolean {
-  const serverOnlyModules = [
-    // Node.js built-ins that shouldn't be in client bundles
-    "fs",
-    "path",
-    "os",
-    "crypto",
-    "util",
-    "stream",
-    "buffer",
-    "events",
-    "url",
-    "querystring",
-    "http",
-    "https",
-    "net",
-    "tls",
-    "dgram",
-    "dns",
-    "cluster",
-    "child_process",
-    "worker_threads",
-    "perf_hooks",
-    "inspector",
-    "vm",
-    "module",
-    "repl",
-    "readline",
-    "tty",
-    "zlib",
-
-    // Firebase Admin SDK (server-only)
-    "firebase-admin",
-    "firebase-admin/app",
-    "firebase-admin/auth",
-    "firebase-admin/firestore",
-    "firebase-admin/storage",
-
-    // Database drivers (server-only)
-    "mysql",
-    "mysql2",
-    "pg",
-    "sqlite3",
-    "mongodb",
-    "mongoose",
-    "prisma",
-    "@prisma/client",
-
-    // Server-only packages
-    "express",
-    "fastify",
-    "koa",
-    "hapi",
-    "cors",
-    "helmet",
-    "bcrypt",
-    "bcryptjs",
-    "jsonwebtoken",
-    "passport",
-    "nodemailer",
-    "multer",
-    "sharp",
-    "jimp",
-
-    // Environment/config (can contain secrets)
-    "dotenv",
-    "@next/env",
-
-    // Next.js server-only
-    "next/server",
-    "next/headers",
-    "next/cookies",
-    "next/cache",
-    "server-only",
-  ];
-
-  return serverOnlyModules.includes(moduleName);
 }
 
 function isServerSecret(envVarName: string): boolean {

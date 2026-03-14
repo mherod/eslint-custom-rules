@@ -789,7 +789,7 @@ Current test files (48 test suites, 828 tests total):
 - **Vue**: 1 test file (prefer-to-value)
 - **Security**: 0 test files
 
-**Note**: Security rules have no test files yet. When creating new rules, always include comprehensive tests.
+**Note**: Security rules have no test files yet. Several React rules also lack test coverage (e.g. `prevent-environment-poisoning`). When creating new rules or modifying existing rule logic, always include comprehensive tests.
 
 ## Common Patterns & Conventions
 
