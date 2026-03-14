@@ -142,22 +142,28 @@ function isPublicPath(filePath: string): boolean {
   );
 }
 
+const SHARED_SEGMENTS = [
+  "lib",
+  "utils",
+  "shared",
+  "common",
+  "types",
+  "constants",
+  "config",
+  "hooks",
+  "providers",
+  "context",
+  "store",
+  "validation",
+  "schemas",
+  "components/ui",
+] as const;
+
 function isSharedPath(filePath: string): boolean {
-  // Shared paths that can be imported by both admin and public
-  return (
-    filePath.includes("/lib/") ||
-    filePath.includes("/utils/") ||
-    filePath.includes("/shared/") ||
-    filePath.includes("/common/") ||
-    filePath.includes("/types/") ||
-    filePath.includes("/constants/") ||
-    filePath.includes("/config/") ||
-    filePath.includes("/hooks/") ||
-    filePath.includes("/providers/") ||
-    filePath.includes("/context/") ||
-    filePath.includes("/store/") ||
-    filePath.includes("/validation/") ||
-    filePath.includes("/schemas/")
+  // Check both /segment/ (full paths) and segment/ (alias-stripped paths)
+  return SHARED_SEGMENTS.some(
+    (segment) =>
+      filePath.includes(`/${segment}/`) || filePath.startsWith(`${segment}/`)
   );
 }
 
@@ -273,45 +279,18 @@ function isAdminComponentName(componentName: string): boolean {
 }
 
 function isAdminUtilityName(functionName: string): boolean {
-  // Admin utilities typically have these patterns
-  const adminUtilPatterns = [
+  // Only flag functions with explicitly admin-related prefixes
+  const adminPrefixes = [
     "admin",
-    "manage",
     "moderate",
-    "control",
     "supervise",
-    "dashboard",
-    "panel",
-    "console",
-    "settings",
-    "config",
-    "permission",
-    "role",
-    "grant",
-    "revoke",
-    "ban",
-    "unban",
-    "suspend",
-    "activate",
-    "deactivate",
-    "approve",
-    "reject",
-    "delete",
-    "purge",
-    "cleanup",
-    "migrate",
-    "backup",
-    "restore",
-    "analytics",
-    "metrics",
-    "reports",
-    "logs",
-    "audit",
-    "monitor",
+    "banUser",
+    "unbanUser",
+    "suspendUser",
   ];
 
   const lowerFunctionName = functionName.toLowerCase();
-  return adminUtilPatterns.some((pattern) =>
-    lowerFunctionName.includes(pattern)
+  return adminPrefixes.some((pattern) =>
+    lowerFunctionName.startsWith(pattern.toLowerCase())
   );
 }
