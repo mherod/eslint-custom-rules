@@ -15,6 +15,9 @@ const APP_ROUTER_API_ROUTE_PATTERN = /\/app\/api\/.*\/route\.(ts|js|tsx|jsx)$/;
 // Next.js Pages Router API route files: pages/api/.../*.ts
 const PAGES_ROUTER_API_ROUTE_PATTERN = /\/pages\/api\/.+\.(ts|js|tsx|jsx)$/;
 
+// Next.js middleware files: middleware.ts at project root or src/
+const MIDDLEWARE_PATTERN = /\/(src\/)?middleware\.(ts|js|tsx|jsx)$/;
+
 function isApiRouteFile(filename: string): boolean {
   const normalized = normalizePath(filename);
   return (
@@ -25,6 +28,10 @@ function isApiRouteFile(filename: string): boolean {
 
 function isPagesRouterApiRoute(filename: string): boolean {
   return PAGES_ROUTER_API_ROUTE_PATTERN.test(normalizePath(filename));
+}
+
+function isMiddlewareFile(filename: string): boolean {
+  return MIDDLEWARE_PATTERN.test(normalizePath(filename));
 }
 
 export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
@@ -44,12 +51,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   create(context) {
     const filename = context.filename;
     const sourceCode = context.sourceCode;
+    const middleware = isMiddlewareFile(filename);
 
-    if (!isApiRouteFile(filename)) {
+    if (!(middleware || isApiRouteFile(filename))) {
       return {};
     }
 
-    if (isProtectedRoute(filename)) {
+    if (!middleware && isProtectedRoute(filename)) {
       return {};
     }
 
@@ -61,11 +69,19 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           return;
         }
 
-        // App Router: exported HTTP method handlers (GET, POST, etc.)
-        // Pages Router: default-exported handler function
-        const isTargetHandler = pagesRouter
-          ? node.parent?.type === AST_NODE_TYPES.ExportDefaultDeclaration
-          : isHttpMethod(node.id?.name);
+        let isTargetHandler: boolean;
+
+        if (middleware) {
+          // Middleware: exported function named "middleware"
+          isTargetHandler = node.id?.name === "middleware";
+        } else if (pagesRouter) {
+          // Pages Router: default-exported handler function
+          isTargetHandler =
+            node.parent?.type === AST_NODE_TYPES.ExportDefaultDeclaration;
+        } else {
+          // App Router: exported HTTP method handlers (GET, POST, etc.)
+          isTargetHandler = isHttpMethod(node.id?.name);
+        }
 
         if (isTargetHandler && !hasRateLimit(node, sourceCode)) {
           context.report({

@@ -135,6 +135,44 @@ ruleTester.run("require-rate-limiting", rule, {
       `,
       filename: "/src/pages/api/items.ts",
     },
+    // Middleware with rate limiting — should pass
+    {
+      code: `
+        export function middleware(request: NextRequest) {
+          await rateLimit(request);
+          return NextResponse.next();
+        }
+      `,
+      filename: "/src/middleware.ts",
+    },
+    // Middleware at project root with rate limiting — should pass
+    {
+      code: `
+        export function middleware(request: NextRequest) {
+          await throttle(request);
+          return NextResponse.next();
+        }
+      `,
+      filename: "/middleware.ts",
+    },
+    // Middleware: non-middleware export — not flagged
+    {
+      code: `
+        export function config() {
+          return { matcher: ['/api/:path*'] };
+        }
+      `,
+      filename: "/src/middleware.ts",
+    },
+    // Middleware: non-exported function — not flagged
+    {
+      code: `
+        function middleware(request: NextRequest) {
+          return NextResponse.next();
+        }
+      `,
+      filename: "/src/middleware.ts",
+    },
   ],
   invalid: [
     // Exported GET handler in app/api route without rate limiting
@@ -187,6 +225,26 @@ ruleTester.run("require-rate-limiting", rule, {
         }
       `,
       filename: "/src/pages/api/users/[id].ts",
+      errors: [{ messageId: "requireRateLimit" }],
+    },
+    // Middleware without rate limiting (src/)
+    {
+      code: `
+        export function middleware(request: NextRequest) {
+          return NextResponse.next();
+        }
+      `,
+      filename: "/src/middleware.ts",
+      errors: [{ messageId: "requireRateLimit" }],
+    },
+    // Middleware without rate limiting (project root)
+    {
+      code: `
+        export function middleware(request: NextRequest) {
+          return NextResponse.next();
+        }
+      `,
+      filename: "/middleware.ts",
       errors: [{ messageId: "requireRateLimit" }],
     },
   ],
