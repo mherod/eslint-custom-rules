@@ -1,7 +1,20 @@
 import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import { isExportedFunction, isHttpMethod } from "../utils/common";
+import { normalizePath } from "../utils/component-type-utils";
 
 type MessageIds = "requireRateLimit";
 type Options = [];
+
+/**
+ * Pattern matching Next.js App Router API route files.
+ * Matches paths like `/app/api/users/route.ts` but NOT `/lib/api/exports.ts`.
+ */
+const APP_ROUTER_API_ROUTE_PATTERN = /\/app\/api\/.*\/route\.(ts|js|tsx|jsx)$/;
+
+function isAppRouterApiRoute(filename: string): boolean {
+  const normalized = normalizePath(filename);
+  return APP_ROUTER_API_ROUTE_PATTERN.test(normalized);
+}
 
 export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   meta: {
@@ -18,16 +31,19 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const filename = context.getFilename();
-    const isApiFile = filename.includes("/api/");
-    const sourceCode = context.getSourceCode();
+    const filename = context.filename;
+    const sourceCode = context.sourceCode;
+
+    if (!isAppRouterApiRoute(filename)) {
+      return {};
+    }
 
     return {
       FunctionDeclaration(node: TSESTree.FunctionDeclaration): void {
         if (
-          isApiFile &&
-          node.id &&
-          isPublicApiRoute(filename) &&
+          isExportedFunction(node) &&
+          isHttpMethod(node.id?.name) &&
+          !isProtectedRoute(filename) &&
           !hasRateLimit(node, sourceCode)
         ) {
           context.report({
@@ -53,10 +69,6 @@ function isProtectedRoute(filename: string): boolean {
   ];
 
   return protectedPatterns.some((pattern) => filename.includes(pattern));
-}
-
-function isPublicApiRoute(filename: string): boolean {
-  return filename.includes("/api/") && !isProtectedRoute(filename);
 }
 
 function hasRateLimit(
