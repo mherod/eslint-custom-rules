@@ -180,20 +180,63 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       CallExpression(node: TSESTree.CallExpression): void {
-        if (node.callee.type === AST_NODE_TYPES.Identifier) {
-          const functionName = node.callee.name;
+        if (node.callee.type !== AST_NODE_TYPES.Identifier) {
+          return;
+        }
 
-          // Server using client-only hook
+        const functionName = node.callee.name;
+
+        // require() calls — apply same boundary checks as import
+        if (functionName === "require" && node.arguments.length > 0) {
+          const arg = node.arguments[0];
           if (
-            isClientOnlyHook(functionName) &&
-            isServerComponent(filename, sourceCode)
+            arg?.type === AST_NODE_TYPES.Literal &&
+            typeof arg.value === "string"
           ) {
-            context.report({
-              node,
-              messageId: "serverUsingClientHook",
-              data: { hook: functionName },
-            });
+            const importedModule = arg.value;
+            const isClientFile =
+              hasUseClientDirective(sourceCode) ||
+              isClientComponent(filename, sourceCode);
+            const isServerFile = isServerComponent(filename, sourceCode);
+
+            if (isClientFile && isServerOnlyModule(importedModule)) {
+              if (!isActionModule(importedModule)) {
+                context.report({
+                  node,
+                  messageId: "clientImportingServerModule",
+                  data: { module: importedModule },
+                });
+              }
+            }
+
+            if (isClientFile && isUseCacheModule(importedModule)) {
+              context.report({
+                node,
+                messageId: "clientImportingUseCacheFunction",
+                data: { module: importedModule },
+              });
+            }
+
+            if (isServerFile && isClientOnlyModule(importedModule)) {
+              context.report({
+                node,
+                messageId: "serverImportingClientModule",
+                data: { module: importedModule },
+              });
+            }
           }
+        }
+
+        // Server using client-only hook
+        if (
+          isClientOnlyHook(functionName) &&
+          isServerComponent(filename, sourceCode)
+        ) {
+          context.report({
+            node,
+            messageId: "serverUsingClientHook",
+            data: { hook: functionName },
+          });
         }
       },
 
