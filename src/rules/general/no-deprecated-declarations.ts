@@ -4,6 +4,7 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import { isExportedVariable } from "../utils/common";
 
 export const RULE_NAME = "no-deprecated-declarations";
 
@@ -133,14 +134,6 @@ function hasDeprecatedTag(
 
 function isExported(node: TSESTree.Node): boolean {
   const parent = node.parent;
-  return (
-    parent?.type === AST_NODE_TYPES.ExportNamedDeclaration ||
-    parent?.type === AST_NODE_TYPES.ExportDefaultDeclaration
-  );
-}
-
-function isExportedVariable(node: TSESTree.VariableDeclarator): boolean {
-  const parent = node.parent?.parent;
   return (
     parent?.type === AST_NODE_TYPES.ExportNamedDeclaration ||
     parent?.type === AST_NODE_TYPES.ExportDefaultDeclaration
