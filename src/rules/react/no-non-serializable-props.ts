@@ -113,6 +113,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               "WeakSet",
               "WeakRef",
               "Error",
+              "ArrayBuffer",
+              "SharedArrayBuffer",
+              "DataView",
+              "Promise",
             ].includes(expr.callee.name)
           ) {
             context.report({

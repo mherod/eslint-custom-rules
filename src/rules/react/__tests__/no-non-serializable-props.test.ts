@@ -125,5 +125,25 @@ ruleTester.run("no-non-serializable-props", rule, {
       code: "<Component ref={new WeakRef(target)} />",
       errors: [{ messageId: "nonSerializableProp" }],
     },
+    // new ArrayBuffer() prop
+    {
+      code: "<Component buffer={new ArrayBuffer(16)} />",
+      errors: [{ messageId: "nonSerializableProp" }],
+    },
+    // new SharedArrayBuffer() prop
+    {
+      code: "<Component shared={new SharedArrayBuffer(16)} />",
+      errors: [{ messageId: "nonSerializableProp" }],
+    },
+    // new DataView() prop
+    {
+      code: "<Component view={new DataView(buf)} />",
+      errors: [{ messageId: "nonSerializableProp" }],
+    },
+    // new Promise() prop
+    {
+      code: "<Component pending={new Promise(() => {})} />",
+      errors: [{ messageId: "nonSerializableProp" }],
+    },
   ],
 });
