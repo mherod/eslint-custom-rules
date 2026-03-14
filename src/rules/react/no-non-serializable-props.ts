@@ -2,7 +2,12 @@ import { AST_NODE_TYPES, ESLintUtils } from "@typescript-eslint/utils";
 
 export const RULE_NAME = "no-non-serializable-props";
 
-type MessageIds = "nonSerializableProp" | "functionProp" | "symbolProp";
+type MessageIds =
+  | "nonSerializableProp"
+  | "functionProp"
+  | "symbolProp"
+  | "bigintProp"
+  | "regexProp";
 
 type Options = [];
 
@@ -21,6 +26,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         "Prop '{{name}}' is a function, which is not serializable across the server/client boundary. Use a Server Action or move to a Client Component.",
       symbolProp:
         "Prop '{{name}}' is a Symbol, which is not serializable across the server/client boundary.",
+      bigintProp:
+        "Prop '{{name}}' is a BigInt literal, which is not JSON-serializable. Convert to string or number before passing across the server/client boundary.",
+      regexProp:
+        "Prop '{{name}}' is a RegExp literal, which is not JSON-serializable. Convert to string before passing across the server/client boundary.",
     },
   },
   defaultOptions: [],
@@ -69,7 +78,27 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           return;
         }
 
-        // 3. new Date/Map/Set/RegExp and other non-serializable constructors
+        // 3. BigInt literals (42n) and regex literals (/pattern/)
+        if (expr.type === AST_NODE_TYPES.Literal) {
+          if ("bigint" in expr && expr.bigint !== undefined) {
+            context.report({
+              node,
+              messageId: "bigintProp",
+              data: { name: propName },
+            });
+            return;
+          }
+          if ("regex" in expr && expr.regex !== undefined) {
+            context.report({
+              node,
+              messageId: "regexProp",
+              data: { name: propName },
+            });
+            return;
+          }
+        }
+
+        // 4. new Date/Map/Set/RegExp and other non-serializable constructors
         if (
           expr.type === AST_NODE_TYPES.NewExpression &&
           expr.callee.type === AST_NODE_TYPES.Identifier

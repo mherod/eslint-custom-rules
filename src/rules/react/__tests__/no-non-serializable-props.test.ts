@@ -100,5 +100,15 @@ ruleTester.run("no-non-serializable-props", rule, {
       code: "<Component createdDate={user.createdAt} />",
       errors: [{ messageId: "nonSerializableProp" }],
     },
+    // BigInt literal prop
+    {
+      code: "<Component value={42n} />",
+      errors: [{ messageId: "bigintProp" }],
+    },
+    // Regex literal prop
+    {
+      code: "<Component pattern={/test/gi} />",
+      errors: [{ messageId: "regexProp" }],
+    },
   ],
 });
