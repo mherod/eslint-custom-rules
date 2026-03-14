@@ -419,102 +419,102 @@ function isServerSecret(envVarName: string): boolean {
   return secretPatterns.some((pattern) => pattern.test(envVarName));
 }
 
+const BROWSER_ONLY_HOOKS: string[] = [
+  // DOM manipulation hooks
+  "useEventListener",
+  "useClickOutside",
+  "useOnClickOutside",
+  "useKeyPress",
+  "useKeyDown",
+  "useKeyUp",
+  "useHotkeys",
+  "useScroll",
+  "useScrollPosition",
+  "useWindowSize",
+  "useViewport",
+  "useWindowScroll",
+  "usePageVisibility",
+  "useDocumentTitle",
+  "useFavicon",
+  "useFullscreen",
+  "useClipboard",
+  "useCopyToClipboard",
+
+  // Browser storage hooks
+  "useLocalStorage",
+  "useSessionStorage",
+  "useCookie",
+  "useCookies",
+  "useIndexedDB",
+
+  // Navigation/routing hooks
+  "useHistory",
+  "useLocation",
+  "useParams",
+  "useSearchParams",
+  "useNavigate",
+  "useRouter", // Next.js client router
+
+  // Media/device hooks
+  "useMedia",
+  "useMediaQuery",
+  "useBreakpoint",
+  "useOrientation",
+  "useDeviceOrientation",
+  "useGeolocation",
+  "useBattery",
+  "useNetworkState",
+  "useOnlineStatus",
+  "usePermission",
+
+  // Animation/visual hooks
+  "useInView",
+  "useIntersectionObserver",
+  "useResizeObserver",
+  "useMutationObserver",
+  "useSpring",
+  "useTransition",
+  "useChain",
+
+  // Input/interaction hooks
+  "useDrag",
+  "useDrop",
+  "useGesture",
+  "useTouch",
+  "useMouse",
+  "useHover",
+  "useFocus",
+  "useActive",
+
+  // Browser API hooks
+  "useNotification",
+  "useShare",
+  "useWakeLock",
+  "useVibrate",
+  "useSpeechSynthesis",
+  "useSpeechRecognition",
+  "useCamera",
+  "useMicrophone",
+  "useWebRTC",
+  "useWebSocket",
+  "useEventSource",
+  "useBroadcastChannel",
+  "useServiceWorker",
+
+  // Performance monitoring
+  "usePerformance",
+  "usePageSpeed",
+  "useWebVitals",
+
+  // Theme/appearance
+  "useDarkMode",
+  "useTheme",
+  "useColorScheme",
+  "usePreferredColorScheme",
+];
+
 function isBrowserOnlyHook(hookName: string): boolean {
-  const browserOnlyHooks = [
-    // DOM manipulation hooks
-    "useEventListener",
-    "useClickOutside",
-    "useOnClickOutside",
-    "useKeyPress",
-    "useKeyDown",
-    "useKeyUp",
-    "useHotkeys",
-    "useScroll",
-    "useScrollPosition",
-    "useWindowSize",
-    "useViewport",
-    "useWindowScroll",
-    "usePageVisibility",
-    "useDocumentTitle",
-    "useFavicon",
-    "useFullscreen",
-    "useClipboard",
-    "useCopyToClipboard",
-
-    // Browser storage hooks
-    "useLocalStorage",
-    "useSessionStorage",
-    "useCookie",
-    "useCookies",
-    "useIndexedDB",
-
-    // Navigation/routing hooks
-    "useHistory",
-    "useLocation",
-    "useParams",
-    "useSearchParams",
-    "useNavigate",
-    "useRouter", // Next.js client router
-
-    // Media/device hooks
-    "useMedia",
-    "useMediaQuery",
-    "useBreakpoint",
-    "useOrientation",
-    "useDeviceOrientation",
-    "useGeolocation",
-    "useBattery",
-    "useNetworkState",
-    "useOnlineStatus",
-    "usePermission",
-
-    // Animation/visual hooks
-    "useInView",
-    "useIntersectionObserver",
-    "useResizeObserver",
-    "useMutationObserver",
-    "useSpring",
-    "useTransition",
-    "useChain",
-
-    // Input/interaction hooks
-    "useDrag",
-    "useDrop",
-    "useGesture",
-    "useTouch",
-    "useMouse",
-    "useHover",
-    "useFocus",
-    "useActive",
-
-    // Browser API hooks
-    "useNotification",
-    "useShare",
-    "useWakeLock",
-    "useVibrate",
-    "useSpeechSynthesis",
-    "useSpeechRecognition",
-    "useCamera",
-    "useMicrophone",
-    "useWebRTC",
-    "useWebSocket",
-    "useEventSource",
-    "useBroadcastChannel",
-    "useServiceWorker",
-
-    // Performance monitoring
-    "usePerformance",
-    "usePageSpeed",
-    "useWebVitals",
-
-    // Theme/appearance
-    "useDarkMode",
-    "useTheme",
-    "useColorScheme",
-    "usePreferredColorScheme",
-  ];
-
-  return browserOnlyHooks.includes(hookName);
+  return BROWSER_ONLY_HOOKS.includes(hookName);
 }
 
 /**

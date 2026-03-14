@@ -3,6 +3,7 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import { isZodMethod } from "../utils/zod-utils";
 
 export const RULE_NAME = "enforce-zod-schema-naming";
 
@@ -79,55 +80,6 @@ function isZodSchemaCall(node: TSESTree.Node): boolean {
   }
 
   return false;
-}
-
-function isZodMethod(methodName: string): boolean {
-  const zodMethods = [
-    "object",
-    "string",
-    "number",
-    "boolean",
-    "array",
-    "union",
-    "intersection",
-    "literal",
-    "enum",
-    "nativeEnum",
-    "optional",
-    "nullable",
-    "void",
-    "undefined",
-    "null",
-    "any",
-    "unknown",
-    "never",
-    "date",
-    "bigint",
-    "symbol",
-    "function",
-    "lazy",
-    "record",
-    "map",
-    "set",
-    "tuple",
-    "discriminatedUnion",
-    "preprocess",
-    "transform",
-    "refine",
-    "superRefine",
-    "pipeline",
-    "brand",
-    "catch",
-    "default",
-    "describe",
-    "readonly",
-    "promise",
-    "effects",
-    "custom",
-    "coerce",
-  ];
-
-  return zodMethods.includes(methodName);
 }
 
 function isPascalCaseWithSchemaSuffix(name: string): boolean {

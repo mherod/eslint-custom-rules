@@ -171,53 +171,57 @@ function validateFilename(
 }
 
 function isKebabCase(name: string): boolean {
-  // kebab-case: lowercase with hyphens, can contain numbers
-  return KEBAB_CASE_REGEX.test(name);
+  // kebab-case: lowercase letters, digits, and hyphens only
+  const pattern = KEBAB_CASE_REGEX;
+  return pattern.test(name);
 }
 
 function isHookNaming(name: string): boolean {
   // Hook naming: starts with "use" followed by PascalCase
+  if (!name.startsWith("use")) {
+    return false;
+  }
   return HOOK_NAMING_REGEX.test(name);
 }
 
-function isSpecialNextJsFile(filename: string): boolean {
-  const specialFiles = [
-    "page.tsx",
-    "page.ts",
-    "layout.tsx",
-    "layout.ts",
-    "loading.tsx",
-    "loading.ts",
-    "error.tsx",
-    "error.ts",
-    "not-found.tsx",
-    "not-found.ts",
-    "route.ts",
-    "middleware.ts",
-    "instrumentation.ts",
-    "global-error.tsx",
-    "global-error.ts",
-    "template.tsx",
-    "template.ts",
-    "head.tsx",
-    "head.ts",
-    "opengraph-image.tsx",
-    "opengraph-image.ts",
-    "twitter-image.tsx",
-    "twitter-image.ts",
-    "icon.tsx",
-    "icon.ts",
-    "apple-icon.tsx",
-    "apple-icon.ts",
-    "favicon.ico",
-    "sitemap.xml",
-    "robots.txt",
-    "manifest.json",
-    "default.tsx",
-    "default.ts",
-  ];
+const SPECIAL_NEXT_JS_FILES = new Set([
+  "page.tsx",
+  "page.ts",
+  "layout.tsx",
+  "layout.ts",
+  "loading.tsx",
+  "loading.ts",
+  "error.tsx",
+  "error.ts",
+  "not-found.tsx",
+  "not-found.ts",
+  "route.ts",
+  "middleware.ts",
+  "instrumentation.ts",
+  "global-error.tsx",
+  "global-error.ts",
+  "template.tsx",
+  "template.ts",
+  "head.tsx",
+  "head.ts",
+  "opengraph-image.tsx",
+  "opengraph-image.ts",
+  "twitter-image.tsx",
+  "twitter-image.ts",
+  "icon.tsx",
+  "icon.ts",
+  "apple-icon.tsx",
+  "apple-icon.ts",
+  "favicon.ico",
+  "sitemap.xml",
+  "robots.txt",
+  "manifest.json",
+  "default.tsx",
+  "default.ts",
+]);
 
-  return specialFiles.includes(filename);
+function isSpecialNextJsFile(filename: string): boolean {
+  return SPECIAL_NEXT_JS_FILES.has(filename);
 }
 
 function isConfigFile(filename: string): boolean {

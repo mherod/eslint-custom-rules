@@ -72,17 +72,17 @@ export function hasSecretInArguments(
   });
 }
 
-export function isDangerousVariableName(varName: string): boolean {
-  const dangerousNames = [
-    "userinput",
-    "rawquery",
-    "rawbody",
-    "rawparams",
-    "untrustedinput",
-    "unsanitizedinput",
-  ];
+const DANGEROUS_VARIABLE_NAMES = new Set([
+  "userinput",
+  "rawquery",
+  "rawbody",
+  "rawparams",
+  "untrustedinput",
+  "unsanitizedinput",
+]);
 
-  return dangerousNames.includes(varName);
+export function isDangerousVariableName(varName: string): boolean {
+  return DANGEROUS_VARIABLE_NAMES.has(varName);
 }
 
 export function isSafeVariable(varName: string): boolean {
@@ -325,29 +325,34 @@ export function isProtectedRoute(filename: string): boolean {
   return protectedPatterns.some((pattern) => filename.includes(pattern));
 }
 
+function bodyContainsKeywords(
+  node: TSESTree.FunctionDeclaration,
+  sourceCode: { getText(node: TSESTree.Node): string },
+  keywords: readonly string[]
+): boolean {
+  const bodyText = sourceCode.getText(node.body);
+  return keywords.some((keyword) => bodyText.includes(keyword));
+}
+
 export function hasAuthValidation(
   node: TSESTree.FunctionDeclaration,
   sourceCode: { getText(node: TSESTree.Node): string }
 ): boolean {
-  const bodyText = sourceCode.getText(node.body);
-  return (
-    bodyText.includes("auth") ||
-    bodyText.includes("verify") ||
-    bodyText.includes("authenticate") ||
-    bodyText.includes("authorize")
-  );
+  return bodyContainsKeywords(node, sourceCode, [
+    "auth",
+    "verify",
+    "authenticate",
+    "authorize",
+  ]);
 }
+
+const RATE_LIMIT_KEYWORDS = ["rateLimit", "throttle", "limit"] as const;
 
 export function hasRateLimit(
   node: TSESTree.FunctionDeclaration,
   sourceCode: { getText(node: TSESTree.Node): string }
 ): boolean {
-  const bodyText = sourceCode.getText(node.body);
-  return (
-    bodyText.includes("rateLimit") ||
-    bodyText.includes("throttle") ||
-    bodyText.includes("limit")
-  );
+  return bodyContainsKeywords(node, sourceCode, RATE_LIMIT_KEYWORDS);
 }
 
 export function isApiKeyOrSecret(value: string): boolean {

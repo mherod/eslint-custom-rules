@@ -3,7 +3,7 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
-import { isExportedFunction, isHttpMethod } from "../utils/common";
+import { isExported, isHttpMethod } from "../utils/common";
 import { normalizePath } from "../utils/component-type-utils";
 import { hasRateLimit, isProtectedRoute } from "./security-utils";
 
@@ -66,7 +66,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     return {
       FunctionDeclaration(node: TSESTree.FunctionDeclaration): void {
-        if (!isExportedFunction(node)) {
+        if (!isExported(node)) {
           return;
         }
 

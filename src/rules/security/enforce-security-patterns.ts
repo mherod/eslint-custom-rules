@@ -247,15 +247,15 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
 });
 
-function isUnsafeRedirectFunction(functionName: string): boolean {
-  const redirectFunctions = [
-    "redirect",
-    "permanentRedirect",
-    "replace",
-    "push",
-  ];
+const UNSAFE_REDIRECT_FUNCTIONS = new Set([
+  "redirect",
+  "permanentRedirect",
+  "replace",
+  "push",
+]);
 
-  return redirectFunctions.includes(functionName);
+function isUnsafeRedirectFunction(functionName: string): boolean {
+  return UNSAFE_REDIRECT_FUNCTIONS.has(functionName);
 }
 
 function isPublicApiRoute(filename: string): boolean {

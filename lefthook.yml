@@ -10,7 +10,7 @@ pre-commit:
         - "*.jsonc"
         - "*.css"
       stage_fixed: true
-    - run: 'command -v resect >/dev/null 2>&1 || { echo "Skipping similar check: resect not installed"; exit 0; }; resect similar . --threshold=0.95'
+    - run: 'command -v resect >/dev/null 2>&1 || { echo "Skipping similar check: resect not installed"; exit 0; }; resect similar . --threshold=0.95 --strict'
       skip:
         - merge
         - rebase

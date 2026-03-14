@@ -249,6 +249,5 @@ export function isAsyncExportedFunction(
     | TSESTree.ArrowFunctionExpression
     | TSESTree.FunctionExpression
 ): boolean {
-  // Must be async
-  return node.async === true;
+  return Boolean(node.async);
 }

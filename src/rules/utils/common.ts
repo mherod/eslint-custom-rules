@@ -81,6 +81,9 @@ const PROTECTED_ROUTE_PATTERNS = [
  * Check if a name follows PascalCase convention
  */
 export function isPascalCase(name: string): boolean {
+  if (name.length === 0) {
+    return false;
+  }
   return NAMING_PATTERNS.PASCAL_CASE.test(name);
 }
 
@@ -88,14 +91,14 @@ export function isPascalCase(name: string): boolean {
  * Check if a name follows the component naming convention (PascalCase)
  */
 export function isComponentName(name: string): boolean {
-  return NAMING_PATTERNS.COMPONENT.test(name);
+  return name.length > 0 && NAMING_PATTERNS.COMPONENT.test(name);
 }
 
 /**
  * Check if a name follows the hook naming convention (use + PascalCase)
  */
 export function isHookName(name: string): boolean {
-  return NAMING_PATTERNS.HOOK.test(name);
+  return name.startsWith("use") && NAMING_PATTERNS.HOOK.test(name);
 }
 
 /**
@@ -156,11 +159,9 @@ export function isProtectedRoute(routeName: string): boolean {
 }
 
 /**
- * Check if a function declaration is exported
+ * Check if a node is exported (named or default)
  */
-export function isExportedFunction(
-  node: TSESTree.FunctionDeclaration
-): boolean {
+export function isExported(node: TSESTree.Node): boolean {
   const parent = node.parent;
   return (
     parent?.type === AST_NODE_TYPES.ExportNamedDeclaration ||
@@ -172,29 +173,11 @@ export function isExportedFunction(
  * Check if a variable declarator is exported
  */
 export function isExportedVariable(node: TSESTree.VariableDeclarator): boolean {
-  const parent = node.parent?.parent;
-  return (
-    parent?.type === AST_NODE_TYPES.ExportNamedDeclaration ||
-    parent?.type === AST_NODE_TYPES.ExportDefaultDeclaration
-  );
-}
-
-/**
- * Check if a type alias is exported
- */
-export function isExportedType(node: TSESTree.TSTypeAliasDeclaration): boolean {
-  const parent = node.parent;
-  return parent?.type === AST_NODE_TYPES.ExportNamedDeclaration;
-}
-
-/**
- * Check if an interface is exported
- */
-export function isExportedInterface(
-  node: TSESTree.TSInterfaceDeclaration
-): boolean {
-  const parent = node.parent;
-  return parent?.type === AST_NODE_TYPES.ExportNamedDeclaration;
+  const declaration = node.parent;
+  if (!declaration) {
+    return false;
+  }
+  return isExported(declaration);
 }
 
 /**
@@ -209,15 +192,6 @@ export function isComplexType(typeAnnotation: TSESTree.TypeNode): boolean {
     (typeAnnotation.type === AST_NODE_TYPES.TSTypeLiteral &&
       typeAnnotation.members.length > 3)
   );
-}
-
-/**
- * Check if a return type is complex
- */
-export function isComplexReturnType(
-  returnType: TSESTree.TSTypeAnnotation
-): boolean {
-  return isComplexType(returnType.typeAnnotation);
 }
 
 /**

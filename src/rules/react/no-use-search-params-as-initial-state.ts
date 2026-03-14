@@ -25,6 +25,22 @@ function isUseSearchParamsCall(node: TSESTree.CallExpression): boolean {
 }
 
 /**
+ * Extracts the object from a member-call expression (e.g. `obj.method()`).
+ * Returns null if the expression is not a call on a member expression.
+ */
+function getMemberCallObject(
+  expr: TSESTree.Expression | TSESTree.SpreadElement
+): TSESTree.Expression | null {
+  if (
+    expr.type !== AST_NODE_TYPES.CallExpression ||
+    expr.callee.type !== AST_NODE_TYPES.MemberExpression
+  ) {
+    return null;
+  }
+  return expr.callee.object;
+}
+
+/**
  * Returns true when the expression references a member of a known
  * useSearchParams variable (e.g. `sp.get('q')`, `sp.getAll('filter')`).
  */
@@ -32,14 +48,10 @@ function referencesSearchParamsVar(
   expr: TSESTree.Expression | TSESTree.SpreadElement,
   searchParamsVars: Set<string>
 ): boolean {
-  if (expr.type !== AST_NODE_TYPES.CallExpression) {
+  const object = getMemberCallObject(expr);
+  if (object === null) {
     return false;
   }
-  const call = expr;
-  if (call.callee.type !== AST_NODE_TYPES.MemberExpression) {
-    return false;
-  }
-  const { object } = call.callee;
   return (
     object.type === AST_NODE_TYPES.Identifier &&
     searchParamsVars.has(object.name)
@@ -52,15 +64,9 @@ function referencesSearchParamsVar(
 function isInlineSearchParamsAccess(
   expr: TSESTree.Expression | TSESTree.SpreadElement
 ): boolean {
-  if (expr.type !== AST_NODE_TYPES.CallExpression) {
-    return false;
-  }
-  const call = expr;
-  if (call.callee.type !== AST_NODE_TYPES.MemberExpression) {
-    return false;
-  }
-  const { object } = call.callee;
+  const object = getMemberCallObject(expr);
   return (
+    object !== null &&
     object.type === AST_NODE_TYPES.CallExpression &&
     isUseSearchParamsCall(object)
   );

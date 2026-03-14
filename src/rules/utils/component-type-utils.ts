@@ -279,113 +279,113 @@ export function hasAsyncExport(program: TSESTree.Program): boolean {
   return false;
 }
 
-export function isServerOnlyModule(moduleName: string): boolean {
-  const serverOnlyModules = [
-    // Node.js built-ins
-    "fs",
-    "path",
-    "os",
-    "crypto",
-    "util",
-    "stream",
-    "buffer",
-    "events",
-    "url",
-    "querystring",
-    "http",
-    "https",
-    "net",
-    "tls",
-    "dgram",
-    "dns",
-    "cluster",
-    "child_process",
-    "worker_threads",
-    "perf_hooks",
-    "inspector",
-    "vm",
-    "module",
-    "repl",
-    "readline",
-    "tty",
-    "zlib",
-    // Next.js server-only
-    "next/server",
-    "next/headers",
-    "next/cookies",
-    "next/cache",
-    "server-only",
-    // Firebase Admin SDK (server-only)
-    "firebase-admin",
-    "firebase-admin/app",
-    "firebase-admin/auth",
-    "firebase-admin/firestore",
-    "firebase-admin/storage",
-    // Database drivers
-    "mysql",
-    "mysql2",
-    "pg",
-    "sqlite3",
-    "mongodb",
-    "mongoose",
-    "prisma",
-    "@prisma/client",
-    // Server frameworks
-    "express",
-    "fastify",
-    "koa",
-    "hapi",
-    "cors",
-    "helmet",
-    // Auth/crypto
-    "bcrypt",
-    "bcryptjs",
-    "jsonwebtoken",
-    "passport",
-    // Server tools
-    "nodemailer",
-    "multer",
-    "sharp",
-    "jimp",
-    "dotenv",
-    "@next/env",
-  ];
+const SERVER_ONLY_MODULES = new Set([
+  // Node.js built-ins
+  "fs",
+  "path",
+  "os",
+  "crypto",
+  "util",
+  "stream",
+  "buffer",
+  "events",
+  "url",
+  "querystring",
+  "http",
+  "https",
+  "net",
+  "tls",
+  "dgram",
+  "dns",
+  "cluster",
+  "child_process",
+  "worker_threads",
+  "perf_hooks",
+  "inspector",
+  "vm",
+  "module",
+  "repl",
+  "readline",
+  "tty",
+  "zlib",
+  // Next.js server-only
+  "next/server",
+  "next/headers",
+  "next/cookies",
+  "next/cache",
+  "server-only",
+  // Firebase Admin SDK (server-only)
+  "firebase-admin",
+  "firebase-admin/app",
+  "firebase-admin/auth",
+  "firebase-admin/firestore",
+  "firebase-admin/storage",
+  // Database drivers
+  "mysql",
+  "mysql2",
+  "pg",
+  "sqlite3",
+  "mongodb",
+  "mongoose",
+  "prisma",
+  "@prisma/client",
+  // Server frameworks
+  "express",
+  "fastify",
+  "koa",
+  "hapi",
+  "cors",
+  "helmet",
+  // Auth/crypto
+  "bcrypt",
+  "bcryptjs",
+  "jsonwebtoken",
+  "passport",
+  // Server tools
+  "nodemailer",
+  "multer",
+  "sharp",
+  "jimp",
+  "dotenv",
+  "@next/env",
+]);
 
-  return serverOnlyModules.includes(moduleName);
+export function isServerOnlyModule(moduleName: string): boolean {
+  return SERVER_ONLY_MODULES.has(moduleName);
 }
 
-export function isClientOnlyModule(moduleName: string): boolean {
-  // NOTE: "react" and "react-dom" are NOT client-only!
-  // Server Components can import React for JSX and certain utilities.
-  // Only "react-dom/client" is truly client-only (for client-side rendering).
-  const clientOnlyModules = [
-    "react-dom/client",
-    "framer-motion",
-    "react-spring",
-    "react-transition-group",
-    "react-player",
-    "react-chartjs-2",
-    "recharts",
-    "react-map-gl",
-    "leaflet",
-    "mapbox-gl",
-    "localforage",
-    "idb",
-    "client-only",
-    "use-debounce",
-    "use-throttle",
-    "mixpanel-browser",
-    "hotjar",
-    "google-analytics",
-    "react-modal",
-    "react-tooltip",
-    "react-select",
-    "react-datepicker",
-    "react-color",
-    "react-dropzone",
-  ];
+// NOTE: "react" and "react-dom" are NOT client-only!
+// Server Components can import React for JSX and certain utilities.
+// Only "react-dom/client" is truly client-only (for client-side rendering).
+const CLIENT_ONLY_MODULES: string[] = [
+  "react-dom/client",
+  "framer-motion",
+  "react-spring",
+  "react-transition-group",
+  "react-player",
+  "react-chartjs-2",
+  "recharts",
+  "react-map-gl",
+  "leaflet",
+  "mapbox-gl",
+  "localforage",
+  "idb",
+  "client-only",
+  "use-debounce",
+  "use-throttle",
+  "mixpanel-browser",
+  "hotjar",
+  "google-analytics",
+  "react-modal",
+  "react-tooltip",
+  "react-select",
+  "react-datepicker",
+  "react-color",
+  "react-dropzone",
+];
 
-  return clientOnlyModules.includes(moduleName);
+export function isClientOnlyModule(moduleName: string): boolean {
+  return CLIENT_ONLY_MODULES.includes(moduleName);
 }
 
 export function isClientOnlyHook(hookName: string): boolean {

@@ -14,19 +14,6 @@ type MessageIds = "preferPromiseAll";
 
 type Options = [];
 
-/**
- * Collects all Identifier names referenced inside an expression node.
- * Uses an explicit switch over the node types that can appear as await
- * arguments, avoiding untyped Object.keys() traversal.
- */
-function collectReferencedNames(
-  node: TSESTree.Expression | TSESTree.SpreadElement
-): Set<string> {
-  const names = new Set<string>();
-  visitExpr(node, names);
-  return names;
-}
-
 function visitExpr(
   node: TSESTree.Expression | TSESTree.SpreadElement,
   out: Set<string>
@@ -238,7 +225,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           continue;
         }
 
-        const refs = collectReferencedNames(current.awaitExpr);
+        const refs = new Set<string>();
+        visitExpr(current.awaitExpr, refs);
         const dependsOnPrevious = [...refs].some((name) =>
           cumulativeBound.has(name)
         );

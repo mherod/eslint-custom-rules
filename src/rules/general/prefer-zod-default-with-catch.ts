@@ -3,6 +3,7 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import { isZodMethod } from "../utils/zod-utils";
 
 export const RULE_NAME = "prefer-zod-default-with-catch";
 
@@ -149,36 +150,4 @@ function hasCatchInChain(node: TSESTree.CallExpression): boolean {
   }
 
   return false;
-}
-
-function isZodMethod(name: string): boolean {
-  const zodMethods = [
-    "string",
-    "number",
-    "boolean",
-    "array",
-    "object",
-    "union",
-    "intersection",
-    "enum",
-    "nativeEnum",
-    "date",
-    "promise",
-    "any",
-    "unknown",
-    "never",
-    "void",
-    "undefined",
-    "null",
-    "literal",
-    "tuple",
-    "record",
-    "map",
-    "set",
-    "function",
-    "lazy",
-    "effect",
-    "custom",
-  ];
-  return zodMethods.includes(name);
 }

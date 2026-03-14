@@ -6,12 +6,8 @@ import {
 } from "@typescript-eslint/utils";
 import {
   getJsDocComment,
-  isComplexReturnType,
   isComplexType,
   isComponentName,
-  isExportedFunction,
-  isExportedInterface,
-  isExportedType,
   isExportedVariable,
   isHookName,
 } from "../utils/common";
@@ -81,7 +77,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         }
 
         const functionName = node.id.name;
-        const isExported = isExportedFunction(node);
+        const isExported =
+          node.parent?.type === AST_NODE_TYPES.ExportNamedDeclaration ||
+          node.parent?.type === AST_NODE_TYPES.ExportDefaultDeclaration;
         const jsDocComment = getJsDocComment(node, sourceCode);
 
         // Check if public function needs JSDoc
@@ -154,7 +152,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       // Type aliases
       TSTypeAliasDeclaration(node: TSESTree.TSTypeAliasDeclaration): void {
         const typeName = node.id.name;
-        const isExported = isExportedType(node);
+        const isExported =
+          node.parent?.type === AST_NODE_TYPES.ExportNamedDeclaration;
         const jsDocComment = getJsDocComment(node, sourceCode);
 
         if (isExported && !jsDocComment && isComplexType(node.typeAnnotation)) {
@@ -169,7 +168,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       // Interfaces
       TSInterfaceDeclaration(node: TSESTree.TSInterfaceDeclaration): void {
         const interfaceName = node.id.name;
-        const isExported = isExportedInterface(node);
+        const isExported =
+          node.parent?.type === AST_NODE_TYPES.ExportNamedDeclaration;
         const jsDocComment = getJsDocComment(node, sourceCode);
 
         if (isExported && !jsDocComment) {
@@ -236,7 +236,7 @@ function isComplexFunction(node: TSESTree.Node): boolean {
     // Consider a function complex if it has multiple parameters or complex return type
     return (
       node.params.length > 2 ||
-      (node.returnType ? isComplexReturnType(node.returnType) : false)
+      (node.returnType ? isComplexType(node.returnType.typeAnnotation) : false)
     );
   }
   return false;
