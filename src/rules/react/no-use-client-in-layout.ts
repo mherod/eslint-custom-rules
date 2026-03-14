@@ -1,5 +1,4 @@
 import { AST_NODE_TYPES, ESLintUtils } from "@typescript-eslint/utils";
-import { getFilename } from "../utils/common";
 import { hasUseClientDirective } from "../utils/component-type-utils";
 
 export const RULE_NAME = "no-use-client-in-layout";
@@ -23,16 +22,14 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const filename = getFilename(context);
-
     // Only check layout files
-    if (!/layout\.(tsx|jsx|js|ts)$/.test(filename)) {
+    if (!/layout\.(tsx|jsx|js|ts)$/.test(context.filename)) {
       return {};
     }
 
     return {
       Program(node): void {
-        if (!hasUseClientDirective(context.getSourceCode())) {
+        if (!hasUseClientDirective(context.sourceCode)) {
           return;
         }
         // Report on the "use client" directive statement if found

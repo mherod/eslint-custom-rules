@@ -1,5 +1,4 @@
 import { AST_NODE_TYPES, ESLintUtils } from "@typescript-eslint/utils";
-import { getFilename } from "../utils/common";
 import { hasUseClientDirective } from "../utils/component-type-utils";
 
 export const RULE_NAME = "prefer-async-page-component";
@@ -23,15 +22,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const filename = getFilename(context);
-
     // Only check page files
-    if (!/page\.(tsx|jsx|js|ts)$/.test(filename)) {
+    if (!/page\.(tsx|jsx|js|ts)$/.test(context.filename)) {
       return {};
     }
 
     // Check if it's a Client Component
-    const isClientComponent = hasUseClientDirective(context.getSourceCode());
+    const isClientComponent = hasUseClientDirective(context.sourceCode);
 
     return {
       ExportDefaultDeclaration(node): void {

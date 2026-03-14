@@ -1,5 +1,4 @@
 import { AST_NODE_TYPES, ESLintUtils } from "@typescript-eslint/utils";
-import { getFilename } from "../utils/common";
 import {
   hasUseClientDirective,
   normalizePath,
@@ -25,13 +24,11 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const filename = getFilename(context);
-
     // Only check page files in app directory
     if (
       !(
-        /page\.(tsx|jsx|js|ts)$/.test(filename) &&
-        normalizePath(filename).includes("/app/")
+        /page\.(tsx|jsx|js|ts)$/.test(context.filename) &&
+        normalizePath(context.filename).includes("/app/")
       )
     ) {
       return {};
@@ -39,7 +36,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     return {
       Program(node): void {
-        if (!hasUseClientDirective(context.getSourceCode())) {
+        if (!hasUseClientDirective(context.sourceCode)) {
           return;
         }
         // Report on the "use client" directive statement if found
