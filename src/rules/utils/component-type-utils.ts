@@ -482,3 +482,23 @@ export function isServerEnvVar(envVarName: string): boolean {
   ];
   return serverPatterns.some((p) => p.test(envVarName));
 }
+
+/**
+ * Returns true when a CallExpression is a `useState(...)` or `React.useState(...)` call.
+ */
+export function isUseStateCall(node: TSESTree.CallExpression): boolean {
+  const { callee } = node;
+  if (callee.type === AST_NODE_TYPES.Identifier && callee.name === "useState") {
+    return true;
+  }
+  if (
+    callee.type === AST_NODE_TYPES.MemberExpression &&
+    callee.object.type === AST_NODE_TYPES.Identifier &&
+    callee.object.name === "React" &&
+    callee.property.type === AST_NODE_TYPES.Identifier &&
+    callee.property.name === "useState"
+  ) {
+    return true;
+  }
+  return false;
+}

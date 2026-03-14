@@ -3,7 +3,10 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
-import { hasUseClientDirective } from "../utils/component-type-utils";
+import {
+  hasUseClientDirective,
+  isUseStateCall,
+} from "../utils/component-type-utils";
 
 export const RULE_NAME = "no-use-search-params-as-initial-state";
 
@@ -19,26 +22,6 @@ function isUseSearchParamsCall(node: TSESTree.CallExpression): boolean {
     node.callee.type === AST_NODE_TYPES.Identifier &&
     node.callee.name === "useSearchParams"
   );
-}
-
-/**
- * Returns true when an expression is a `useState(...)` or `React.useState(...)` call.
- */
-function isUseStateCall(node: TSESTree.CallExpression): boolean {
-  const { callee } = node;
-  if (callee.type === AST_NODE_TYPES.Identifier && callee.name === "useState") {
-    return true;
-  }
-  if (
-    callee.type === AST_NODE_TYPES.MemberExpression &&
-    callee.object.type === AST_NODE_TYPES.Identifier &&
-    callee.object.name === "React" &&
-    callee.property.type === AST_NODE_TYPES.Identifier &&
-    callee.property.name === "useState"
-  ) {
-    return true;
-  }
-  return false;
 }
 
 /**

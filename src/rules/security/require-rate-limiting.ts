@@ -5,6 +5,7 @@ import {
 } from "@typescript-eslint/utils";
 import { isExportedFunction, isHttpMethod } from "../utils/common";
 import { normalizePath } from "../utils/component-type-utils";
+import { hasRateLimit, isProtectedRoute } from "./security-utils";
 
 type MessageIds = "requireRateLimit";
 type Options = [];
@@ -93,30 +94,3 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     };
   },
 });
-
-function isProtectedRoute(filename: string): boolean {
-  const protectedPatterns = [
-    "/admin/",
-    "/dashboard/",
-    "/profile/",
-    "/settings/",
-    "/account/",
-    "/user/",
-    "/private/",
-    "/protected/",
-  ];
-
-  return protectedPatterns.some((pattern) => filename.includes(pattern));
-}
-
-function hasRateLimit(
-  node: TSESTree.FunctionDeclaration,
-  sourceCode: { getText(node: TSESTree.Node): string }
-): boolean {
-  const bodyText = sourceCode.getText(node.body);
-  return (
-    bodyText.includes("rateLimit") ||
-    bodyText.includes("throttle") ||
-    bodyText.includes("limit")
-  );
-}

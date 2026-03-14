@@ -3,7 +3,7 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
-import { isSqlFunction } from "./security-utils";
+import { hasStringConcatenation, isSqlFunction } from "./security-utils";
 
 type MessageIds = "noSqlInjection";
 type Options = [];
@@ -41,15 +41,3 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     };
   },
 });
-
-function hasStringConcatenation(
-  args: TSESTree.CallExpressionArgument[]
-): boolean {
-  return args.some(
-    (arg) =>
-      arg.type === AST_NODE_TYPES.BinaryExpression &&
-      arg.operator === "+" &&
-      (arg.left.type === AST_NODE_TYPES.Literal ||
-        arg.right.type === AST_NODE_TYPES.Literal)
-  );
-}

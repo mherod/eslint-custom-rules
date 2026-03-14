@@ -1,4 +1,5 @@
 import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import { hasAuthValidation, isProtectedRoute } from "./security-utils";
 
 type MessageIds = "requireAuthValidation";
 type Options = [];
@@ -39,31 +40,3 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     };
   },
 });
-
-function isProtectedRoute(filename: string): boolean {
-  const protectedPatterns = [
-    "/admin/",
-    "/dashboard/",
-    "/profile/",
-    "/settings/",
-    "/account/",
-    "/user/",
-    "/private/",
-    "/protected/",
-  ];
-
-  return protectedPatterns.some((pattern) => filename.includes(pattern));
-}
-
-function hasAuthValidation(
-  node: TSESTree.FunctionDeclaration,
-  sourceCode: { getText(node: TSESTree.Node): string }
-): boolean {
-  const bodyText = sourceCode.getText(node.body);
-  return (
-    bodyText.includes("auth") ||
-    bodyText.includes("verify") ||
-    bodyText.includes("authenticate") ||
-    bodyText.includes("authorize")
-  );
-}

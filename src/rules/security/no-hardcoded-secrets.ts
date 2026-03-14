@@ -3,7 +3,7 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
-import { isHardcodedSecret } from "./security-utils";
+import { isApiKeyOrSecret, isHardcodedSecret } from "./security-utils";
 
 type MessageIds = "noHardcodedSecrets" | "noClientSideSecrets";
 type Options = [];
@@ -60,18 +60,3 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     };
   },
 });
-
-function isApiKeyOrSecret(value: string): boolean {
-  const apiKeyPatterns = [
-    /^sk_/, // Stripe
-    /^pk_/, // Public keys (less sensitive but still shouldn't be hardcoded)
-    /^AIza/, // Google API keys
-    /^ya29/, // Google OAuth tokens
-    /^ghp_/, // GitHub tokens
-    /^xoxb/, // Slack tokens
-    /^[0-9a-f]{32}$/, // 32 character hex
-    /^[A-Za-z0-9+/]{40,}={0,2}$/, // Base64 encoded
-  ];
-
-  return apiKeyPatterns.some((pattern) => pattern.test(value));
-}

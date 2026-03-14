@@ -3,32 +3,13 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import { isUseStateCall } from "../utils/component-type-utils";
 
 export const RULE_NAME = "prefer-functional-setstate";
 
 type MessageIds = "preferFunctionalSetState";
 
 type Options = [];
-
-/**
- * Returns true when a call expression is `useState(...)` or `React.useState(...)`.
- */
-function isUseStateCall(node: TSESTree.CallExpression): boolean {
-  const { callee } = node;
-  if (callee.type === AST_NODE_TYPES.Identifier && callee.name === "useState") {
-    return true;
-  }
-  if (
-    callee.type === AST_NODE_TYPES.MemberExpression &&
-    callee.object.type === AST_NODE_TYPES.Identifier &&
-    callee.object.name === "React" &&
-    callee.property.type === AST_NODE_TYPES.Identifier &&
-    callee.property.name === "useState"
-  ) {
-    return true;
-  }
-  return false;
-}
 
 /**
  * Collects all Identifier names referenced in an expression.
