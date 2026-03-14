@@ -1,19 +1,30 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
 import { isExportedFunction, isHttpMethod } from "../utils/common";
 import { normalizePath } from "../utils/component-type-utils";
 
 type MessageIds = "requireRateLimit";
 type Options = [];
 
-/**
- * Pattern matching Next.js App Router API route files.
- * Matches paths like `/app/api/users/route.ts` but NOT `/lib/api/exports.ts`.
- */
+// Next.js App Router API route files: app/api/.../route.ts
 const APP_ROUTER_API_ROUTE_PATTERN = /\/app\/api\/.*\/route\.(ts|js|tsx|jsx)$/;
 
-function isAppRouterApiRoute(filename: string): boolean {
+// Next.js Pages Router API route files: pages/api/.../*.ts
+const PAGES_ROUTER_API_ROUTE_PATTERN = /\/pages\/api\/.+\.(ts|js|tsx|jsx)$/;
+
+function isApiRouteFile(filename: string): boolean {
   const normalized = normalizePath(filename);
-  return APP_ROUTER_API_ROUTE_PATTERN.test(normalized);
+  return (
+    APP_ROUTER_API_ROUTE_PATTERN.test(normalized) ||
+    PAGES_ROUTER_API_ROUTE_PATTERN.test(normalized)
+  );
+}
+
+function isPagesRouterApiRoute(filename: string): boolean {
+  return PAGES_ROUTER_API_ROUTE_PATTERN.test(normalizePath(filename));
 }
 
 export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
@@ -34,18 +45,29 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     const filename = context.filename;
     const sourceCode = context.sourceCode;
 
-    if (!isAppRouterApiRoute(filename)) {
+    if (!isApiRouteFile(filename)) {
       return {};
     }
 
+    if (isProtectedRoute(filename)) {
+      return {};
+    }
+
+    const pagesRouter = isPagesRouterApiRoute(filename);
+
     return {
       FunctionDeclaration(node: TSESTree.FunctionDeclaration): void {
-        if (
-          isExportedFunction(node) &&
-          isHttpMethod(node.id?.name) &&
-          !isProtectedRoute(filename) &&
-          !hasRateLimit(node, sourceCode)
-        ) {
+        if (!isExportedFunction(node)) {
+          return;
+        }
+
+        // App Router: exported HTTP method handlers (GET, POST, etc.)
+        // Pages Router: default-exported handler function
+        const isTargetHandler = pagesRouter
+          ? node.parent?.type === AST_NODE_TYPES.ExportDefaultDeclaration
+          : isHttpMethod(node.id?.name);
+
+        if (isTargetHandler && !hasRateLimit(node, sourceCode)) {
           context.report({
             node,
             messageId: "requireRateLimit",
