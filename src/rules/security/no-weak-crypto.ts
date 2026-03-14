@@ -3,6 +3,7 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import { isWeakCryptoFunction } from "./security-utils";
 
 type MessageIds = "noWeakCrypto";
 type Options = [];
@@ -38,8 +39,3 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     };
   },
 });
-
-function isWeakCryptoFunction(functionName: string): boolean {
-  const weakFunctions = ["md5", "sha1", "des", "rc4", "crc32"];
-  return weakFunctions.includes(functionName.toLowerCase());
-}

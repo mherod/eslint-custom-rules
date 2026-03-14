@@ -3,6 +3,7 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import { isSqlFunction } from "./security-utils";
 
 type MessageIds = "noSqlInjection";
 type Options = [];
@@ -40,11 +41,6 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     };
   },
 });
-
-function isSqlFunction(functionName: string): boolean {
-  const sqlFunctions = ["query", "execute", "raw", "sql", "exec"];
-  return sqlFunctions.includes(functionName.toLowerCase());
-}
 
 function hasStringConcatenation(
   args: TSESTree.CallExpressionArgument[]
