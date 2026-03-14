@@ -50,7 +50,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isComponentFile = isComponentPath(filename);
     const isHookFile = isHookPath(filename);
 
@@ -58,7 +58,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       return {};
     }
 
-    const sourceCode = context.getSourceCode();
+    const sourceCode = context.sourceCode;
     const componentDeclarations: string[] = [];
     const hookDeclarations: string[] = [];
     const exportedNames: string[] = [];

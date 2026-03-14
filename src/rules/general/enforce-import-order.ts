@@ -39,7 +39,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const sourceCode = context.getSourceCode();
+    const sourceCode = context.sourceCode;
     const imports: TSESTree.ImportDeclaration[] = [];
 
     return {

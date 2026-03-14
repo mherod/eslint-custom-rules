@@ -32,8 +32,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const filename = context.getFilename();
-    const sourceCode = context.getSourceCode();
+    const filename = context.filename;
+    const sourceCode = context.sourceCode;
 
     // Only check page.tsx files in App Router
     if (!isAppRouterPageFile(filename)) {

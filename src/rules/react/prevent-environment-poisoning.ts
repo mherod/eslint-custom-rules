@@ -44,7 +44,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isUtilityFile = isUtilityOrLibFile(filename);
 
     // Only apply this rule to utility/lib files
@@ -87,8 +87,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               messageId: "serverOnlyInUtil",
               data: { module: importedModule },
               fix(fixer) {
-                const sourceCode =
-                  context.sourceCode || context.getSourceCode();
+                const sourceCode = context.sourceCode;
                 const program = sourceCode.ast;
 
                 // Check if server-only import already exists
@@ -143,8 +142,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
                 messageId: "serverSecretInUtil",
                 data: { secret: envVar },
                 fix(fixer) {
-                  const sourceCode =
-                    context.sourceCode || context.getSourceCode();
+                  const sourceCode = context.sourceCode;
                   const program = sourceCode.ast;
 
                   // Check if server-only import already exists
@@ -198,8 +196,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
                 messageId: "serverSecretInUtil",
                 data: { secret: envVar },
                 fix(fixer) {
-                  const sourceCode =
-                    context.sourceCode || context.getSourceCode();
+                  const sourceCode = context.sourceCode;
                   const program = sourceCode.ast;
 
                   // Check if server-only import already exists
@@ -247,8 +244,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               messageId: "browserHookInUtil",
               data: { hook: node.callee.name },
               fix(fixer) {
-                const sourceCode =
-                  context.sourceCode || context.getSourceCode();
+                const sourceCode = context.sourceCode;
                 const program = sourceCode.ast;
 
                 // Check if client-only import already exists
@@ -292,7 +288,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             node: context.sourceCode.ast,
             messageId: "missingServerOnlyDirective",
             fix(fixer) {
-              const sourceCode = context.sourceCode || context.getSourceCode();
+              const sourceCode = context.sourceCode;
               const program = sourceCode.ast;
 
               // Check if server-only import already exists

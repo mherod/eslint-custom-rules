@@ -164,7 +164,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
       // Get original source text for allowed check
       // Remove backticks to match against the actual template content
-      const fullText = context.getSourceCode().getText(node);
+      const fullText = context.sourceCode.getText(node);
       const originalText = fullText.startsWith("`")
         ? fullText.slice(1, -1)
         : fullText;
@@ -290,7 +290,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         const example = `${leftText || (leftIsVariable ? "variable" : leftIsBinary ? "expression" : "prefix")} + ${rightText || (rightIsVariable ? "variable" : rightIsBinary ? "expression" : "suffix")}`;
 
         // Check if this pattern is allowed by configuration
-        const originalText = context.getSourceCode().getText(node);
+        const originalText = context.sourceCode.getText(node);
         if (isAllowedDynamic(originalText)) {
           return;
         }

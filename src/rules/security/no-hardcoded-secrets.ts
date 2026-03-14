@@ -25,7 +25,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isClientFile =
       filename.includes("components/") || filename.includes("pages/");
 

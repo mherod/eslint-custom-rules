@@ -27,7 +27,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode;
     let hasReactImport = false;
     let reactImportNode: TSESTree.ImportDeclaration | null = null;
     const existingDestructuredImports: Set<string> = new Set();

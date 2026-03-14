@@ -107,8 +107,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           }
         } else {
           // Add new Vue import at the top
-          const program = context.getSourceCode().ast;
-          const sourceCode = context.getSourceCode();
+          const program = context.sourceCode.ast;
+          const sourceCode = context.sourceCode;
           const firstImport = program.body.find(
             (node): node is TSESTree.ImportDeclaration =>
               node.type === AST_NODE_TYPES.ImportDeclaration
@@ -159,9 +159,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         node.type === AST_NODE_TYPES.MemberExpression &&
         node.object.type === AST_NODE_TYPES.Identifier
       ) {
-        return context.getSourceCode().getText(node.object);
+        return context.sourceCode.getText(node.object);
       }
-      return context.getSourceCode().getText(node);
+      return context.sourceCode.getText(node);
     }
 
     return {
@@ -344,18 +344,18 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           node.test.arguments.length === 1
         ) {
           const refArg = node.test.arguments[0];
-          const refText = context.getSourceCode().getText(refArg);
+          const refText = context.sourceCode.getText(refArg);
 
           // Check if consequent is ref.value
           const isRefValuePattern =
             node.consequent.type === AST_NODE_TYPES.MemberExpression &&
             node.consequent.property.type === AST_NODE_TYPES.Identifier &&
             node.consequent.property.name === "value" &&
-            context.getSourceCode().getText(node.consequent.object) === refText;
+            context.sourceCode.getText(node.consequent.object) === refText;
 
           // Check if alternate is the same ref
           const alternateIsRef =
-            context.getSourceCode().getText(node.alternate) === refText;
+            context.sourceCode.getText(node.alternate) === refText;
 
           if (isRefValuePattern && alternateIsRef) {
             context.report({

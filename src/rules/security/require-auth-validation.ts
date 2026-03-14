@@ -18,9 +18,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isApiFile = filename.includes("/api/");
-    const sourceCode = context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     return {
       FunctionDeclaration(node: TSESTree.FunctionDeclaration): void {

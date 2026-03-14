@@ -27,7 +27,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const hasUseClient = hasUseClientDirective(context.getSourceCode());
+    const hasUseClient = hasUseClientDirective(context.sourceCode);
     let isInReactComponent = false;
 
     // Check if a function name looks like a React component

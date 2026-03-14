@@ -70,13 +70,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isClientFile =
       filename.includes("components/") || filename.includes("pages/");
     const isApiFile = filename.includes("/api/");
 
     // If file contains Zod, skip template literal security checks entirely
-    const sourceCode = context.getSourceCode();
+    const sourceCode = context.sourceCode;
     const skipTemplateCheck = hasZodImport(sourceCode);
 
     return {

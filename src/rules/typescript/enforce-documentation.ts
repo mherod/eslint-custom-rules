@@ -64,8 +64,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const filename = context.getFilename();
-    const sourceCode = context.getSourceCode();
+    const filename = context.filename;
+    const sourceCode = context.sourceCode;
 
     const isComponentFile = filename.includes("/components/");
     const isHookFile = filename.includes("/hooks/");

@@ -63,7 +63,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const filename = context.getFilename();
+    const filename = context.filename;
+    const sourceCode = context.sourceCode;
 
     if (!isApiRoute(filename)) {
       return {};
@@ -168,7 +169,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         // Validate API route patterns
         if (!hasErrorHandling) {
           context.report({
-            node: context.getSourceCode().ast,
+            node: sourceCode.ast,
             messageId: "missingErrorHandling",
             data: { route: routeName },
           });
@@ -176,7 +177,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         if (!hasInputValidation) {
           context.report({
-            node: context.getSourceCode().ast,
+            node: sourceCode.ast,
             messageId: "missingInputValidation",
             data: { route: routeName },
           });
@@ -184,7 +185,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         if (!hasMethodCheck) {
           context.report({
-            node: context.getSourceCode().ast,
+            node: sourceCode.ast,
             messageId: "missingRequestMethodCheck",
             data: { route: routeName },
           });
@@ -192,7 +193,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         if (!hasStatusCodeHandling) {
           context.report({
-            node: context.getSourceCode().ast,
+            node: sourceCode.ast,
             messageId: "improperStatusCode",
             data: { route: routeName },
           });
@@ -201,7 +202,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         // Check if error responses are properly formed with NextResponse
         if (hasErrorHandling && !hasProperErrorResponse) {
           context.report({
-            node: context.getSourceCode().ast,
+            node: sourceCode.ast,
             messageId: "improperStatusCode",
             data: { route: routeName },
           });
@@ -209,7 +210,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         if (hasDbAccess) {
           context.report({
-            node: context.getSourceCode().ast,
+            node: sourceCode.ast,
             messageId: "unsafeDirectDbAccess",
             data: { route: routeName },
           });
@@ -217,7 +218,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         if (!hasAuthCheck && isProtectedRoute(routeName)) {
           context.report({
-            node: context.getSourceCode().ast,
+            node: sourceCode.ast,
             messageId: "missingAuthCheck",
             data: { route: routeName },
           });

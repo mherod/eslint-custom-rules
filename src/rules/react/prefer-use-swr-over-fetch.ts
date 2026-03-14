@@ -29,7 +29,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   create(context) {
     // Track context information
     let isInCustomHook = false;
-    const hasUseClient = hasUseClientDirective(context.getSourceCode());
+    const hasUseClient = hasUseClientDirective(context.sourceCode);
     let componentOrHookContext = false; // Track if we're anywhere inside a component or hook
 
     // Check if a function name looks like a React component
@@ -191,7 +191,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       }
 
       if (parent) {
-        const sourceCode = context.sourceCode || context.getSourceCode();
+        const sourceCode = context.sourceCode;
         const functionText = sourceCode.getText(parent);
 
         // Look for common state-setting patterns

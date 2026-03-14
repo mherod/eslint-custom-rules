@@ -26,7 +26,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const isClientComponent = hasUseClientDirective(context.getSourceCode());
+    const isClientComponent = hasUseClientDirective(context.sourceCode);
 
     return {
       FunctionDeclaration(node): void {

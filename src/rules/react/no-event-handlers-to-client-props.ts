@@ -26,8 +26,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const filename = context.getFilename();
-    const sourceCode = context.getSourceCode();
+    const filename = context.filename;
+    const sourceCode = context.sourceCode;
 
     // Check if current file is a server component
     let isServerComponent = false;
