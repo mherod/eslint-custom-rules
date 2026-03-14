@@ -2,7 +2,7 @@ import { AST_NODE_TYPES, ESLintUtils } from "@typescript-eslint/utils";
 
 export const RULE_NAME = "no-non-serializable-props";
 
-type MessageIds = "nonSerializableProp";
+type MessageIds = "nonSerializableProp" | "functionProp" | "symbolProp";
 
 type Options = [];
 
@@ -17,6 +17,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     messages: {
       nonSerializableProp:
         "Prop '{{name}}' appears to be non-serializable (Date/Map/Set). Server Components must serialize data (e.g. .toISOString()) before passing to Client Components.",
+      functionProp:
+        "Prop '{{name}}' is a function, which is not serializable across the server/client boundary. Use a Server Action or move to a Client Component.",
+      symbolProp:
+        "Prop '{{name}}' is a Symbol, which is not serializable across the server/client boundary.",
     },
   },
   defaultOptions: [],
@@ -29,21 +33,64 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         const propName = node.name.name;
 
-        // 1. Check for specific dangerous values like "new Date()"
-        if (node.value?.type === AST_NODE_TYPES.JSXExpressionContainer) {
-          const expr = node.value.expression;
+        if (node.value?.type !== AST_NODE_TYPES.JSXExpressionContainer) {
+          return;
+        }
+
+        const expr = node.value.expression;
+
+        // 1. Function expressions/arrow functions as props
+        if (
+          expr.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+          expr.type === AST_NODE_TYPES.FunctionExpression
+        ) {
+          context.report({
+            node,
+            messageId: "functionProp",
+            data: { name: propName },
+          });
+          return;
+        }
+
+        // 2. Symbol() or Symbol.for() as props
+        if (
+          expr.type === AST_NODE_TYPES.CallExpression &&
+          ((expr.callee.type === AST_NODE_TYPES.Identifier &&
+            expr.callee.name === "Symbol") ||
+            (expr.callee.type === AST_NODE_TYPES.MemberExpression &&
+              expr.callee.object.type === AST_NODE_TYPES.Identifier &&
+              expr.callee.object.name === "Symbol"))
+        ) {
+          context.report({
+            node,
+            messageId: "symbolProp",
+            data: { name: propName },
+          });
+          return;
+        }
+
+        // 3. new Date/Map/Set/RegExp and other non-serializable constructors
+        if (
+          expr.type === AST_NODE_TYPES.NewExpression &&
+          expr.callee.type === AST_NODE_TYPES.Identifier
+        ) {
           if (
-            expr.type === AST_NODE_TYPES.NewExpression &&
-            expr.callee.type === AST_NODE_TYPES.Identifier
+            [
+              "Date",
+              "Map",
+              "Set",
+              "RegExp",
+              "WeakMap",
+              "WeakSet",
+              "Error",
+            ].includes(expr.callee.name)
           ) {
-            if (["Date", "Map", "Set"].includes(expr.callee.name)) {
-              context.report({
-                node,
-                messageId: "nonSerializableProp",
-                data: { name: propName },
-              });
-              return;
-            }
+            context.report({
+              node,
+              messageId: "nonSerializableProp",
+              data: { name: propName },
+            });
+            return;
           }
         }
 
@@ -51,16 +98,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         // Common Date field names: createdAt, updatedAt, deletedAt, date, etc.
         // We use a regex that looks for "Date" or "Time" at a word boundary (start or after uppercase)
         // to avoid false positives like "candidate", "update", "estimate".
-        const isPotentialDateProp = /(?:^|[A-Z])(?:Date|Time)(?:$|[A-Z])/.test(
-          propName
-        );
+        const isPotentialDateProp =
+          /(?:^|[a-z])(?:Date|Time)(?:$|[A-Z]|s$)/.test(propName);
 
-        if (
-          isPotentialDateProp &&
-          node.value?.type === AST_NODE_TYPES.JSXExpressionContainer
-        ) {
-          const expr = node.value.expression;
-
+        if (isPotentialDateProp) {
           // Safe if it's a known string conversion method
           if (
             expr.type === AST_NODE_TYPES.CallExpression &&
