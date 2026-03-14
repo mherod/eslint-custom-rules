@@ -111,6 +111,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               "RegExp",
               "WeakMap",
               "WeakSet",
+              "WeakRef",
               "Error",
             ].includes(expr.callee.name)
           ) {

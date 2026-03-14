@@ -110,5 +110,20 @@ ruleTester.run("no-non-serializable-props", rule, {
       code: "<Component pattern={/test/gi} />",
       errors: [{ messageId: "regexProp" }],
     },
+    // new WeakMap() prop
+    {
+      code: "<Component cache={new WeakMap()} />",
+      errors: [{ messageId: "nonSerializableProp" }],
+    },
+    // new WeakSet() prop
+    {
+      code: "<Component visited={new WeakSet()} />",
+      errors: [{ messageId: "nonSerializableProp" }],
+    },
+    // new WeakRef() prop
+    {
+      code: "<Component ref={new WeakRef(target)} />",
+      errors: [{ messageId: "nonSerializableProp" }],
+    },
   ],
 });
