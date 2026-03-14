@@ -76,6 +76,20 @@ ruleTester.run("enforce-admin-separation", rule, {
       `,
       filename: "/src/app/admin/users/page.tsx",
     },
+    // Dynamic import of shared UI — allowed
+    {
+      code: `
+        const Button = await import("@/components/ui/button");
+      `,
+      filename: "/src/app/admin/page.tsx",
+    },
+    // Dynamic import of shared lib — allowed
+    {
+      code: `
+        const api = await import("@/lib/api");
+      `,
+      filename: "/src/app/admin/page.tsx",
+    },
   ],
   invalid: [
     // Public file importing admin component via alias
@@ -93,6 +107,14 @@ ruleTester.run("enforce-admin-separation", rule, {
       `,
       filename: "/src/app/page.tsx",
       errors: [{ messageId: "adminUtilInPublic" }],
+    },
+    // Dynamic import of admin component from public file
+    {
+      code: `
+        const AdminPanel = await import("@/components/admin/panel");
+      `,
+      filename: "/src/app/page.tsx",
+      errors: [{ messageId: "publicImportingAdmin" }],
     },
   ],
 });

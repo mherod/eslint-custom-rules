@@ -104,6 +104,37 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         }
       },
 
+      // Dynamic import() expressions
+      ImportExpression(node: TSESTree.ImportExpression): void {
+        const source = node.source;
+        if (
+          source.type === AST_NODE_TYPES.Literal &&
+          typeof source.value === "string"
+        ) {
+          const importSource = source.value;
+          if (importSource.startsWith(".")) {
+            validateLocalImport(
+              context,
+              node,
+              importSource,
+              filename,
+              isAdminFile,
+              isPublicFile
+            );
+          }
+          if (importSource.startsWith("@/")) {
+            validateAliasImport(
+              context,
+              node,
+              importSource,
+              filename,
+              isAdminFile,
+              isPublicFile
+            );
+          }
+        }
+      },
+
       // Check for admin utilities being called in public files
       CallExpression(node: TSESTree.CallExpression): void {
         if (node.callee.type === AST_NODE_TYPES.Identifier) {
@@ -169,7 +200,7 @@ function isSharedPath(filePath: string): boolean {
 
 function validateLocalImport(
   context: Readonly<TSESLint.RuleContext<string, unknown[]>>,
-  node: TSESTree.ImportDeclaration,
+  node: TSESTree.ImportDeclaration | TSESTree.ImportExpression,
   importSource: string,
   currentFile: string,
   isCurrentAdmin: boolean,
@@ -209,7 +240,7 @@ function validateLocalImport(
 
 function validateAliasImport(
   context: Readonly<TSESLint.RuleContext<string, unknown[]>>,
-  node: TSESTree.ImportDeclaration,
+  node: TSESTree.ImportDeclaration | TSESTree.ImportExpression,
   importSource: string,
   _currentFile: string,
   isCurrentAdmin: boolean,
