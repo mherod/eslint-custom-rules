@@ -120,6 +120,11 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration): void {
         if (node.declaration.type === AST_NODE_TYPES.Identifier) {
           exportedNames.push(node.declaration.name);
+        } else if (
+          node.declaration.type === AST_NODE_TYPES.FunctionDeclaration &&
+          node.declaration.id
+        ) {
+          exportedNames.push(node.declaration.id.name);
         }
       },
 
