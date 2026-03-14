@@ -145,5 +145,25 @@ ruleTester.run("no-non-serializable-props", rule, {
       code: "<Component pending={new Promise(() => {})} />",
       errors: [{ messageId: "nonSerializableProp" }],
     },
+    // new Blob() prop
+    {
+      code: "<Component file={new Blob()} />",
+      errors: [{ messageId: "nonSerializableProp" }],
+    },
+    // new FormData() prop
+    {
+      code: "<Component body={new FormData()} />",
+      errors: [{ messageId: "nonSerializableProp" }],
+    },
+    // new ReadableStream() prop
+    {
+      code: "<Component stream={new ReadableStream()} />",
+      errors: [{ messageId: "nonSerializableProp" }],
+    },
+    // new Worker() prop
+    {
+      code: `<Component worker={new Worker("worker.js")} />`,
+      errors: [{ messageId: "nonSerializableProp" }],
+    },
   ],
 });

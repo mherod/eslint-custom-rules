@@ -117,6 +117,14 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               "SharedArrayBuffer",
               "DataView",
               "Promise",
+              "Blob",
+              "File",
+              "FormData",
+              "URLSearchParams",
+              "ReadableStream",
+              "WritableStream",
+              "MessageChannel",
+              "Worker",
             ].includes(expr.callee.name)
           ) {
             context.report({
