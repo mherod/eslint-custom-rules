@@ -440,6 +440,20 @@ export function isClientOnlyHook(hookName: string): boolean {
   return clientOnlyHooks.includes(hookName);
 }
 
+interface EslintContextLike {
+  filename: string;
+  sourceCode: SourceCodeLike;
+}
+
+/**
+ * Returns true if the ESLint rule context represents a Server Component file.
+ * Convenience wrapper that extracts filename and sourceCode from the context,
+ * eliminating the repetitive 3-line boilerplate across server-component rules.
+ */
+export function isServerComponentContext(context: EslintContextLike): boolean {
+  return isServerComponent(context.filename, context.sourceCode);
+}
+
 export function isUseCacheModule(moduleName: string): boolean {
   // Filename patterns that commonly contain "use cache" functions
   // These should NOT be imported by client components

@@ -1,5 +1,5 @@
 import { AST_NODE_TYPES, ESLintUtils } from "@typescript-eslint/utils";
-import { isServerComponent } from "../utils/component-type-utils";
+import { isServerComponentContext } from "../utils/component-type-utils";
 
 export const RULE_NAME = "no-context-provider-in-server-component";
 
@@ -21,13 +21,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const filename = context.getFilename();
-    const sourceCode = context.getSourceCode();
-
     // Only apply this rule to files that are actually Server Components.
     // Files without "use client" are NOT necessarily server components —
     // they could be utility files, hook files, test files, or non-Next.js code.
-    if (!isServerComponent(filename, sourceCode)) {
+    if (!isServerComponentContext(context)) {
       return {};
     }
 
