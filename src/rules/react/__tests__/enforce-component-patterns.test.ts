@@ -16,30 +16,27 @@ const ruleTester = new RuleTester({
 
 ruleTester.run("enforce-component-patterns", rule, {
   valid: [
-    // export default function — should NOT flag as unexported
+    // export default function without React import (React 17+ JSX transform)
     {
       code: `
-        import React from 'react';
         export default function BrandsPage() {
           return <div>Brands</div>;
         }
       `,
       filename: "/src/app/admin/brands/page.tsx",
     },
-    // export default function in layout
+    // export default function in layout without React import
     {
       code: `
-        import React from 'react';
         export default function RootLayout({ children }: { children: React.ReactNode }) {
           return <html><body>{children}</body></html>;
         }
       `,
       filename: "/src/app/layout.tsx",
     },
-    // Named export function
+    // Named export function without React import
     {
       code: `
-        import React from 'react';
         export function MyComponent() {
           return <div>Hello</div>;
         }
@@ -49,7 +46,6 @@ ruleTester.run("enforce-component-patterns", rule, {
     // Arrow function with named export
     {
       code: `
-        import React from 'react';
         export const MyComponent = () => {
           return <div>Hello</div>;
         };
@@ -59,7 +55,6 @@ ruleTester.run("enforce-component-patterns", rule, {
     // export default with separate identifier
     {
       code: `
-        import React from 'react';
         function MyComponent() {
           return <div>Hello</div>;
         }
@@ -81,7 +76,6 @@ ruleTester.run("enforce-component-patterns", rule, {
     // Component not exported at all
     {
       code: `
-        import React from 'react';
         function MyComponent() {
           return <div>Hello</div>;
         }

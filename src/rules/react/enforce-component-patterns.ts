@@ -18,7 +18,6 @@ type MessageIds =
   | "componentMustHavePropsInterface"
   | "hookMustHaveExplicitReturnType"
   | "componentMustBeExported"
-  | "componentShouldUseReactImport"
   | "componentMustUseForwardRef"
   | "componentShouldUseMemo"
   | "componentShouldHaveDisplayName";
@@ -41,8 +40,6 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         "Hook '{{name}}' must have an explicit return type annotation",
       componentMustBeExported:
         "Component '{{name}}' must be exported (default or named export)",
-      componentShouldUseReactImport:
-        "Component files should import React or use React namespace",
       componentMustUseForwardRef:
         "Component '{{name}}' that accepts ref prop must use React.forwardRef",
       componentShouldUseMemo:
@@ -62,20 +59,11 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     }
 
     const sourceCode = context.getSourceCode();
-    let hasReactImport = false;
     const componentDeclarations: string[] = [];
     const hookDeclarations: string[] = [];
     const exportedNames: string[] = [];
 
     return {
-      ImportDeclaration(node: TSESTree.ImportDeclaration): void {
-        const importSource = node.source.value;
-
-        if (typeof importSource === "string" && importSource === "react") {
-          hasReactImport = true;
-        }
-      },
-
       // Function declarations
       FunctionDeclaration(node: TSESTree.FunctionDeclaration): void {
         if (!node.id) {
@@ -160,14 +148,6 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       "Program:exit"(): void {
-        // Check if component file has React import
-        if (isComponentFile && !hasReactImport) {
-          context.report({
-            node: sourceCode.ast,
-            messageId: "componentShouldUseReactImport",
-          });
-        }
-
         // Check if components are exported
         for (const componentName of componentDeclarations) {
           if (!exportedNames.includes(componentName)) {
