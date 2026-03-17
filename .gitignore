@@ -20,6 +20,9 @@ coverage/
 *.swn
 .DS_Store
 
+# NPM auth (local tokens)
+.npmrc
+
 # Environment variables
 .env
 .env.local
