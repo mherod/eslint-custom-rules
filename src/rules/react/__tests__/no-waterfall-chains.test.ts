@@ -200,6 +200,46 @@ ruleTester.run(RULE_NAME, rule, {
       `,
     },
     {
+      name: "Linear dependency chain: auth → fetch → error handling (3 awaits)",
+      filename: "/api/test/route.ts",
+      code: `
+        async function fetchData(endpoint: string) {
+          const authHeaders = await getAuthHeaders(true);
+          const response = await fetch(url, { headers: { ...authHeaders } });
+          if (!response.ok) {
+            await handleResponseError(response, endpoint);
+          }
+          return parseResponse(response);
+        }
+      `,
+    },
+    {
+      name: "Linear dependency chain: 5 dependent awaits",
+      filename: "/api/test/route.ts",
+      code: `
+        export async function GET() {
+          const auth = await authenticate();
+          const permissions = await getPermissions(auth.userId);
+          const data = await fetchData(permissions.scope);
+          const analytics = await getAnalytics(data.id);
+          const formatted = await formatResponse(analytics);
+          return Response.json(formatted);
+        }
+      `,
+    },
+    {
+      name: "Linear chain with member expression dependency",
+      filename: "/actions/user-actions.ts",
+      code: `
+        export async function processOrder() {
+          const order = await createOrder();
+          const payment = await processPayment(order.id);
+          const receipt = await generateReceipt(payment.transactionId);
+          return receipt;
+        }
+      `,
+    },
+    {
       name: "Complex dependency chain with Promise.all",
       filename: "/api/complex/route.ts",
       code: `

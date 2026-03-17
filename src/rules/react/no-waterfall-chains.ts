@@ -41,8 +41,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     // Each entry tracks state for one async function scope.
     // Using a stack correctly handles nested async functions: the inner
     // function's awaits don't bleed into the outer function's count.
+    interface AwaitInfo {
+      /** Variable name assigned from this await (if any) */
+      assignedTo: string | null;
+      node: TSESTree.AwaitExpression;
+    }
     interface FunctionScope {
-      awaitExpressions: TSESTree.AwaitExpression[];
+      awaits: AwaitInfo[];
       hasPromiseAll: boolean;
       node:
         | TSESTree.FunctionDeclaration
@@ -51,13 +56,103 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     }
     const scopeStack: FunctionScope[] = [];
 
+    /** Collect all Identifier names referenced in a subtree. */
+    function collectReferencedIdentifiers(node: TSESTree.Node): Set<string> {
+      const refs = new Set<string>();
+      function walk(n: TSESTree.Node): void {
+        if (n.type === AST_NODE_TYPES.Identifier) {
+          refs.add(n.name);
+        }
+        for (const key of Object.keys(n)) {
+          if (key === "parent") {
+            continue;
+          }
+          const child = (n as unknown as Record<string, unknown>)[key];
+          if (
+            child &&
+            typeof child === "object" &&
+            "type" in (child as Record<string, unknown>)
+          ) {
+            walk(child as TSESTree.Node);
+          } else if (Array.isArray(child)) {
+            for (const item of child) {
+              if (
+                item &&
+                typeof item === "object" &&
+                "type" in (item as Record<string, unknown>)
+              ) {
+                walk(item as TSESTree.Node);
+              }
+            }
+          }
+        }
+      }
+      walk(node);
+      return refs;
+    }
+
+    /** Get the variable name assigned from an await expression, if any. */
+    function getAssignedVariable(
+      awaitNode: TSESTree.AwaitExpression
+    ): string | null {
+      const parent = awaitNode.parent;
+      if (
+        parent?.type === AST_NODE_TYPES.VariableDeclarator &&
+        parent.id.type === AST_NODE_TYPES.Identifier
+      ) {
+        return parent.id.name;
+      }
+      return null;
+    }
+
+    /**
+     * Check if the await chain is a linear dependency chain.
+     * A chain is linear if each await (after the first) references
+     * the variable assigned by its immediate predecessor. This means
+     * no two awaits could be parallelized because each step requires
+     * the output of the previous step.
+     *
+     * Example of a linear chain (no warning):
+     *   const headers = await getAuth();
+     *   const response = await fetch(url, { headers });
+     *   await handleError(response);
+     *
+     * Example of a parallelizable chain (should warn):
+     *   const user = await getUser();
+     *   const stats = await getStats(user.id);   // depends on user
+     *   const posts = await getPosts(user.id);   // depends on user, NOT stats
+     *   → stats and posts are independent of each other
+     */
+    function isLinearDependencyChain(awaits: AwaitInfo[]): boolean {
+      for (let i = 1; i < awaits.length; i++) {
+        const current = awaits[i];
+        const predecessor = awaits[i - 1];
+        if (current === undefined || predecessor === undefined) {
+          continue;
+        }
+
+        // If the predecessor didn't assign a variable, the chain can't
+        // be proven dependent — treat as potentially parallelizable.
+        if (predecessor.assignedTo === null) {
+          return false;
+        }
+
+        // Check if this await references its immediate predecessor's variable
+        const refs = collectReferencedIdentifiers(current.node.argument);
+        if (!refs.has(predecessor.assignedTo)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
     function pushScope(
       node:
         | TSESTree.FunctionDeclaration
         | TSESTree.ArrowFunctionExpression
         | TSESTree.FunctionExpression
     ): void {
-      scopeStack.push({ node, awaitExpressions: [], hasPromiseAll: false });
+      scopeStack.push({ node, awaits: [], hasPromiseAll: false });
     }
 
     function popScope(
@@ -75,11 +170,16 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       // Report on the third await — the first one that makes it a waterfall.
       // Targeting the await node (not the function declaration) means inline
       // suppression comments on that line take effect correctly.
-      if (top.awaitExpressions.length >= 3 && !top.hasPromiseAll) {
-        const thirdAwait = top.awaitExpressions[2];
+      if (top.awaits.length >= 3 && !top.hasPromiseAll) {
+        // Skip if the chain is sequentially dependent (each await uses
+        // the result of a prior await — cannot be parallelized).
+        if (isLinearDependencyChain(top.awaits)) {
+          return;
+        }
+        const thirdAwait = top.awaits[2];
         if (thirdAwait !== undefined) {
           context.report({
-            node: thirdAwait,
+            node: thirdAwait.node,
             messageId: "noWaterfallChains",
           });
         }
@@ -128,7 +228,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       AwaitExpression(node: TSESTree.AwaitExpression): void {
         const top = scopeStack.at(-1);
         if (top !== undefined) {
-          top.awaitExpressions.push(node);
+          top.awaits.push({
+            node,
+            assignedTo: getAssignedVariable(node),
+          });
         }
       },
 
