@@ -14,6 +14,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Prevent usage of useParams in Client Components; warn against using useSearchParams as a data source instead of a URL sync mechanism",
     },
+    fixable: "code",
     schema: [],
     messages: {
       noUseParamsInClient:

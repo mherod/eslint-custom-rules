@@ -13,6 +13,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Enforce using Cache API over route segment configs for Next.js 16 compatibility",
     },
+    fixable: "code",
     schema: [],
     messages: {
       routeSegmentConfig:
@@ -41,6 +42,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               node: declaration,
               messageId: "routeSegmentConfig",
               data: { name: declaration.id.name },
+              fix(fixer) {
+                const src = context.sourceCode.getText();
+                const end = node.range[1];
+                const removeEnd =
+                  end < src.length && src[end] === "\n" ? end + 1 : end;
+                return fixer.removeRange([node.range[0], removeEnd]);
+              },
             });
           }
         }

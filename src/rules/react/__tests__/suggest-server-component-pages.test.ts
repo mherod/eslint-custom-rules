@@ -81,7 +81,22 @@ import { useState } from 'react';
 
 export default function DashboardPage() {
   const [count, setCount] = useState(0);
-  
+
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      <button onClick={() => setCount(count + 1)}>
+        Count: {count}
+      </button>
+    </div>
+  );
+}`,
+      output: `
+import { useState } from 'react';
+
+export default function DashboardPage() {
+  const [count, setCount] = useState(0);
+
   return (
     <div>
       <h1>Dashboard</h1>
@@ -102,7 +117,7 @@ import { useState } from 'react';
 
 export default function DashboardPage() {
   const [count, setCount] = useState(0);
-  
+
   return (
     <div>
       <h1>Dashboard</h1>
@@ -122,6 +137,10 @@ export default function DashboardPage() {
       filename: "/project/app/page.tsx",
       code: `"use client";
 
+export default function HomePage() {
+  return <div>Home</div>;
+}`,
+      output: `
 export default function HomePage() {
   return <div>Home</div>;
 }`,
@@ -151,7 +170,17 @@ export default function UsersPage() {
   useEffect(() => {
     console.log('Component mounted');
   }, []);
-  
+
+  return <div>Users</div>;
+}`,
+      output: `
+import { useEffect } from 'react';
+
+export default function UsersPage() {
+  useEffect(() => {
+    console.log('Component mounted');
+  }, []);
+
   return <div>Users</div>;
 }`,
       errors: [
@@ -167,7 +196,7 @@ export default function UsersPage() {
   useEffect(() => {
     console.log('Component mounted');
   }, []);
-  
+
   return <div>Users</div>;
 }`,
             },

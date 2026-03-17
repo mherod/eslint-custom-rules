@@ -16,6 +16,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Disallow conflicting 'use client' and 'use server' directives in the same file.",
     },
+    fixable: "code",
     messages: {
       conflictingDirectives:
         "It's not possible to have both 'use client' and 'use server' directives in the same file. " +
@@ -30,6 +31,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       Program(node: TSESTree.Program): void {
         let hasUseClient = false;
         let hasUseServer = false;
+        let useServerNode: TSESTree.ExpressionStatement | null = null;
 
         for (const statement of node.body) {
           if (
@@ -41,6 +43,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               hasUseClient = true;
             } else if (statement.directive === "use server") {
               hasUseServer = true;
+              useServerNode = statement as TSESTree.ExpressionStatement;
             }
           } else if (
             statement.type === AST_NODE_TYPES.ExpressionStatement &&
@@ -51,12 +54,29 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               hasUseClient = true;
             } else if (statement.expression.value === "use server") {
               hasUseServer = true;
+              useServerNode = statement;
             }
           }
         }
 
         if (hasUseClient && hasUseServer) {
-          context.report({ node, messageId: "conflictingDirectives" });
+          context.report({
+            node,
+            messageId: "conflictingDirectives",
+            fix: useServerNode
+              ? (fixer) => {
+                  const src = context.sourceCode.getText();
+                  const end = (useServerNode as TSESTree.ExpressionStatement)
+                    .range[1];
+                  const removeEnd =
+                    end < src.length && src[end] === "\n" ? end + 1 : end;
+                  return fixer.removeRange([
+                    (useServerNode as TSESTree.ExpressionStatement).range[0],
+                    removeEnd,
+                  ]);
+                }
+              : null,
+          });
         }
       },
     };

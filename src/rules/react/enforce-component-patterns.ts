@@ -30,6 +30,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     docs: {
       description: "Enforce consistent component architecture patterns",
     },
+    fixable: "code",
     schema: [],
     messages: {
       componentMustBePascalCase:

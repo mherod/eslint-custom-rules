@@ -137,6 +137,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Prefer Promise.all() over sequential awaits for independent data fetches in server components and pages",
     },
+    fixable: "code",
     schema: [],
     messages: {
       preferPromiseAll:

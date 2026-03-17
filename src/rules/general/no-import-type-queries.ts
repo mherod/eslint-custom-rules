@@ -1,4 +1,8 @@
-import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from "@typescript-eslint/utils";
 
 export const RULE_NAME = "no-import-type-queries";
 
@@ -12,6 +16,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Disallow import() type queries and require top-level type imports.",
     },
+    fixable: "code",
     schema: [],
     messages: {
       noImportTypeQueries:
@@ -37,6 +42,15 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           node,
           messageId: "noImportTypeQueries",
           data: { moduleHint },
+          fix(fixer) {
+            if (
+              !node.qualifier ||
+              node.qualifier.type !== AST_NODE_TYPES.Identifier
+            ) {
+              return null;
+            }
+            return fixer.replaceText(node, node.qualifier.name);
+          },
         });
       },
     };

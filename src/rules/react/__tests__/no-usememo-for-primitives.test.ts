@@ -54,51 +54,61 @@ ruleTester.run(RULE_NAME, rule, {
       // Number arithmetic — always produces a number
       code: "const sum = useMemo(() => a + b, [a, b]);",
       errors: [{ messageId: "noUseMemoForPrimitive" }],
+      output: "const sum = a + b;",
     },
     {
       // String concatenation
       code: "const label = useMemo(() => `Hello ${name}`, [name]);",
       errors: [{ messageId: "noUseMemoForPrimitive" }],
+      output: "const label = `Hello ${name}`;",
     },
     {
       // Boolean comparison
       code: "const isActive = useMemo(() => count > 0, [count]);",
       errors: [{ messageId: "noUseMemoForPrimitive" }],
+      output: "const isActive = count > 0;",
     },
     {
       // Literal return
       code: "const val = useMemo(() => 42, []);",
       errors: [{ messageId: "noUseMemoForPrimitive" }],
+      output: "const val = 42;",
     },
     {
       // String literal
       code: "const val = useMemo(() => 'hello', []);",
       errors: [{ messageId: "noUseMemoForPrimitive" }],
+      output: "const val = 'hello';",
     },
     {
       // Boolean literal
       code: "const val = useMemo(() => true, []);",
       errors: [{ messageId: "noUseMemoForPrimitive" }],
+      output: "const val = true;",
     },
     {
       // Block body with single return of primitive
       code: "const val = useMemo(() => { return a * b; }, [a, b]);",
       errors: [{ messageId: "noUseMemoForPrimitive" }],
+      output: "const val = a * b;",
     },
     {
       // Ternary returning literals on both branches
       code: "const val = useMemo(() => isOn ? 1 : 0, [isOn]);",
       errors: [{ messageId: "noUseMemoForPrimitive" }],
+      output: "const val = isOn ? 1 : 0;",
     },
     {
       // Unary expression
       code: "const val = useMemo(() => !flag, [flag]);",
       errors: [{ messageId: "noUseMemoForPrimitive" }],
+      output: "const val = !flag;",
     },
     {
       // Logical OR with both literal operands — provably primitive
       code: "const val = useMemo(() => true || false, []);",
       errors: [{ messageId: "noUseMemoForPrimitive" }],
+      output: "const val = true || false;",
     },
   ],
 });

@@ -25,6 +25,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Enforce separation between admin and public code to prevent unauthorized access",
     },
+    fixable: "code",
     schema: [],
     messages: {
       publicImportingAdmin:

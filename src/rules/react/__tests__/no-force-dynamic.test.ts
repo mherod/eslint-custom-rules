@@ -91,6 +91,7 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "noForceDynamic",
         },
       ],
+      output: "\n      ",
     },
     {
       name: 'export const dynamic = "force-dynamic" with single quotes',
@@ -102,6 +103,7 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "noForceDynamic",
         },
       ],
+      output: "\n      ",
     },
     {
       name: 'export const dynamic = "force-dynamic" in a page file',
@@ -119,6 +121,14 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "noForceDynamic",
         },
       ],
+      output: `
+        import { NextRequest } from "next/server";
+
+
+        export async function GET(request: NextRequest) {
+          return new Response("Hello World");
+        }
+      `,
     },
     {
       name: 'export const dynamic = "force-dynamic" with extra whitespace',
@@ -130,6 +140,7 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "noForceDynamic",
         },
       ],
+      output: "\n      ",
     },
     {
       name: 'Multiple exports, one with dynamic = "force-dynamic"',
@@ -143,6 +154,10 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "noForceDynamic",
         },
       ],
+      output: `
+        export const revalidate = 300;
+        export const runtime = "nodejs";
+      `,
     },
   ],
 });

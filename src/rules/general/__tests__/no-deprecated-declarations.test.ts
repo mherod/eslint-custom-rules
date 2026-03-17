@@ -40,6 +40,10 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "deprecatedDeclaration",
         },
       ],
+      output: `
+        /**/
+        export const oldThing = 42;
+      `,
     },
     {
       name: "deprecated exported function",
@@ -52,6 +56,10 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "deprecatedDeclaration",
         },
       ],
+      output: `
+        /**/
+        export function oldFunction() {}
+      `,
     },
     {
       name: "deprecated exported default class",
@@ -64,6 +72,10 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "deprecatedDeclaration",
         },
       ],
+      output: `
+        /**/
+        export default class OldClass {}
+      `,
     },
     {
       name: "deprecated exported type alias",
@@ -76,6 +88,10 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "deprecatedDeclaration",
         },
       ],
+      output: `
+        /**/
+        export type OldType = string;
+      `,
     },
   ],
 });

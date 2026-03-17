@@ -117,6 +117,14 @@ ruleTester.run("prefer-start-transition-for-server-actions", rule, {
         }
       `,
       errors: [{ messageId: "serverActionNeedsStartTransition" }],
+      output: `
+        "use client";
+        import { createPost } from "@/actions/post.action";
+
+        function handleSubmit(formData: FormData) {
+          startTransition(() => { createPost(formData); });
+        }
+      `,
     },
     {
       name: "ERROR: Server action from /actions/ directory without startTransition",
@@ -129,6 +137,14 @@ ruleTester.run("prefer-start-transition-for-server-actions", rule, {
         }
       `,
       errors: [{ messageId: "serverActionNeedsStartTransition" }],
+      output: `
+        "use client";
+        import { updateUser } from "@/lib/actions/user";
+
+        function handleUpdate(formData: FormData) {
+          startTransition(() => { updateUser(formData); });
+        }
+      `,
     },
     {
       name: "ERROR: Multiple server action calls without startTransition",
@@ -146,6 +162,16 @@ ruleTester.run("prefer-start-transition-for-server-actions", rule, {
         { messageId: "serverActionNeedsStartTransition" },
         { messageId: "serverActionNeedsStartTransition" },
       ],
+      output: `
+        "use client";
+        import { createPost } from "@/actions/post.action";
+        import { updateUser } from "@/lib/actions/user";
+
+        function handleBatch(formData: FormData) {
+          startTransition(() => { createPost(formData); });
+          startTransition(() => { updateUser(formData); });
+        }
+      `,
     },
     {
       name: "ERROR: Server action call with new FormData() argument",
@@ -162,6 +188,18 @@ ruleTester.run("prefer-start-transition-for-server-actions", rule, {
         }
       `,
       errors: [{ messageId: "serverActionNeedsStartTransition" }],
+      output: `
+        "use client";
+        import { createPost } from "@/actions/post.action";
+
+        function MyComponent() {
+          return (
+            <button onClick={() => startTransition(() => { createPost(new FormData()); })}>
+              Submit
+            </button>
+          );
+        }
+      `,
     },
     {
       name: "ERROR: Server action with request parameter pattern",
@@ -174,6 +212,14 @@ ruleTester.run("prefer-start-transition-for-server-actions", rule, {
         }
       `,
       errors: [{ messageId: "serverActionNeedsStartTransition" }],
+      output: `
+        "use client";
+        import { callApi } from "@/actions/api.action";
+
+        function handleApi(request: Request) {
+          startTransition(() => { callApi(request); });
+        }
+      `,
     },
   ],
 });

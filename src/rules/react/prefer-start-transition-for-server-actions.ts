@@ -21,6 +21,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Server Action calls should be wrapped in startTransition to synchronize UI updates with server action completion and data revalidation.",
     },
+    fixable: "code",
     schema: [],
     messages: {
       serverActionNeedsStartTransition:
@@ -45,6 +46,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             node,
             messageId: "serverActionNeedsStartTransition",
             data: { actionName: getActionName(node) },
+            fix(fixer) {
+              const callText = context.sourceCode.getText(node);
+              return fixer.replaceText(
+                node,
+                `startTransition(() => { ${callText}; })`
+              );
+            },
           });
         }
       },

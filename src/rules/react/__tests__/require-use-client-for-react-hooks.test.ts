@@ -39,12 +39,14 @@ ruleTester.run("require-use-client-for-react-hooks", rule, {
       code: `import { useRef } from "react";\nexport function Comp() { const ref = useRef(null); return null; }`,
       filename: "/app/components/Comp.tsx",
       errors: [{ messageId: "missingUseClientDirective" }],
+      output: `"use client";\nimport { useRef } from "react";\nexport function Comp() { const ref = useRef(null); return null; }`,
     },
     {
       name: "Missing use client with React.useState",
       code: `import React from "react";\nexport function Comp() { React.useState(0); return null; }`,
       filename: "/app/components/Comp.tsx",
       errors: [{ messageId: "missingUseClientDirective" }],
+      output: `"use client";\nimport React from "react";\nexport function Comp() { React.useState(0); return null; }`,
     },
     {
       name: "Missing use client with aliased hook imports",
@@ -54,6 +56,7 @@ ruleTester.run("require-use-client-for-react-hooks", rule, {
         { messageId: "missingUseClientDirective" },
         { messageId: "missingUseClientDirective" },
       ],
+      output: `"use client";\nimport { useMemo as useMemoReact, useEffect } from "react";\nexport function Comp() { useMemoReact(() => 1, []); useEffect(() => {}); return null; }`,
     },
   ],
 });

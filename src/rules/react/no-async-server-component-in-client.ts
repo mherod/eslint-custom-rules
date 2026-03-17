@@ -146,6 +146,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Disallow async server components in client components to prevent infinite render loops",
     },
+    fixable: "code",
     schema: [],
     messages: {
       asyncServerComponentInClient:

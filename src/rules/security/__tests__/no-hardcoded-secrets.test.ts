@@ -55,30 +55,35 @@ ruleTester.run("no-hardcoded-secrets", rule, {
       code: `const key = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef1234";`,
       filename: SERVER_FILE,
       errors: [{ messageId: "noHardcodedSecrets" }],
+      output: "const key = process.env.SECRET_KEY;",
     },
     // 32-char hex string — matches hex secret pattern
     {
       code: `const secret = "0123456789abcdef0123456789abcdef";`,
       filename: SERVER_FILE,
       errors: [{ messageId: "noHardcodedSecrets" }],
+      output: "const secret = process.env.SECRET_KEY;",
     },
     // JWT-like token — matches ey... pattern
     {
       code: `const token = "eyJhbGciOiJIUzI1NiJ9somePayload";`,
       filename: SERVER_FILE,
       errors: [{ messageId: "noHardcodedSecrets" }],
+      output: "const token = process.env.SECRET_KEY;",
     },
     // GitHub personal access token in client component — matches isApiKeyOrSecret
     {
       code: `const token = "ghp_SomeShortGitHubKey";`,
       filename: CLIENT_FILE,
       errors: [{ messageId: "noClientSideSecrets" }],
+      output: "const token = process.env.TOKEN;",
     },
     // Stripe public key in client component — matches isApiKeyOrSecret
     {
       code: `const pk = "pk_live_test123456789";`,
       filename: CLIENT_FILE,
       errors: [{ messageId: "noClientSideSecrets" }],
+      output: "const pk = process.env.PK;",
     },
   ],
 });

@@ -15,6 +15,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Detect potential SQL injection vulnerabilities from string concatenation in query functions",
     },
+    fixable: "code",
     schema: [],
     messages: {
       noSqlInjection:

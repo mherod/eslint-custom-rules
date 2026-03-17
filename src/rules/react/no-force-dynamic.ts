@@ -16,6 +16,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     docs: {
       description: 'Prevent usage of export const dynamic = "force-dynamic"',
     },
+    fixable: "code",
     schema: [],
     messages: {
       noForceDynamic:
@@ -56,6 +57,21 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               context.report({
                 node: declaration,
                 messageId: "noForceDynamic",
+                fix(fixer) {
+                  const exportDecl = node.parent;
+                  const src = context.sourceCode.getText();
+                  let start = exportDecl.range[0];
+                  while (
+                    start > 0 &&
+                    (src[start - 1] === " " || src[start - 1] === "\t")
+                  ) {
+                    start--;
+                  }
+                  const end = exportDecl.range[1];
+                  const removeEnd =
+                    end < src.length && src[end] === "\n" ? end + 1 : end;
+                  return fixer.removeRange([start, removeEnd]);
+                },
               });
             }
           }

@@ -16,6 +16,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Encourage creating reusable custom hooks when using useSWR with complex logic",
     },
+    fixable: "code",
     schema: [],
     messages: {
       preferReusableSwrHook:

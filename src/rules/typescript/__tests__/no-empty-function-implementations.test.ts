@@ -75,6 +75,11 @@ ruleTester.run("no-empty-function-implementations", rule, {
           },
         },
       ],
+      output: `
+        const emptyArrow = () => {
+  throw new Error("Not implemented");
+};
+      `,
     },
     {
       code: `
@@ -88,6 +93,11 @@ ruleTester.run("no-empty-function-implementations", rule, {
           },
         },
       ],
+      output: `
+        function emptyFunction() {
+  throw new Error("Not implemented");
+}
+      `,
     },
     {
       code: `
@@ -101,6 +111,11 @@ ruleTester.run("no-empty-function-implementations", rule, {
           },
         },
       ],
+      output: `
+        const emptyFunctionExpr = function() {
+  throw new Error("Not implemented");
+};
+      `,
     },
     {
       code: `
@@ -116,6 +131,13 @@ ruleTester.run("no-empty-function-implementations", rule, {
           },
         },
       ],
+      output: `
+        const obj = {
+          emptyMethod() {
+  throw new Error("Not implemented");
+}
+        };
+      `,
     },
     {
       code: `
@@ -131,6 +153,13 @@ ruleTester.run("no-empty-function-implementations", rule, {
           },
         },
       ],
+      output: `
+        class MyClass {
+          emptyMethod() {
+  throw new Error("Not implemented");
+}
+        }
+      `,
     },
     {
       code: `
@@ -147,6 +176,14 @@ ruleTester.run("no-empty-function-implementations", rule, {
           },
         },
       ],
+      output: `
+        const Component = () => {
+          const handleClick = () => {
+  throw new Error("Not implemented");
+};
+          return <button onClick={handleClick}>Click</button>;
+        };
+      `,
     },
     // Multiple empty functions in one file
     {
@@ -175,6 +212,17 @@ ruleTester.run("no-empty-function-implementations", rule, {
           },
         },
       ],
+      output: `
+        const empty1 = () => {
+  throw new Error("Not implemented");
+};
+        const empty2 = function() {
+  throw new Error("Not implemented");
+};
+        function empty3() {
+  throw new Error("Not implemented");
+}
+      `,
     },
   ],
 });

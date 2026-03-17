@@ -18,6 +18,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Suggest using the 'use' hook for Promise props in Client Components to support streaming",
     },
+    fixable: "code",
     schema: [],
     messages: {
       preferUseHook:

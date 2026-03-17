@@ -37,6 +37,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     docs: {
       description: "Enforce consistent API route patterns and best practices",
     },
+    fixable: "code",
     schema: [],
     messages: {
       missingErrorHandling:

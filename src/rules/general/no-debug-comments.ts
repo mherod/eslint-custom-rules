@@ -79,6 +79,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Disallow debug comments, thinking notes, and incomplete markers in production code",
     },
+    fixable: "code",
     schema: [],
     messages: {
       debugComment:
@@ -113,6 +114,28 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
                 text:
                   comment.value.trim().slice(0, 50) +
                   (comment.value.length > 50 ? "..." : ""),
+              },
+              fix(fixer) {
+                if (!comment.range) {
+                  return null;
+                }
+                const src = context.sourceCode.getText();
+                const start = comment.range[0];
+                const end = comment.range[1];
+                // Find the start of the line to check if comment is standalone
+                let lineStart = start;
+                while (lineStart > 0 && src[lineStart - 1] !== "\n") {
+                  lineStart--;
+                }
+                const isStandalone = /^\s*$/.test(src.slice(lineStart, start));
+                if (isStandalone) {
+                  // Remove entire line including trailing newline
+                  const removeEnd =
+                    end < src.length && src[end] === "\n" ? end + 1 : end;
+                  return fixer.removeRange([lineStart, removeEnd]);
+                }
+                // Inline comment — remove from comment start to end of line
+                return fixer.removeRange([start, end]);
               },
             });
           }

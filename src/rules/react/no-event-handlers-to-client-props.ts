@@ -18,6 +18,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Prevent passing event handlers to Client Component props in Next.js applications",
     },
+    fixable: "code",
     schema: [],
     messages: {
       eventHandlerToClientProp:

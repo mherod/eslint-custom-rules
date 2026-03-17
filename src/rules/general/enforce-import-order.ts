@@ -27,6 +27,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     docs: {
       description: "Enforce consistent import ordering and grouping",
     },
+    fixable: "code",
     schema: [],
     messages: {
       wrongOrder:
@@ -209,6 +210,13 @@ function validateEmptyLinesBetweenGroups(
               currentGroup: currentGroup.type,
               nextGroup: nextGroup.type,
             },
+            fix(fixer) {
+              const lastImport = currentGroup.imports.at(-1);
+              if (!lastImport) {
+                return null;
+              }
+              return fixer.insertTextAfter(lastImport, "\n");
+            },
           });
         }
       } else if (linesBetween > 1) {
@@ -218,6 +226,16 @@ function validateEmptyLinesBetweenGroups(
             node: nextImport,
             messageId: "extraEmptyLine",
             data: { group: nextGroup.type },
+            fix(fixer) {
+              const lastImport = currentGroup.imports.at(-1);
+              if (!(lastImport?.range && nextImport.range)) {
+                return null;
+              }
+              return fixer.replaceTextRange(
+                [lastImport.range[1], nextImport.range[0]],
+                "\n\n"
+              );
+            },
           });
         }
       }

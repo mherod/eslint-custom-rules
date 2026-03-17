@@ -76,6 +76,13 @@ ruleTester.run("no-use-state-in-async-component", rule, {
           messageId: "noUseStateInAsyncComponent",
         },
       ],
+      output: `
+        "use client";
+async function MyComponent() {
+          const [state, setState] = useState(0);
+          return <div>{state}</div>;
+        }
+      `,
     },
     // Async arrow function component with useState - should error
     {
@@ -90,6 +97,13 @@ ruleTester.run("no-use-state-in-async-component", rule, {
           messageId: "noUseStateInAsyncComponent",
         },
       ],
+      output: `
+        "use client";
+const MyComponent = async () => {
+          const [state, setState] = useState(0);
+          return <div>{state}</div>;
+        };
+      `,
     },
     // Async component with React.useState - should error
     {
@@ -104,6 +118,13 @@ ruleTester.run("no-use-state-in-async-component", rule, {
           messageId: "noUseStateInAsyncComponent",
         },
       ],
+      output: `
+        "use client";
+async function MyComponent() {
+          const [state, setState] = React.useState(0);
+          return <div>{state}</div>;
+        }
+      `,
     },
     // Async component with multiple useState calls - should error on each
     {
@@ -122,6 +143,15 @@ ruleTester.run("no-use-state-in-async-component", rule, {
           messageId: "noUseStateInAsyncComponent",
         },
       ],
+      // Both fixes insert at the same position; only one is applied per pass
+      output: `
+        "use client";
+async function MyComponent() {
+          const [state1, setState1] = useState(0);
+          const [state2, setState2] = useState("");
+          return <div>{state1} {state2}</div>;
+        }
+      `,
     },
     // Export default async component with useState - should error
     {
@@ -136,6 +166,13 @@ ruleTester.run("no-use-state-in-async-component", rule, {
           messageId: "noUseStateInAsyncComponent",
         },
       ],
+      output: `
+        "use client";
+export default async function() {
+          const [state, setState] = useState(0);
+          return <div>{state}</div>;
+        }
+      `,
     },
   ],
 });

@@ -21,6 +21,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Prevent usage of Math.random() in React components that can cause state instability and unwanted re-renders",
     },
+    fixable: "code",
     schema: [],
     messages: {
       avoidMathRandomInRender:

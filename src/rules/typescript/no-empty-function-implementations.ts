@@ -17,6 +17,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Detect empty function implementations that indicate incomplete code",
     },
+    fixable: "code",
     schema: [],
     messages: {
       emptyFunctionImplementation:
@@ -35,8 +36,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           context.report({
             node,
             messageId: "emptyFunctionImplementation",
-            data: {
-              functionType: "arrow function",
+            data: { functionType: "arrow function" },
+            fix(fixer) {
+              return fixer.replaceText(
+                node.body as TSESTree.BlockStatement,
+                '{\n  throw new Error("Not implemented");\n}'
+              );
             },
           });
         }
@@ -52,8 +57,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           context.report({
             node,
             messageId: "emptyFunctionImplementation",
-            data: {
-              functionType: "function expression",
+            data: { functionType: "function expression" },
+            fix(fixer) {
+              return fixer.replaceText(
+                node.body as TSESTree.BlockStatement,
+                '{\n  throw new Error("Not implemented");\n}'
+              );
             },
           });
         }
@@ -65,8 +74,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           context.report({
             node,
             messageId: "emptyFunctionImplementation",
-            data: {
-              functionType: "function declaration",
+            data: { functionType: "function declaration" },
+            fix(fixer) {
+              return fixer.replaceText(
+                node.body as TSESTree.BlockStatement,
+                '{\n  throw new Error("Not implemented");\n}'
+              );
             },
           });
         }
@@ -79,13 +92,17 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           node.value.type === AST_NODE_TYPES.FunctionExpression &&
           isEmptyFunction(node.value)
         ) {
-          // Mark this function as already reported to avoid double reporting
           reportedNodes.add(node.value);
           context.report({
             node: node.value,
             messageId: "emptyFunctionImplementation",
-            data: {
-              functionType: "method",
+            data: { functionType: "method" },
+            fix(fixer) {
+              return fixer.replaceText(
+                (node.value as TSESTree.FunctionExpression)
+                  .body as TSESTree.BlockStatement,
+                '{\n  throw new Error("Not implemented");\n}'
+              );
             },
           });
         }
@@ -100,13 +117,19 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             node.value.type === AST_NODE_TYPES.ArrowFunctionExpression) &&
           isEmptyFunction(node.value)
         ) {
-          // Mark this function as already reported to avoid double reporting
           reportedNodes.add(node.value);
           context.report({
             node: node.value,
             messageId: "emptyFunctionImplementation",
-            data: {
-              functionType: "object method",
+            data: { functionType: "object method" },
+            fix(fixer) {
+              const fn = node.value as
+                | TSESTree.FunctionExpression
+                | TSESTree.ArrowFunctionExpression;
+              return fixer.replaceText(
+                fn.body as TSESTree.BlockStatement,
+                '{\n  throw new Error("Not implemented");\n}'
+              );
             },
           });
         }

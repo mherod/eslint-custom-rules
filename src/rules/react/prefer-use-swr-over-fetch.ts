@@ -17,6 +17,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Prefer useSWR over direct fetch calls in client components and hooks for better caching, revalidation, and error handling",
     },
+    fixable: "code",
     schema: [],
     messages: {
       preferUseSWROverFetch:

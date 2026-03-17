@@ -17,6 +17,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Warn about sequential data fetching in Server Components which causes waterfalls",
     },
+    fixable: "code",
     schema: [],
     messages: {
       sequentialAwait:

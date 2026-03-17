@@ -45,6 +45,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         "Enforce server/client code boundary separation in Next.js applications. " +
         "Action files can be imported by clients, but server-only modules cannot.",
     },
+    fixable: "code",
     schema: [],
     messages: {
       clientImportingServerModule:

@@ -35,11 +35,13 @@ ruleTester.run("no-conflicting-directives", rule, {
     {
       code: `"use client";\n"use server";`,
       errors: [{ messageId: "conflictingDirectives" }],
+      output: `"use client";\n`,
     },
     // Both directives — use server first
     {
       code: `"use server";\n"use client";`,
       errors: [{ messageId: "conflictingDirectives" }],
+      output: `"use client";`,
     },
   ],
 });

@@ -16,6 +16,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Use Next.js after() for non-blocking operations like logging and analytics to prevent blocking the response",
     },
+    fixable: "code",
     schema: [],
     messages: {
       useAfterForNonBlocking:
@@ -86,7 +87,14 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       AwaitExpression(node: TSESTree.AwaitExpression): void {
         if (functionStack.length > 0 && !insideAfterCall) {
           if (isSideEffectCall(node.argument)) {
-            context.report({ node, messageId: "useAfterForNonBlocking" });
+            context.report({
+              node,
+              messageId: "useAfterForNonBlocking",
+              fix(fixer) {
+                const argText = context.sourceCode.getText(node.argument);
+                return fixer.replaceText(node, `after(() => ${argText})`);
+              },
+            });
           }
         }
       },

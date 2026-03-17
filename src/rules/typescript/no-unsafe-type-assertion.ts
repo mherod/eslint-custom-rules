@@ -161,6 +161,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Disallow type assertions used to bypass the type system for property access or Object.keys iteration",
     },
+    fixable: "code",
     schema: [],
     messages: {
       noIndexAccessCast:

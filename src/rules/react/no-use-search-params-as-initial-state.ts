@@ -79,6 +79,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Prevent using useSearchParams() as the source of useState initial values in Client Components",
     },
+    fixable: "code",
     schema: [],
     messages: {
       noSearchParamsAsInitialState:

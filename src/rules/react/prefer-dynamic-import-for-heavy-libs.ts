@@ -103,6 +103,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Prefer next/dynamic for importing heavy component libraries to avoid including them in the initial bundle. This significantly improves initial page load performance.",
     },
+    fixable: "code",
     schema: [],
     messages: {
       preferDynamicImport:

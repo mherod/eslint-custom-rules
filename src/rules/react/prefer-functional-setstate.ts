@@ -144,6 +144,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Prefer functional setState updates (setState(curr => ...)) when the new value depends on the current state to prevent stale closures",
     },
+    fixable: "code",
     schema: [],
     messages: {
       preferFunctionalSetState:
@@ -233,6 +234,24 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           data: {
             stateVar: stateVarName,
             setter: setterName,
+          },
+          fix(fixer) {
+            const argText = context.sourceCode.getText(
+              arg as TSESTree.Expression
+            );
+            const replaced = argText.replace(
+              new RegExp(`\\b${stateVarName}\\b`, "g"),
+              "curr"
+            );
+            const body =
+              (arg as TSESTree.Expression).type ===
+              AST_NODE_TYPES.ObjectExpression
+                ? `(${replaced})`
+                : replaced;
+            return fixer.replaceText(
+              arg as TSESTree.Expression,
+              `curr => ${body}`
+            );
           },
         });
       },

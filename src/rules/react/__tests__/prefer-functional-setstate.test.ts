@@ -74,6 +74,10 @@ ruleTester.run("prefer-functional-setstate", rule, {
           data: { stateVar: "count", setter: "setCount" },
         },
       ],
+      output: `
+        const [count, setCount] = useState(0);
+        setCount(curr => curr + 1);
+      `,
     },
     // State var in arithmetic expression
     {
@@ -87,6 +91,10 @@ ruleTester.run("prefer-functional-setstate", rule, {
           data: { stateVar: "total", setter: "setTotal" },
         },
       ],
+      output: `
+        const [total, setTotal] = useState(0);
+        setTotal(curr => curr + amount);
+      `,
     },
     // State var in spread
     {
@@ -100,8 +108,12 @@ ruleTester.run("prefer-functional-setstate", rule, {
           data: { stateVar: "items", setter: "setItems" },
         },
       ],
+      output: `
+        const [items, setItems] = useState([]);
+        setItems(curr => [...curr, newItem]);
+      `,
     },
-    // State var in object spread
+    // State var in object spread — object literal needs parens in arrow body
     {
       code: `
         const [user, setUser] = useState({});
@@ -113,6 +125,10 @@ ruleTester.run("prefer-functional-setstate", rule, {
           data: { stateVar: "user", setter: "setUser" },
         },
       ],
+      output: `
+        const [user, setUser] = useState({});
+        setUser(curr => ({ ...curr, name: 'Alice' }));
+      `,
     },
     // State var in conditional
     {
@@ -126,6 +142,10 @@ ruleTester.run("prefer-functional-setstate", rule, {
           data: { stateVar: "flag", setter: "setFlag" },
         },
       ],
+      output: `
+        const [flag, setFlag] = useState(false);
+        setFlag(curr => !curr);
+      `,
     },
     // React.useState — non-functional setter referencing state
     {
@@ -139,6 +159,10 @@ ruleTester.run("prefer-functional-setstate", rule, {
           data: { stateVar: "count", setter: "setCount" },
         },
       ],
+      output: `
+        const [count, setCount] = React.useState(0);
+        setCount(curr => curr + 1);
+      `,
     },
     // State var inside template literal
     {
@@ -152,6 +176,10 @@ ruleTester.run("prefer-functional-setstate", rule, {
           data: { stateVar: "label", setter: "setLabel" },
         },
       ],
+      output: `
+        const [label, setLabel] = useState('');
+        setLabel(curr => \`prefix-\${curr}\`);
+      `,
     },
   ],
 });

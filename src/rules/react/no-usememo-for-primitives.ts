@@ -100,6 +100,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Do not wrap a simple expression with a primitive result type in useMemo. The overhead of useMemo exceeds any gains when the result is a primitive value.",
     },
+    fixable: "code",
     schema: [],
     messages: {
       noUseMemoForPrimitive:
@@ -132,6 +133,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           context.report({
             node,
             messageId: "noUseMemoForPrimitive",
+            fix(fixer) {
+              return fixer.replaceText(node, context.sourceCode.getText(body));
+            },
           });
         }
       },

@@ -251,6 +251,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: 'Thinking comment: "Should I"',
@@ -259,6 +262,9 @@ ruleTester.run(RULE_NAME, rule, {
         function process() {}
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        function process() {}
+      `,
     },
     {
       name: 'Thinking comment: "Maybe I"',
@@ -267,6 +273,9 @@ ruleTester.run(RULE_NAME, rule, {
         const data = [];
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        const data = [];
+      `,
     },
     {
       name: 'Thinking comment: "I think"',
@@ -275,6 +284,9 @@ ruleTester.run(RULE_NAME, rule, {
         return result;
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        return result;
+      `,
     },
     {
       name: 'Thinking comment: "I\'m not sure"',
@@ -283,6 +295,9 @@ ruleTester.run(RULE_NAME, rule, {
         if (condition) {}
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        if (condition) {}
+      `,
     },
     {
       name: 'Thinking comment: "I should probably"',
@@ -291,6 +306,9 @@ ruleTester.run(RULE_NAME, rule, {
         const input = getData();
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        const input = getData();
+      `,
     },
     {
       name: 'Thinking comment: "I will just"',
@@ -299,6 +317,9 @@ ruleTester.run(RULE_NAME, rule, {
         doSomething();
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        doSomething();
+      `,
     },
     {
       name: 'Thinking comment: "Is X static or dynamic?"',
@@ -307,6 +328,9 @@ ruleTester.run(RULE_NAME, rule, {
         export default function Page() {}
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        export default function Page() {}
+      `,
     },
     {
       name: 'Thinking comment: "That contradicts"',
@@ -315,6 +339,9 @@ ruleTester.run(RULE_NAME, rule, {
         export const revalidate = 900;
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        export const revalidate = 900;
+      `,
     },
     {
       name: 'Thinking comment: "Removed?"',
@@ -323,6 +350,9 @@ ruleTester.run(RULE_NAME, rule, {
         await connection();
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        await connection();
+      `,
     },
     {
       name: "Thinking comment: !!??",
@@ -331,6 +361,9 @@ ruleTester.run(RULE_NAME, rule, {
         unstable_noStore();
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        unstable_noStore();
+      `,
     },
     {
       name: "Thinking comment: multiple question marks (3+)",
@@ -339,6 +372,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        const x = 1;
+      `,
     },
 
     // Incomplete markers
@@ -349,6 +385,9 @@ ruleTester.run(RULE_NAME, rule, {
         const result = process(searchParamsValue);
       `,
       errors: [{ messageId: "incompleteMarker" }],
+      output: `
+        const result = process(searchParamsValue);
+      `,
     },
     {
       name: 'Incomplete marker: "Unused but"',
@@ -356,6 +395,8 @@ ruleTester.run(RULE_NAME, rule, {
         const { lang } = await params; // Unused but good to have
       `,
       errors: [{ messageId: "incompleteMarker" }],
+      // Inline fix removes from `//` to end; the space before `//` stays as trailing space
+      output: "\n        const { lang } = await params; \n      ",
     },
     {
       name: 'Incomplete marker: "Renamed to avoid"',
@@ -363,6 +404,9 @@ ruleTester.run(RULE_NAME, rule, {
         const searchParamsValue = await searchParams; // Renamed to avoid confusion
       `,
       errors: [{ messageId: "incompleteMarker" }],
+      // Inline fix removes from `//` to end; the space before `//` stays as trailing space
+      output:
+        "\n        const searchParamsValue = await searchParams; \n      ",
     },
     {
       name: "Incomplete marker: HACK",
@@ -371,6 +415,9 @@ ruleTester.run(RULE_NAME, rule, {
         await delay(100);
       `,
       errors: [{ messageId: "incompleteMarker" }],
+      output: `
+        await delay(100);
+      `,
     },
     {
       name: "Incomplete marker: XXX",
@@ -379,6 +426,9 @@ ruleTester.run(RULE_NAME, rule, {
         const data = unsafeOperation();
       `,
       errors: [{ messageId: "incompleteMarker" }],
+      output: `
+        const data = unsafeOperation();
+      `,
     },
 
     // Debug comments
@@ -389,6 +439,9 @@ ruleTester.run(RULE_NAME, rule, {
         console.log("test");
       `,
       errors: [{ messageId: "debugComment" }],
+      output: `
+        console.log("test");
+      `,
     },
     {
       name: "Debug comment: TEMP",
@@ -397,6 +450,9 @@ ruleTester.run(RULE_NAME, rule, {
         const debug = true;
       `,
       errors: [{ messageId: "debugComment" }],
+      output: `
+        const debug = true;
+      `,
     },
     {
       name: "Debug comment: DELETE ME",
@@ -405,6 +461,9 @@ ruleTester.run(RULE_NAME, rule, {
         const oldCode = "unused";
       `,
       errors: [{ messageId: "debugComment" }],
+      output: `
+        const oldCode = "unused";
+      `,
     },
     {
       name: "Debug comment: REMOVE ME",
@@ -413,6 +472,9 @@ ruleTester.run(RULE_NAME, rule, {
         function deprecatedHelper() {}
       `,
       errors: [{ messageId: "debugComment" }],
+      output: `
+        function deprecatedHelper() {}
+      `,
     },
     {
       name: "Debug comment: commented console.log",
@@ -421,6 +483,9 @@ ruleTester.run(RULE_NAME, rule, {
         processData(data);
       `,
       errors: [{ messageId: "debugComment" }],
+      output: `
+        processData(data);
+      `,
     },
 
     // Multiple violations
@@ -439,6 +504,21 @@ ruleTester.run(RULE_NAME, rule, {
         { messageId: "incompleteMarker" },
         { messageId: "debugComment" },
       ],
+      // Pass 1: fix1 (But wait) + fix3 (DEBUG) applied; fix2 (... rest) skipped (adjacent conflict)
+      // Pass 2: fix2 (... rest) applied
+      output: [
+        `
+        // ... rest of code handles the response
+        function handler() {
+          return response;
+        }
+      `,
+        `
+        function handler() {
+          return response;
+        }
+      `,
+      ],
     },
 
     // Real-world examples from apps/main-web/app/page.tsx (commit 66331d419)
@@ -449,6 +529,9 @@ ruleTester.run(RULE_NAME, rule, {
         await connection();
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        await connection();
+      `,
     },
     {
       name: "Real-world: But wait thinking comment",
@@ -457,6 +540,9 @@ ruleTester.run(RULE_NAME, rule, {
         export default function Page() {}
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        export default function Page() {}
+      `,
     },
     {
       name: "Real-world: Is X static or dynamic?",
@@ -466,6 +552,10 @@ ruleTester.run(RULE_NAME, rule, {
         export default function Home() {}
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        // "Home page displaying curated content... Features partial pre-rendering and ISR".
+        export default function Home() {}
+      `,
     },
     {
       name: "Real-world: That contradicts",
@@ -474,6 +564,9 @@ ruleTester.run(RULE_NAME, rule, {
         export const revalidate = 900;
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        export const revalidate = 900;
+      `,
     },
     {
       name: "Real-world: I should probably",
@@ -482,6 +575,9 @@ ruleTester.run(RULE_NAME, rule, {
         await connection();
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        await connection();
+      `,
     },
     {
       name: "Real-world: I will just",
@@ -490,6 +586,9 @@ ruleTester.run(RULE_NAME, rule, {
         const { lang } = await params;
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        const { lang } = await params;
+      `,
     },
     {
       name: "Real-world: !!?? confusion marker",
@@ -498,6 +597,9 @@ ruleTester.run(RULE_NAME, rule, {
         unstable_noStore();
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        unstable_noStore();
+      `,
     },
     {
       name: "Real-world: ... rest of code marker",
@@ -507,6 +609,10 @@ ruleTester.run(RULE_NAME, rule, {
         const result = process(searchParamsValue);
       `,
       errors: [{ messageId: "incompleteMarker" }],
+      output: `
+        const searchParamsValue = await searchParams;
+        const result = process(searchParamsValue);
+      `,
     },
     {
       name: "Real-world: Unused but comment",
@@ -515,6 +621,9 @@ ruleTester.run(RULE_NAME, rule, {
         return <Component />;
       `,
       errors: [{ messageId: "incompleteMarker" }],
+      // Inline fix: space before `//` stays as trailing space
+      output:
+        "\n        const { lang } = await params; \n        return <Component />;\n      ",
     },
     {
       name: "Real-world: Renamed to avoid comment",
@@ -523,6 +632,9 @@ ruleTester.run(RULE_NAME, rule, {
         const tab = getTabFromParams(searchParamsValue.tab);
       `,
       errors: [{ messageId: "incompleteMarker" }],
+      // Inline fix: space before `//` stays as trailing space
+      output:
+        "\n        const searchParamsValue = await searchParams; \n        const tab = getTabFromParams(searchParamsValue.tab);\n      ",
     },
     {
       name: "Real-world: Fallback shouldn't happen comment",
@@ -532,6 +644,10 @@ ruleTester.run(RULE_NAME, rule, {
         return LocalizedPageMetadata.homeForLocale(lang || DEFAULT_LOCALE);
       `,
       errors: [{ messageId: "incompleteMarker" }],
+      output: `
+        const { lang } = await params;
+        return LocalizedPageMetadata.homeForLocale(lang || DEFAULT_LOCALE);
+      `,
     },
     {
       name: "Real-world: Multiple violations in generateMetadata",
@@ -547,6 +663,19 @@ ruleTester.run(RULE_NAME, rule, {
         { messageId: "thinkingComment" }, // But wait
         { messageId: "thinkingComment" }, // I will just
       ],
+      // Pass 1: fix1 (Removed?) + fix3 (I will just) applied; fix2 (But wait) skipped (adjacent)
+      // Pass 2: fix2 (But wait) applied
+      output: [
+        `
+        // Opt out of static generation since detectLocale uses cookies() and headers()
+        // But wait, page.tsx uses connection() which forces dynamic.
+        await connection();
+      `,
+        `
+        // Opt out of static generation since detectLocale uses cookies() and headers()
+        await connection();
+      `,
+      ],
     },
 
     // --- Edge cases: Boundary testing ---
@@ -557,6 +686,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "debugComment" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: Mixed case DeBuG",
@@ -565,6 +697,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "debugComment" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: Case insensitive TEMP",
@@ -573,6 +708,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "debugComment" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: Case insensitive TEMPORARY",
@@ -581,6 +719,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "debugComment" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: Lowercase delete me",
@@ -589,6 +730,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "debugComment" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: Lowercase remove me",
@@ -597,6 +741,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "debugComment" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: Lowercase hack",
@@ -605,6 +752,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "incompleteMarker" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: Lowercase xxx",
@@ -613,6 +763,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "incompleteMarker" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: Four question marks",
@@ -621,6 +774,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: Triple question marks with space",
@@ -629,6 +785,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: Triple question marks no space",
@@ -637,6 +796,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: Many question marks",
@@ -645,6 +807,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: Exclamation then question marks !!?",
@@ -653,6 +818,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: Multiple exclamations and questions !!!???",
@@ -661,6 +829,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: Very long comment (truncation test)",
@@ -669,6 +840,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "debugComment" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: Ellipsis with single word",
@@ -677,6 +851,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "incompleteMarker" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: Ellipsis at comment start",
@@ -685,6 +862,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "incompleteMarker" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: TODO: remove (specific variant)",
@@ -693,6 +873,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "incompleteMarker" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: FIXME: cleanup (specific variant)",
@@ -701,6 +884,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "incompleteMarker" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: Commented console.log with arguments",
@@ -709,6 +895,9 @@ ruleTester.run(RULE_NAME, rule, {
         processData();
       `,
       errors: [{ messageId: "debugComment" }],
+      output: `
+        processData();
+      `,
     },
     {
       name: "Edge case: Commented console.log template literal",
@@ -717,6 +906,9 @@ ruleTester.run(RULE_NAME, rule, {
         processData();
       `,
       errors: [{ messageId: "debugComment" }],
+      output: `
+        processData();
+      `,
     },
     {
       name: "Edge case: But wait at line start (case insensitive)",
@@ -725,6 +917,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: Should I at line start (case insensitive)",
@@ -733,6 +928,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: I think at line start (case insensitive)",
@@ -741,6 +939,9 @@ ruleTester.run(RULE_NAME, rule, {
         const x = 1;
       `,
       errors: [{ messageId: "thinkingComment" }],
+      output: `
+        const x = 1;
+      `,
     },
     {
       name: "Edge case: Fallback with different text",
@@ -749,6 +950,9 @@ ruleTester.run(RULE_NAME, rule, {
         const items = data || [];
       `,
       errors: [{ messageId: "incompleteMarker" }],
+      output: `
+        const items = data || [];
+      `,
     },
     {
       name: "Edge case: Unused but with different context",
@@ -757,6 +961,9 @@ ruleTester.run(RULE_NAME, rule, {
         const legacy = true;
       `,
       errors: [{ messageId: "incompleteMarker" }],
+      output: `
+        const legacy = true;
+      `,
     },
   ],
 });

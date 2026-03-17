@@ -14,6 +14,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Disallow use of eval() and Function constructor which can execute arbitrary code",
     },
+    fixable: "code",
     schema: [],
     messages: {
       noUnsafeEval:
@@ -30,6 +31,18 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             context.report({
               node,
               messageId: "noUnsafeEval",
+              fix(fixer) {
+                if (functionName !== "eval") {
+                  return null;
+                }
+                if (node.arguments.length === 0) {
+                  return null;
+                }
+                const argText = context.sourceCode.getText(
+                  node.arguments[0] as TSESTree.Expression
+                );
+                return fixer.replaceText(node, `JSON.parse(${argText})`);
+              },
             });
           }
         }

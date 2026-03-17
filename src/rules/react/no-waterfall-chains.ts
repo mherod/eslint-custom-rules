@@ -17,6 +17,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Prevent waterfall chains in API routes and server actions by starting independent operations immediately",
     },
+    fixable: "code",
     schema: [],
     messages: {
       noWaterfallChains:

@@ -13,6 +13,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     docs: {
       description: "Prevent fetching internal APIs in Server Components",
     },
+    fixable: "code",
     schema: [],
     messages: {
       noInternalFetch:

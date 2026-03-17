@@ -92,6 +92,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Prevent importing from barrel files of known heavy packages to avoid loading thousands of unused modules",
     },
+    fixable: "code",
     schema: [],
     messages: {
       noBarrelImport:

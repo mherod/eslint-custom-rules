@@ -21,6 +21,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Prevent accessing Request object properties within 'use cache' functions",
     },
+    fixable: "code",
     schema: [],
     messages: {
       noRequestAccessInUseCache:

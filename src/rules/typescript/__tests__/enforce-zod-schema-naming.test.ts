@@ -50,6 +50,7 @@ ruleTester.run(RULE_NAME, rule, {
           data: { name: "formSchema" },
         },
       ],
+      output: "const FormSchema = z.object({});",
     },
     {
       code: "const user_form_schema = z.object({});",
@@ -59,6 +60,7 @@ ruleTester.run(RULE_NAME, rule, {
           data: { name: "user_form_schema" },
         },
       ],
+      output: "const User_form_schemaSchema = z.object({});",
     },
 
     // Invalid: missing Schema suffix
@@ -70,6 +72,7 @@ ruleTester.run(RULE_NAME, rule, {
           data: { name: "Form" },
         },
       ],
+      output: "const FormSchema = z.object({});",
     },
     {
       code: "const UserForm = z.object({});",
@@ -79,9 +82,10 @@ ruleTester.run(RULE_NAME, rule, {
           data: { name: "UserForm" },
         },
       ],
+      output: "const UserFormSchema = z.object({});",
     },
 
-    // Invalid: just 'Schema'
+    // Invalid: just 'Schema' — fixer strips "Schema" leaving empty base, produces "Schema" (no-op)
     {
       code: "const Schema = z.object({});",
       errors: [
@@ -90,6 +94,7 @@ ruleTester.run(RULE_NAME, rule, {
           data: { name: "Schema" },
         },
       ],
+      output: null,
     },
 
     // Invalid: starts with lowercase
@@ -101,6 +106,7 @@ ruleTester.run(RULE_NAME, rule, {
           data: { name: "formDataSchema" },
         },
       ],
+      output: "const FormDataSchema = z.object({});",
     },
 
     // Invalid: with chained methods
@@ -112,6 +118,7 @@ ruleTester.run(RULE_NAME, rule, {
           data: { name: "userForm" },
         },
       ],
+      output: "const UserFormSchema = z.object({}).required();",
     },
 
     // Invalid: with imported Zod methods
@@ -123,6 +130,7 @@ ruleTester.run(RULE_NAME, rule, {
           data: { name: "userForm" },
         },
       ],
+      output: "const UserFormSchema = object({});",
     },
 
     // Invalid: complex schemas
@@ -134,6 +142,7 @@ ruleTester.run(RULE_NAME, rule, {
           data: { name: "complexType" },
         },
       ],
+      output: "const ComplexTypeSchema = z.union([z.string(), z.number()]);",
     },
 
     // Invalid: array schemas
@@ -145,6 +154,7 @@ ruleTester.run(RULE_NAME, rule, {
           data: { name: "stringArray" },
         },
       ],
+      output: "const StringArraySchema = z.array(z.string());",
     },
   ],
 });

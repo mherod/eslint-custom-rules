@@ -42,6 +42,9 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "noImportTypeQueries",
         },
       ],
+      output: `
+        type Foo = TikTokVideoRecord;
+      `,
     },
     {
       code: `
@@ -52,6 +55,9 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "noImportTypeQueries",
         },
       ],
+      output: `
+        const foo: TikTokVideoRecord[] = [];
+      `,
     },
     {
       code: `
@@ -62,6 +68,7 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "noImportTypeQueries",
         },
       ],
+      output: null,
     },
     {
       code: `
@@ -75,6 +82,9 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "noImportTypeQueries",
         },
       ],
+      output: `
+        type Foo = TikTokVideoRecord & Other;
+      `,
     },
   ],
 });

@@ -88,6 +88,14 @@ ruleTester.run("no-context-provider-in-server-component", rule, {
       `,
       filename: SERVER_FILE,
       errors: [{ messageId: "contextInServerComponent" }],
+      output: `
+        "use client";
+import { createContext } from "react";
+        const MyContext = createContext(null);
+        export default async function Page() {
+          return <div />;
+        }
+      `,
     },
     // <Context.Provider> rendered in a Server Component page
     {
@@ -98,6 +106,12 @@ ruleTester.run("no-context-provider-in-server-component", rule, {
       `,
       filename: SERVER_FILE,
       errors: [{ messageId: "contextInServerComponent" }],
+      output: `
+        "use client";
+export default async function Page() {
+          return <MyContext.Provider value={null}><div /></MyContext.Provider>;
+        }
+      `,
     },
     // Both createContext and <Provider> in the same server file — two errors
     {
@@ -113,6 +127,14 @@ ruleTester.run("no-context-provider-in-server-component", rule, {
         { messageId: "contextInServerComponent" },
         { messageId: "contextInServerComponent" },
       ],
+      output: `
+        "use client";
+import { createContext } from "react";
+        const Ctx = createContext(null);
+        export default async function Page() {
+          return <Ctx.Provider value={null}><div /></Ctx.Provider>;
+        }
+      `,
     },
     // createContext in server /components/ directory (treated as server component)
     {
@@ -122,6 +144,11 @@ ruleTester.run("no-context-provider-in-server-component", rule, {
       `,
       filename: "/src/components/my-context.tsx",
       errors: [{ messageId: "contextInServerComponent" }],
+      output: `
+        "use client";
+import { createContext } from "react";
+        export const MyContext = createContext(null);
+      `,
     },
   ],
 });

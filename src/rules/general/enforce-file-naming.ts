@@ -30,6 +30,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     docs: {
       description: "Enforce consistent file and directory naming conventions",
     },
+    fixable: "code",
     schema: [],
     messages: {
       componentShouldBePascalCaseOrKebabCase:

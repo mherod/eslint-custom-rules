@@ -17,6 +17,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Prefer proper promise handling in UI components with error display in UI state or toast notifications instead of suppressing promise results",
     },
+    fixable: "code",
     schema: [],
     messages: {
       preferUIPromiseHandling:

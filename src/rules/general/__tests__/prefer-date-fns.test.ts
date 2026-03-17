@@ -60,6 +60,9 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "preferDateFnsFormat",
         },
       ],
+      output: `
+        const formatted = format(date, 'PP');
+      `,
     },
     // toLocaleTimeString
     {
@@ -71,6 +74,9 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "preferDateFnsFormat",
         },
       ],
+      output: `
+        const time = format(date, 'PP');
+      `,
     },
     // toLocaleString
     {
@@ -82,6 +88,9 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "preferDateFnsFormat",
         },
       ],
+      output: `
+        const str = format(date, 'PP');
+      `,
     },
     // toDateString
     {
@@ -93,6 +102,9 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "preferDateFnsFormat",
         },
       ],
+      output: `
+        const str = format(date, 'PP');
+      `,
     },
     // toTimeString
     {
@@ -104,6 +116,9 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "preferDateFnsFormat",
         },
       ],
+      output: `
+        const str = format(date, 'PP');
+      `,
     },
     // toISOString
     {
@@ -115,6 +130,9 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "preferDateFnsFormatISO",
         },
       ],
+      output: `
+        const iso = formatISO(date);
+      `,
     },
     // Date.parse
     {
@@ -126,6 +144,9 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "preferDateFnsParse",
         },
       ],
+      output: `
+        const timestamp = parseISO('2023-01-01');
+      `,
     },
     // Multiple violations
     {
@@ -145,6 +166,11 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "preferDateFnsParse",
         },
       ],
+      output: `
+        const dateStr = format(date, 'PP');
+        const iso = formatISO(date);
+        const parsed = parseISO('2023-01-01');
+      `,
     },
   ],
 });

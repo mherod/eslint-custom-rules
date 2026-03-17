@@ -16,6 +16,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     docs: {
       description: "Prevent usage of 'use client' in Next.js page files",
     },
+    fixable: "code",
     schema: [],
     messages: {
       useClientInPage:
@@ -50,6 +51,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           context.report({
             node: firstStatement,
             messageId: "useClientInPage",
+            fix(fixer) {
+              const src = context.sourceCode.getText();
+              const end = firstStatement.range[1];
+              const removeEnd =
+                end < src.length && src[end] === "\n" ? end + 1 : end;
+              return fixer.removeRange([firstStatement.range[0], removeEnd]);
+            },
           });
         } else {
           // Detected via comment or first line — report on the program node

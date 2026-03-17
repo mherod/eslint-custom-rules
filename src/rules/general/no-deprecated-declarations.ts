@@ -20,6 +20,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Prevent exporting declarations that are marked as deprecated.",
     },
+    fixable: "code",
     schema: [],
     messages: {
       deprecatedDeclaration:
@@ -39,6 +40,36 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         node,
         messageId: "deprecatedDeclaration",
         data: { name },
+        fix(fixer) {
+          const candidates: (TSESTree.Node | undefined)[] = [
+            node,
+            node.parent,
+            node.parent?.parent,
+          ];
+          for (const subject of candidates) {
+            if (!subject) {
+              continue;
+            }
+            const comments = sourceCode.getCommentsBefore(subject);
+            const depComment = comments.find(
+              (c: TSESTree.Comment) =>
+                (c.type as string) === "Block" &&
+                c.value.trimStart().startsWith("*") &&
+                DEPRECATED_TAG_REGEX.test(c.value)
+            );
+            if (depComment?.range) {
+              const lines = depComment.value.split("\n");
+              const filtered = lines.filter(
+                (l) => !DEPRECATED_TAG_REGEX.test(l)
+              );
+              return fixer.replaceTextRange(
+                depComment.range,
+                `/*${filtered.join("\n")}*/`
+              );
+            }
+          }
+          return null;
+        },
       });
     };
 

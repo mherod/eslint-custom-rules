@@ -18,6 +18,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Enforce that Zod schemas are named with PascalCase and always suffixed with 'Schema'",
     },
+    fixable: "code",
     schema: [],
     messages: {
       zodSchemaMustBePascalCaseWithSuffix:
@@ -42,6 +43,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               node: node.id,
               messageId: "zodSchemaMustBePascalCaseWithSuffix",
               data: { name: schemaName },
+              fix(fixer) {
+                return fixer.replaceText(
+                  node.id,
+                  toPascalCaseWithSchemaSuffix(schemaName)
+                );
+              },
             });
           }
         }
@@ -80,6 +87,14 @@ function isZodSchemaCall(node: TSESTree.Node): boolean {
   }
 
   return false;
+}
+
+function toPascalCaseWithSchemaSuffix(name: string): string {
+  // Strip existing Schema suffix if present
+  const base = name.endsWith("Schema") ? name.slice(0, -6) : name;
+  // Convert first char to uppercase for PascalCase
+  const pascal = base.charAt(0).toUpperCase() + base.slice(1);
+  return `${pascal}Schema`;
 }
 
 function isPascalCaseWithSchemaSuffix(name: string): boolean {

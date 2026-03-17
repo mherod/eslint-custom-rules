@@ -15,6 +15,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Disallow use of weak cryptographic functions like md5, sha1, des, rc4, and crc32",
     },
+    fixable: "code",
     schema: [],
     messages: {
       noWeakCrypto:

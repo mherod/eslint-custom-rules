@@ -47,6 +47,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Enforce security best practices and prevent common vulnerabilities",
     },
+    fixable: "code",
     schema: [],
     messages: {
       noDirectProcessEnvInClient:

@@ -21,6 +21,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Suggest converting 'use client' page.tsx files to Server Components with client components at deeper levels",
     },
+    fixable: "code",
     hasSuggestions: true,
     schema: [],
     messages: {
@@ -66,6 +67,26 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           context.report({
             node: useClientNode,
             messageId: "useClientInPageFile",
+            fix(fixer) {
+              if (
+                useClientNode &&
+                useClientNode.type === AST_NODE_TYPES.ExpressionStatement &&
+                "expression" in useClientNode &&
+                useClientNode.expression.type === AST_NODE_TYPES.Literal
+              ) {
+                const text = sourceCode.getText();
+                const start = useClientNode.range[0];
+                let lineEnd = useClientNode.range[1];
+                while (lineEnd < text.length && text[lineEnd] !== "\n") {
+                  lineEnd++;
+                }
+                if (lineEnd < text.length && text[lineEnd] === "\n") {
+                  lineEnd++;
+                }
+                return fixer.removeRange([start, lineEnd]);
+              }
+              return null;
+            },
             suggest: [
               {
                 messageId: "considerServerComponent",

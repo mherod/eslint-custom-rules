@@ -21,6 +21,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Prefer date-fns functions over direct Date operations for better readability and reliability",
     },
+    fixable: "code",
     schema: [],
     messages: {
       preferDateFnsSort:

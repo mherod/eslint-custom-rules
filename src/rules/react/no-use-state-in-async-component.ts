@@ -4,6 +4,7 @@ import {
   type TSESTree,
 } from "@typescript-eslint/utils";
 import { isAsyncFunction } from "../utils/common";
+import { hasUseClientDirective } from "../utils/component-type-utils";
 
 export const RULE_NAME = "no-use-state-in-async-component";
 
@@ -17,6 +18,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Disallow useState in async React components (Server Components)",
     },
+    fixable: "code",
     schema: [],
     messages: {
       noUseStateInAsyncComponent:
@@ -25,6 +27,11 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
+    // Skip files that already have "use client" — hooks are valid in client components
+    if (hasUseClientDirective(context.sourceCode)) {
+      return {};
+    }
+
     let currentAsyncComponent:
       | TSESTree.FunctionDeclaration
       | TSESTree.FunctionExpression
@@ -72,6 +79,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           context.report({
             node,
             messageId: "noUseStateInAsyncComponent" as const,
+            fix(fixer) {
+              return fixer.insertTextBefore(
+                context.sourceCode.ast,
+                '"use client";\n'
+              );
+            },
           });
         }
       },

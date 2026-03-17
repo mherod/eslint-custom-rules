@@ -18,6 +18,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Prefer using <Link> component over router.push() for navigation in click handlers",
     },
+    fixable: "code",
     schema: [],
     messages: {
       preferLinkOverRouterPush:

@@ -61,6 +61,11 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "missingEmptyLine",
         },
       ],
+      output: `
+        import { sibling } from '../sibling';
+
+        import React from 'react';
+      `,
     },
     // Wrong order: internal before external (also missing empty line)
     {
@@ -76,6 +81,11 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "missingEmptyLine",
         },
       ],
+      output: `
+        import { helper } from '@/utils/helper';
+
+        import React from 'react';
+      `,
     },
     // Wrong order: relative before internal (multiple issues - 3 errors)
     {
@@ -95,8 +105,15 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "missingEmptyLine",
         },
       ],
+      output: `
+        import { helper } from '@/utils/helper';
+
+        import { sibling } from '../sibling';
+
+        import React from 'react';
+      `,
     },
-    // Missing empty line between groups (rule doesn't autofix)
+    // Missing empty line between groups
     {
       code: `
         import React from 'react';
@@ -107,6 +124,11 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "missingEmptyLine",
         },
       ],
+      output: `
+        import React from 'react';
+
+        import { helper } from '@/utils/helper';
+      `,
     },
     {
       code: `
@@ -118,6 +140,11 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "missingEmptyLine",
         },
       ],
+      output: `
+        import { helper } from '@/utils/helper';
+
+        import { sibling } from '../sibling';
+      `,
     },
     // Extra empty line within group (but this triggers unsorted first)
     {

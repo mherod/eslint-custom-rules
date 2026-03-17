@@ -14,6 +14,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Prevent usage of 'use client' in Next.js layout files to protect performance",
     },
+    fixable: "code",
     schema: [],
     messages: {
       useClientInLayout:
@@ -43,6 +44,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           context.report({
             node: firstStatement,
             messageId: "useClientInLayout",
+            fix(fixer) {
+              const src = context.sourceCode.getText();
+              const end = firstStatement.range[1];
+              const removeEnd =
+                end < src.length && src[end] === "\n" ? end + 1 : end;
+              return fixer.removeRange([firstStatement.range[0], removeEnd]);
+            },
           });
         } else {
           // Detected via comment or first line — report on the program node

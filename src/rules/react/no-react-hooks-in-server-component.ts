@@ -32,6 +32,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     docs: {
       description: "Prevent usage of standard React Hooks in Server Components",
     },
+    fixable: "code",
     schema: [],
     messages: {
       hookInServerComponent:
@@ -55,6 +56,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               node,
               messageId: "hookInServerComponent",
               data: { name: node.callee.name },
+              fix(fixer) {
+                return fixer.insertTextBefore(
+                  context.sourceCode.ast,
+                  '"use client";\n'
+                );
+              },
             });
           }
         }

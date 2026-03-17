@@ -119,6 +119,7 @@ ruleTester.run(RULE_NAME, rule, {
           data: { source: "./users" },
         },
       ],
+      output: '\n        "use server";\n\n              ',
     },
     // Invalid: Multiple re-exports in "use server" file
     {
@@ -139,6 +140,7 @@ ruleTester.run(RULE_NAME, rule, {
           data: { source: "./posts" },
         },
       ],
+      output: '\n        "use server";\n\n                      ',
     },
     // Invalid: Namespace re-export in "use server" file
     {
@@ -154,6 +156,7 @@ ruleTester.run(RULE_NAME, rule, {
           data: { source: "./actions" },
         },
       ],
+      output: '\n        "use server";\n\n              ',
     },
     // Invalid: Mix of local functions and re-exports
     {
@@ -173,6 +176,14 @@ ruleTester.run(RULE_NAME, rule, {
           data: { source: "./other" },
         },
       ],
+      output: `
+        "use server";
+
+        export async function localAction(data: FormData) {
+          return { success: true };
+        }
+
+              `,
     },
     // Invalid: Non-async function export in "use server" file
     {
@@ -231,6 +242,19 @@ ruleTester.run(RULE_NAME, rule, {
           data: { source: "./goals" },
         },
       ],
+      output: `
+        "use server";
+
+        export async function createCreatorAction(data: any) {
+          return { success: true };
+        }
+
+        export async function getCreatorsAction() {
+          return [];
+        }
+
+        // Re-export goal actions - THIS IS THE PROBLEM
+              `,
     },
     // Invalid: export * from with local exports
     {
@@ -250,6 +274,14 @@ ruleTester.run(RULE_NAME, rule, {
           data: { source: "./other-actions" },
         },
       ],
+      output: `
+        "use server";
+
+        export async function localAction() {
+          return true;
+        }
+
+              `,
     },
   ],
 });

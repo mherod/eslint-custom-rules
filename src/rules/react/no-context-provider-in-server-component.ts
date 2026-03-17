@@ -13,6 +13,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     docs: {
       description: "Prevent usage of React Context in Server Components",
     },
+    fixable: "code",
     schema: [],
     messages: {
       contextInServerComponent:
@@ -37,6 +38,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           context.report({
             node,
             messageId: "contextInServerComponent",
+            fix(fixer) {
+              return fixer.insertTextBefore(
+                context.sourceCode.ast,
+                '"use client";\n'
+              );
+            },
           });
         }
       },
@@ -47,6 +54,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             context.report({
               node,
               messageId: "contextInServerComponent",
+              fix(fixer) {
+                return fixer.insertTextBefore(
+                  context.sourceCode.ast,
+                  '"use client";\n'
+                );
+              },
             });
           }
         }

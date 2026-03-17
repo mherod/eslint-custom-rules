@@ -34,6 +34,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     docs: {
       description: "Enforce consistent documentation patterns using JSDoc",
     },
+    fixable: "code",
     schema: [],
     messages: {
       missingJSDocForPublicFunction:

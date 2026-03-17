@@ -11,6 +11,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Require authentication and authorization validation in protected API routes",
     },
+    fixable: "code",
     schema: [],
     messages: {
       requireAuthValidation:

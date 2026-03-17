@@ -17,6 +17,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Enforce using `withQuery` from `ufo` for URL query construction instead of `URLSearchParams` or string concatenation",
     },
+    fixable: "code",
     schema: [],
     messages: {
       preferUfoWithQuery:

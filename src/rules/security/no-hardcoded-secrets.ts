@@ -15,6 +15,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Detect hardcoded secrets, API keys, and tokens that should use environment variables",
     },
+    fixable: "code",
     schema: [],
     messages: {
       noHardcodedSecrets:
@@ -37,6 +38,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             node,
             messageId: "noHardcodedSecrets",
             data: { secret: `${node.value.substring(0, 10)}...` },
+            fix(fixer) {
+              return fixer.replaceText(node, "process.env.SECRET_KEY");
+            },
           });
         }
       },
@@ -53,6 +57,22 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             context.report({
               node,
               messageId: "noClientSideSecrets",
+              fix(fixer) {
+                if (!node.init) {
+                  return null;
+                }
+                if (node.id.type === AST_NODE_TYPES.Identifier) {
+                  const envVarName = node.id.name
+                    .replace(/([A-Z])/g, "_$1")
+                    .toUpperCase()
+                    .replace(/^_/, "");
+                  return fixer.replaceText(
+                    node.init,
+                    `process.env.${envVarName}`
+                  );
+                }
+                return fixer.replaceText(node.init, "process.env.SECRET_KEY");
+              },
             });
           }
         }

@@ -20,6 +20,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Enforce using date-fns for date formatting and manipulation instead of native Date methods",
     },
+    fixable: "code",
     schema: [],
     messages: {
       preferDateFnsFormat:
@@ -55,6 +56,11 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
                 node: property,
                 messageId: "preferDateFnsFormat",
                 data: { method: methodName },
+                fix(fixer) {
+                  const memberExpr = node.callee as TSESTree.MemberExpression;
+                  const objText = context.sourceCode.getText(memberExpr.object);
+                  return fixer.replaceText(node, `format(${objText}, 'PP')`);
+                },
               });
             }
 
@@ -63,6 +69,11 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               context.report({
                 node: property,
                 messageId: "preferDateFnsFormatISO",
+                fix(fixer) {
+                  const memberExpr = node.callee as TSESTree.MemberExpression;
+                  const objText = context.sourceCode.getText(memberExpr.object);
+                  return fixer.replaceText(node, `formatISO(${objText})`);
+                },
               });
             }
           }
@@ -79,6 +90,15 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           context.report({
             node,
             messageId: "preferDateFnsParse",
+            fix(fixer) {
+              if (node.arguments.length === 0) {
+                return null;
+              }
+              const argText = context.sourceCode.getText(
+                node.arguments[0] as TSESTree.Expression
+              );
+              return fixer.replaceText(node, `parseISO(${argText})`);
+            },
           });
         }
       },

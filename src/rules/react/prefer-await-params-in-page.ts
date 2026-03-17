@@ -18,6 +18,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Enforce awaiting params and searchParams in Next.js 15+ Pages",
     },
+    fixable: "code",
     schema: [],
     messages: {
       awaitParams:
@@ -85,6 +86,9 @@ function checkPageProps(
             context.report({
               node: prop,
               messageId: "awaitParams",
+              fix(fixer) {
+                return fixer.insertTextBefore(node, "async ");
+              },
             });
           }
         }
@@ -113,6 +117,9 @@ function checkPageProps(
         context.report({
           node: propsParam,
           messageId: "awaitParams",
+          fix(fixer) {
+            return fixer.insertTextBefore(node, "async ");
+          },
         });
       }
     }

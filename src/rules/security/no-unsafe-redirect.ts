@@ -14,6 +14,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Detect unsafe redirect patterns that could lead to open redirect vulnerabilities",
     },
+    fixable: "code",
     schema: [],
     messages: {
       noUnsafeRedirect:

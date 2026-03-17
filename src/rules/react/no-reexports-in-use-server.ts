@@ -17,6 +17,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         "Disallow re-exports in files with 'use server' directive. " +
         "Next.js/Turbopack requires that 'use server' files only export locally-defined async functions.",
     },
+    fixable: "code",
     schema: [],
     messages: {
       reexportInUseServer:
@@ -72,6 +73,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
                 node.source.type === AST_NODE_TYPES.Literal
                   ? String(node.source.value)
                   : "",
+            },
+            fix(fixer) {
+              const src = sourceCode.getText();
+              const end = node.range[1];
+              const removeEnd =
+                end < src.length && src[end] === "\n" ? end + 1 : end;
+              return fixer.removeRange([node.range[0], removeEnd]);
             },
           });
           return;
@@ -139,6 +147,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               node.source.type === AST_NODE_TYPES.Literal
                 ? String(node.source.value)
                 : "",
+          },
+          fix(fixer) {
+            const src = sourceCode.getText();
+            const end = node.range[1];
+            const removeEnd =
+              end < src.length && src[end] === "\n" ? end + 1 : end;
+            return fixer.removeRange([node.range[0], removeEnd]);
           },
         });
       },

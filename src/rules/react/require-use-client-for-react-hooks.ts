@@ -37,6 +37,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Require 'use client' in files that use client-only React hooks.",
     },
+    fixable: "code",
     schema: [],
     messages: {
       missingUseClientDirective:
@@ -70,6 +71,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         node,
         messageId: "missingUseClientDirective",
         data: { hook },
+        fix(fixer) {
+          return fixer.insertTextBefore(sourceCode.ast, '"use client";\n');
+        },
       });
     };
 

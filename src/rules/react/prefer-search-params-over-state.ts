@@ -57,6 +57,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Prefer URL search params (useSearchParams / nuqs) over useState for search/query strings",
     },
+    fixable: "code",
     schema: [],
     messages: {
       preferSearchParams:

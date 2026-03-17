@@ -20,6 +20,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Detect unsafe template literal usage with unsanitized input and direct process.env access in client code",
     },
+    fixable: "code",
     schema: [],
     messages: {
       requireInputSanitization:

@@ -127,6 +127,15 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "useAfterForNonBlocking",
         },
       ],
+      output: `
+        export async function POST(request: Request) {
+          await updateDatabase(request);
+
+          after(() => logUserAction({ userAgent: 'test' }));
+
+          return new Response(JSON.stringify({ status: 'success' }));
+        }
+      `,
     },
     {
       name: "Server action with blocking analytics",
@@ -145,6 +154,15 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "useAfterForNonBlocking",
         },
       ],
+      output: `
+        export async function updateUser() {
+          await updateUserInDb();
+
+          after(() => trackAnalytics('user_updated'));
+
+          return { success: true };
+        }
+      `,
     },
     {
       name: "Server action with blocking email",
@@ -163,6 +181,15 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "useAfterForNonBlocking",
         },
       ],
+      output: `
+        export async function sendWelcomeEmail() {
+          await updateUserStatus();
+
+          after(() => sendEmail());
+
+          return { emailed: true };
+        }
+      `,
     },
     {
       name: "API route with multiple blocking side effects",
@@ -188,6 +215,16 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "useAfterForNonBlocking",
         },
       ],
+      output: `
+        export async function POST() {
+          after(() => processWebhook());
+
+          after(() => logWebhookEvent());
+          after(() => sendNotification());
+
+          return Response.json({ processed: true });
+        }
+      `,
     },
     {
       name: "Server action with blocking cache invalidation",
@@ -206,6 +243,15 @@ ruleTester.run(RULE_NAME, rule, {
           messageId: "useAfterForNonBlocking",
         },
       ],
+      output: `
+        export async function updateData() {
+          await updateDatabase();
+
+          after(() => invalidateCache());
+
+          return { updated: true };
+        }
+      `,
     },
   ],
 });

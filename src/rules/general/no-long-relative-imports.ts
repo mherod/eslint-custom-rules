@@ -17,6 +17,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Disallow overly long relative imports and prefer absolute imports using aliases",
     },
+    fixable: "code",
     schema: [
       {
         type: "object",

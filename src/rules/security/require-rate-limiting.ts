@@ -42,6 +42,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Require rate limiting in public API endpoints to prevent abuse",
     },
+    fixable: "code",
     schema: [],
     messages: {
       requireRateLimit:

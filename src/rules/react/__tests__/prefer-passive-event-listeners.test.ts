@@ -43,6 +43,7 @@ ruleTester.run("prefer-passive-event-listeners", rule, {
           data: { eventType: "touchstart" },
         },
       ],
+      output: `el.addEventListener('touchstart', (e) => { console.log(e); }, { passive: true });`,
     },
     {
       code: `el.addEventListener('touchmove', handler, {});`,
@@ -52,12 +53,14 @@ ruleTester.run("prefer-passive-event-listeners", rule, {
           data: { eventType: "touchmove" },
         },
       ],
+      output: `el.addEventListener('touchmove', handler, { passive: true });`,
     },
     {
       code: `el.addEventListener('touchend', handler);`,
       errors: [
         { messageId: "preferPassiveListener", data: { eventType: "touchend" } },
       ],
+      output: `el.addEventListener('touchend', handler, { passive: true });`,
     },
     {
       code: `el.addEventListener('touchcancel', handler);`,
@@ -67,12 +70,14 @@ ruleTester.run("prefer-passive-event-listeners", rule, {
           data: { eventType: "touchcancel" },
         },
       ],
+      output: `el.addEventListener('touchcancel', handler, { passive: true });`,
     },
     {
       code: `el.addEventListener('wheel', (e) => { doSomething(e); });`,
       errors: [
         { messageId: "preferPassiveListener", data: { eventType: "wheel" } },
       ],
+      output: `el.addEventListener('wheel', (e) => { doSomething(e); }, { passive: true });`,
     },
     {
       code: `el.addEventListener('mousewheel', handler);`,
@@ -82,12 +87,14 @@ ruleTester.run("prefer-passive-event-listeners", rule, {
           data: { eventType: "mousewheel" },
         },
       ],
+      output: `el.addEventListener('mousewheel', handler, { passive: true });`,
     },
     {
       code: `el.addEventListener('scroll', handler);`,
       errors: [
         { messageId: "preferPassiveListener", data: { eventType: "scroll" } },
       ],
+      output: `el.addEventListener('scroll', handler, { passive: true });`,
     },
     // Options object present but passive not set
     {
@@ -98,6 +105,7 @@ ruleTester.run("prefer-passive-event-listeners", rule, {
           data: { eventType: "touchstart" },
         },
       ],
+      output: `el.addEventListener('touchstart', handler, { capture: true, passive: true });`,
     },
     // passive: false explicitly set — still flagged (not passive: true)
     {
@@ -105,6 +113,7 @@ ruleTester.run("prefer-passive-event-listeners", rule, {
       errors: [
         { messageId: "preferPassiveListener", data: { eventType: "wheel" } },
       ],
+      output: `el.addEventListener('wheel', handler, { passive: false, passive: true });`,
     },
     // Named function references — rule flags these since it cannot verify no preventDefault()
     {
@@ -115,12 +124,14 @@ ruleTester.run("prefer-passive-event-listeners", rule, {
           data: { eventType: "touchstart" },
         },
       ],
+      output: `el.addEventListener('touchstart', handleTouch, { passive: true });`,
     },
     {
       code: `el.addEventListener('wheel', this.onWheel);`,
       errors: [
         { messageId: "preferPassiveListener", data: { eventType: "wheel" } },
       ],
+      output: `el.addEventListener('wheel', this.onWheel, { passive: true });`,
     },
   ],
 });

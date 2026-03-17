@@ -14,6 +14,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Disallow use of dangerouslySetInnerHTML without proper sanitization",
     },
+    fixable: "code",
     schema: [],
     messages: {
       noUnsafeInnerHTML:
@@ -31,6 +32,34 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           context.report({
             node,
             messageId: "noUnsafeInnerHTML",
+            fix(fixer) {
+              const value = node.value;
+              if (
+                !value ||
+                value.type !== AST_NODE_TYPES.JSXExpressionContainer
+              ) {
+                return null;
+              }
+              const expr = value.expression;
+              if (expr.type !== AST_NODE_TYPES.ObjectExpression) {
+                return null;
+              }
+              const htmlProp = expr.properties.find(
+                (p) =>
+                  p.type === AST_NODE_TYPES.Property &&
+                  p.key.type === AST_NODE_TYPES.Identifier &&
+                  (p.key as TSESTree.Identifier).name === "__html"
+              );
+              if (!htmlProp || htmlProp.type !== AST_NODE_TYPES.Property) {
+                return null;
+              }
+              const htmlValue = htmlProp.value as TSESTree.Expression;
+              const htmlText = context.sourceCode.getText(htmlValue);
+              return fixer.replaceText(
+                htmlValue,
+                `DOMPurify.sanitize(${htmlText})`
+              );
+            },
           });
         }
       },

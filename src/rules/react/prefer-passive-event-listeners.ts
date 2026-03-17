@@ -111,6 +111,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Prefer { passive: true } for scroll and touch event listeners to improve scrolling performance",
     },
+    fixable: "code",
     schema: [],
     messages: {
       preferPassiveListener:
@@ -191,6 +192,25 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           node,
           messageId: "preferPassiveListener",
           data: { eventType },
+          fix(fixer) {
+            if (optionsArg === undefined) {
+              return fixer.insertTextAfter(
+                handlerArg as TSESTree.Expression,
+                ", { passive: true }"
+              );
+            }
+            if (optionsArg.type === AST_NODE_TYPES.SpreadElement) {
+              return null;
+            }
+            if (optionsArg.type === AST_NODE_TYPES.ObjectExpression) {
+              const lastProp = optionsArg.properties.at(-1);
+              if (!lastProp) {
+                return fixer.replaceText(optionsArg, "{ passive: true }");
+              }
+              return fixer.insertTextAfter(lastProp, ", passive: true");
+            }
+            return fixer.replaceText(optionsArg, "{ passive: true }");
+          },
         });
       },
     };

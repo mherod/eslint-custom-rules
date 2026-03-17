@@ -14,6 +14,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Suggest using async functions for Pages to enable data fetching and prepare for Next.js 15+ params",
     },
+    fixable: "code",
     schema: [],
     messages: {
       preferAsyncPage:
@@ -49,6 +50,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           context.report({
             node: decl,
             messageId: "preferAsyncPage",
+            fix(fixer) {
+              return fixer.insertTextBefore(decl, "async ");
+            },
           });
         } else if (
           decl.type === AST_NODE_TYPES.ArrowFunctionExpression &&
@@ -57,6 +61,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           context.report({
             node: decl,
             messageId: "preferAsyncPage",
+            fix(fixer) {
+              return fixer.insertTextBefore(decl, "async ");
+            },
           });
         }
       },
