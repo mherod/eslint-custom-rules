@@ -1,6 +1,7 @@
 import {
   AST_NODE_TYPES,
   ESLintUtils,
+  type TSESLint,
   type TSESTree,
 } from "@typescript-eslint/utils";
 
@@ -64,7 +65,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             node,
             messageId: "conflictingDirectives",
             fix: useServerNode
-              ? (fixer) => {
+              ? (fixer): TSESLint.RuleFix | null => {
                   const src = context.sourceCode.getText();
                   const end = (useServerNode as TSESTree.ExpressionStatement)
                     .range[1];
