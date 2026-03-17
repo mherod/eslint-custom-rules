@@ -1,4 +1,5 @@
 import { AST_NODE_TYPES, ESLintUtils } from "@typescript-eslint/utils";
+import { hasUseClientDirective } from "../utils/component-type-utils";
 
 export const RULE_NAME = "no-non-serializable-props";
 
@@ -18,6 +19,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Prevent passing non-serializable props (Date, Map, Set) to components",
     },
+    fixable: "code",
     schema: [],
     messages: {
       nonSerializableProp:
@@ -34,6 +36,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
+    // Skip files with "use client" directive — all prop types are valid
+    // between Client Components (no RSC serialization boundary).
+    if (hasUseClientDirective(context.sourceCode)) {
+      return {};
+    }
+
     return {
       JSXAttribute(node): void {
         if (node.name.type !== AST_NODE_TYPES.JSXIdentifier) {

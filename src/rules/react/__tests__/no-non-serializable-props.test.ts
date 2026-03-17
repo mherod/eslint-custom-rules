@@ -16,6 +16,34 @@ const ruleTester = new RuleTester({
 
 ruleTester.run("no-non-serializable-props", rule, {
   valid: [
+    // "use client" files — all prop types are valid (no RSC boundary)
+    {
+      code: `"use client";\nconst Foo = () => <Button onClick={() => {}} />;`,
+    },
+    {
+      code: `"use client";\nconst Foo = () => <Input onChange={function() {}} />;`,
+    },
+    {
+      code: `"use client";\nconst Foo = () => <Component timestamp={new Date()} />;`,
+    },
+    {
+      code: `"use client";\nconst Foo = () => <Component data={new Map()} />;`,
+    },
+    {
+      code: `"use client";\nconst Foo = () => <Component tags={new Set()} />;`,
+    },
+    {
+      code: `"use client";\nconst Foo = () => <Component createdDate={user.createdAt} />;`,
+    },
+    {
+      code: `"use client";\nconst Foo = () => <Component id={Symbol("unique")} />;`,
+    },
+    {
+      code: `"use client";\nconst Foo = () => <Component value={42n} />;`,
+    },
+    {
+      code: `"use client";\nconst Foo = () => <Component pattern={/test/gi} />;`,
+    },
     // String prop — serializable
     {
       code: `<Component name="hello" />`,
