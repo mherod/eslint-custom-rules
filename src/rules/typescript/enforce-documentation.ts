@@ -81,7 +81,11 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         const isExported =
           node.parent?.type === AST_NODE_TYPES.ExportNamedDeclaration ||
           node.parent?.type === AST_NODE_TYPES.ExportDefaultDeclaration;
-        const jsDocComment = getJsDocComment(node, sourceCode);
+        const jsDocComment =
+          getJsDocComment(node, sourceCode) ||
+          (isExported && node.parent
+            ? getJsDocComment(node.parent, sourceCode)
+            : null);
 
         // Check if public function needs JSDoc
         if (isExported && !jsDocComment) {
@@ -155,7 +159,11 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         const typeName = node.id.name;
         const isExported =
           node.parent?.type === AST_NODE_TYPES.ExportNamedDeclaration;
-        const jsDocComment = getJsDocComment(node, sourceCode);
+        const jsDocComment =
+          getJsDocComment(node, sourceCode) ||
+          (isExported && node.parent
+            ? getJsDocComment(node.parent, sourceCode)
+            : null);
 
         if (isExported && !jsDocComment && isComplexType(node.typeAnnotation)) {
           context.report({
@@ -171,7 +179,11 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         const interfaceName = node.id.name;
         const isExported =
           node.parent?.type === AST_NODE_TYPES.ExportNamedDeclaration;
-        const jsDocComment = getJsDocComment(node, sourceCode);
+        const jsDocComment =
+          getJsDocComment(node, sourceCode) ||
+          (isExported && node.parent
+            ? getJsDocComment(node.parent, sourceCode)
+            : null);
 
         if (isExported && !jsDocComment) {
           context.report({
