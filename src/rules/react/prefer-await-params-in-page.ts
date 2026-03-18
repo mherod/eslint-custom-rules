@@ -4,6 +4,7 @@ import {
   type TSESLint,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import { isExported } from "../utils/common";
 
 export const RULE_NAME = "prefer-await-params-in-page";
 
@@ -53,13 +54,6 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     };
   },
 });
-
-function isExported(node: TSESTree.FunctionDeclaration): boolean {
-  return (
-    node.parent?.type === AST_NODE_TYPES.ExportDefaultDeclaration ||
-    node.parent?.type === AST_NODE_TYPES.ExportNamedDeclaration
-  );
-}
 
 function checkPageProps(
   node:

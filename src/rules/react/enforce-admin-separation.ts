@@ -66,7 +66,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         // Check if import is relative (local file)
         if (importSource.startsWith(".")) {
-          validateLocalImport(
+          validateImport(
             context,
             node,
             importSource,
@@ -78,7 +78,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         // Check if import is from internal alias (@/)
         if (importSource.startsWith("@/")) {
-          validateAliasImport(
+          validateImport(
             context,
             node,
             importSource,
@@ -114,7 +114,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         ) {
           const importSource = source.value;
           if (importSource.startsWith(".")) {
-            validateLocalImport(
+            validateImport(
               context,
               node,
               importSource,
@@ -124,7 +124,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             );
           }
           if (importSource.startsWith("@/")) {
-            validateAliasImport(
+            validateImport(
               context,
               node,
               importSource,
@@ -199,7 +199,14 @@ function isSharedPath(filePath: string): boolean {
   );
 }
 
-function validateLocalImport(
+function resolveImportPath(importSource: string, currentFile: string): string {
+  if (importSource.startsWith("@/")) {
+    return importSource.replace("@/", "");
+  }
+  return resolve(dirname(currentFile), importSource);
+}
+
+function validateImport(
   context: Readonly<TSESLint.RuleContext<string, unknown[]>>,
   node: TSESTree.ImportDeclaration | TSESTree.ImportExpression,
   importSource: string,
@@ -207,52 +214,11 @@ function validateLocalImport(
   isCurrentAdmin: boolean,
   isCurrentPublic: boolean
 ): void {
-  // Resolve the imported file path
-  const currentDir = dirname(currentFile);
-  const importedPath = resolve(currentDir, importSource);
+  const importedPath = resolveImportPath(importSource, currentFile);
 
   const isImportedAdmin = isAdminPath(importedPath);
   const isImportedPublic = isPublicPath(importedPath);
   const isImportedShared = isSharedPath(importedPath);
-
-  // Allow shared imports
-  if (isImportedShared) {
-    return;
-  }
-
-  // Public file importing admin file
-  if (isCurrentPublic && isImportedAdmin) {
-    context.report({
-      node,
-      messageId: "publicImportingAdmin",
-      data: { component: importSource },
-    });
-  }
-
-  // Admin file importing public file (warning, not error)
-  if (isCurrentAdmin && isImportedPublic) {
-    context.report({
-      node,
-      messageId: "adminImportingPublic",
-      data: { component: importSource },
-    });
-  }
-}
-
-function validateAliasImport(
-  context: Readonly<TSESLint.RuleContext<string, unknown[]>>,
-  node: TSESTree.ImportDeclaration | TSESTree.ImportExpression,
-  importSource: string,
-  _currentFile: string,
-  isCurrentAdmin: boolean,
-  isCurrentPublic: boolean
-): void {
-  // Remove @/ prefix and check the path
-  const cleanPath = importSource.replace("@/", "");
-
-  const isImportedAdmin = isAdminPath(cleanPath);
-  const isImportedPublic = isPublicPath(cleanPath);
-  const isImportedShared = isSharedPath(cleanPath);
 
   // Allow shared imports
   if (isImportedShared) {
