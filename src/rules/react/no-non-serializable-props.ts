@@ -1,3 +1,4 @@
+import type { TSESLint } from "@typescript-eslint/utils";
 import { AST_NODE_TYPES, ESLintUtils } from "@typescript-eslint/utils";
 import { hasUseClientDirective } from "../utils/component-type-utils";
 
@@ -131,14 +132,14 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             },
             suggest: [
               {
-                messageId: "datePropSuggestIso",
-                fix(fixer) {
+                messageId: "datePropSuggestIso" as const,
+                fix(fixer): TSESLint.RuleFix {
                   return fixer.replaceText(expr, `${exprText}.toISOString()`);
                 },
               },
               {
-                messageId: "datePropSuggestTime",
-                fix(fixer) {
+                messageId: "datePropSuggestTime" as const,
+                fix(fixer): TSESLint.RuleFix {
                   return fixer.replaceText(expr, `${exprText}.getTime()`);
                 },
               },
@@ -232,14 +233,14 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               data: { name: propName },
               suggest: [
                 {
-                  messageId: "datePropSuggestIso",
-                  fix(fixer) {
+                  messageId: "datePropSuggestIso" as const,
+                  fix(fixer): TSESLint.RuleFix {
                     return fixer.replaceText(expr, `${exprText}.toISOString()`);
                   },
                 },
                 {
-                  messageId: "datePropSuggestTime",
-                  fix(fixer) {
+                  messageId: "datePropSuggestTime" as const,
+                  fix(fixer): TSESLint.RuleFix {
                     return fixer.replaceText(expr, `${exprText}.getTime()`);
                   },
                 },
