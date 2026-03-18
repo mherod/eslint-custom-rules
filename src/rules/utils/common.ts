@@ -18,7 +18,7 @@ const NAMING_PATTERNS = {
 const FILE_PATTERNS = {
   COMPONENT: ["/components/", "/pages/", "/app/"],
   HOOK: ["/hooks/"],
-  API: ["/api/", "/route.ts", "/route.js"],
+  API: ["/app/api/", "/pages/api/", "/route.ts", "/route.js"],
   UTIL: ["/utils/", "/lib/", "/helpers/"],
   TEST: ["__tests__", ".test.", ".spec."],
   STYLE: [".css", ".scss", ".sass", ".less"],
