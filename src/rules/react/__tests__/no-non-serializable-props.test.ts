@@ -98,10 +98,45 @@ ruleTester.run("no-non-serializable-props", rule, {
       code: `<Component key={Symbol.for("shared")} />`,
       errors: [{ messageId: "symbolProp" }],
     },
-    // new Date() prop
+    // new Date() prop — auto-fixed to .toISOString()
     {
       code: "<Component timestamp={new Date()} />",
-      errors: [{ messageId: "nonSerializableProp" }],
+      output: "<Component timestamp={new Date().toISOString()} />",
+      errors: [
+        {
+          messageId: "dateProp",
+          suggestions: [
+            {
+              messageId: "datePropSuggestIso",
+              output: "<Component timestamp={new Date().toISOString()} />",
+            },
+            {
+              messageId: "datePropSuggestTime",
+              output: "<Component timestamp={new Date().getTime()} />",
+            },
+          ],
+        },
+      ],
+    },
+    // new Date(arg) prop — auto-fixed to .toISOString()
+    {
+      code: `<Component timestamp={new Date("2024-01-01")} />`,
+      output: `<Component timestamp={new Date("2024-01-01").toISOString()} />`,
+      errors: [
+        {
+          messageId: "dateProp",
+          suggestions: [
+            {
+              messageId: "datePropSuggestIso",
+              output: `<Component timestamp={new Date("2024-01-01").toISOString()} />`,
+            },
+            {
+              messageId: "datePropSuggestTime",
+              output: `<Component timestamp={new Date("2024-01-01").getTime()} />`,
+            },
+          ],
+        },
+      ],
     },
     // new Map() prop
     {
@@ -123,10 +158,25 @@ ruleTester.run("no-non-serializable-props", rule, {
       code: `<Component error={new Error("fail")} />`,
       errors: [{ messageId: "nonSerializableProp" }],
     },
-    // Date-named prop with variable (heuristic)
+    // Date-named prop with variable (heuristic) — suggestion fixes
     {
       code: "<Component createdDate={user.createdAt} />",
-      errors: [{ messageId: "nonSerializableProp" }],
+      errors: [
+        {
+          messageId: "dateProp",
+          suggestions: [
+            {
+              messageId: "datePropSuggestIso",
+              output:
+                "<Component createdDate={user.createdAt.toISOString()} />",
+            },
+            {
+              messageId: "datePropSuggestTime",
+              output: "<Component createdDate={user.createdAt.getTime()} />",
+            },
+          ],
+        },
+      ],
     },
     // BigInt literal prop
     {

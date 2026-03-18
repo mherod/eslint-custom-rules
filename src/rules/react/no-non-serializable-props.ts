@@ -5,6 +5,9 @@ export const RULE_NAME = "no-non-serializable-props";
 
 type MessageIds =
   | "nonSerializableProp"
+  | "dateProp"
+  | "datePropSuggestIso"
+  | "datePropSuggestTime"
   | "functionProp"
   | "symbolProp"
   | "bigintProp"
@@ -20,10 +23,15 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         "Prevent passing non-serializable props (Date, Map, Set) to components",
     },
     fixable: "code",
+    hasSuggestions: true,
     schema: [],
     messages: {
       nonSerializableProp:
-        "Prop '{{name}}' appears to be non-serializable (Date/Map/Set). Server Components must serialize data (e.g. .toISOString()) before passing to Client Components.",
+        "Prop '{{name}}' appears to be non-serializable (Map/Set/etc). Server Components must serialize data before passing to Client Components.",
+      dateProp:
+        "Prop '{{name}}' is a Date, which is not serializable across the server/client boundary. Convert to a string with .toISOString() or a number with .getTime().",
+      datePropSuggestIso: "Convert to ISO string with .toISOString()",
+      datePropSuggestTime: "Convert to timestamp number with .getTime()",
       functionProp:
         "Prop '{{name}}' is a function, which is not serializable across the server/client boundary. Use a Server Action or move to a Client Component.",
       symbolProp:
@@ -106,14 +114,46 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           }
         }
 
-        // 4. new Date/Map/Set/RegExp and other non-serializable constructors
+        // 4. new Date() — auto-fixable to .toISOString()
+        if (
+          expr.type === AST_NODE_TYPES.NewExpression &&
+          expr.callee.type === AST_NODE_TYPES.Identifier &&
+          expr.callee.name === "Date"
+        ) {
+          const sourceCode = context.sourceCode;
+          const exprText = sourceCode.getText(expr);
+          context.report({
+            node,
+            messageId: "dateProp",
+            data: { name: propName },
+            fix(fixer) {
+              return fixer.replaceText(expr, `${exprText}.toISOString()`);
+            },
+            suggest: [
+              {
+                messageId: "datePropSuggestIso",
+                fix(fixer) {
+                  return fixer.replaceText(expr, `${exprText}.toISOString()`);
+                },
+              },
+              {
+                messageId: "datePropSuggestTime",
+                fix(fixer) {
+                  return fixer.replaceText(expr, `${exprText}.getTime()`);
+                },
+              },
+            ],
+          });
+          return;
+        }
+
+        // 5. new Map/Set/RegExp and other non-serializable constructors
         if (
           expr.type === AST_NODE_TYPES.NewExpression &&
           expr.callee.type === AST_NODE_TYPES.Identifier
         ) {
           if (
             [
-              "Date",
               "Map",
               "Set",
               "RegExp",
@@ -184,10 +224,26 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             expr.type === AST_NODE_TYPES.Identifier ||
             expr.type === AST_NODE_TYPES.MemberExpression
           ) {
+            const sourceCode = context.sourceCode;
+            const exprText = sourceCode.getText(expr);
             context.report({
               node,
-              messageId: "nonSerializableProp",
+              messageId: "dateProp",
               data: { name: propName },
+              suggest: [
+                {
+                  messageId: "datePropSuggestIso",
+                  fix(fixer) {
+                    return fixer.replaceText(expr, `${exprText}.toISOString()`);
+                  },
+                },
+                {
+                  messageId: "datePropSuggestTime",
+                  fix(fixer) {
+                    return fixer.replaceText(expr, `${exprText}.getTime()`);
+                  },
+                },
+              ],
             });
           }
         }
