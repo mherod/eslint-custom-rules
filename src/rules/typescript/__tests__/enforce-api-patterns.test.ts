@@ -38,6 +38,16 @@ ruleTester.run(RULE_NAME, rule, {
       code: "export const apiConfig = {};",
       filename: "/src/services/api/config.ts",
     },
+    // Arbitrary route.ts outside app/ — NOT an API route (issue #26)
+    {
+      code: "export function getData() { return 'hello'; }",
+      filename: "/project/some/path/route.ts",
+    },
+    // route.ts in a non-app directory
+    {
+      code: "export function handler() { return 'ok'; }",
+      filename: "/src/routes/route.ts",
+    },
   ],
   invalid: [
     // App Router route handler — should be flagged for missing patterns
@@ -51,10 +61,10 @@ ruleTester.run(RULE_NAME, rule, {
         { messageId: "improperStatusCode" },
       ],
     },
-    // Pages Router API route — should also be flagged
+    // App Router route handler outside api/ (e.g. app/webhooks/route.ts)
     {
       code: "export function getData() { return 'hello'; }",
-      filename: "/project/pages/api/data.ts",
+      filename: "/project/app/webhooks/route.ts",
       errors: [
         { messageId: "missingErrorHandling" },
         { messageId: "missingInputValidation" },
@@ -62,10 +72,10 @@ ruleTester.run(RULE_NAME, rule, {
         { messageId: "improperStatusCode" },
       ],
     },
-    // File ending with route.ts is flagged regardless of location
+    // Pages Router API route — should also be flagged
     {
       code: "export function getData() { return 'hello'; }",
-      filename: "/project/some/path/route.ts",
+      filename: "/project/pages/api/data.ts",
       errors: [
         { messageId: "missingErrorHandling" },
         { messageId: "missingInputValidation" },

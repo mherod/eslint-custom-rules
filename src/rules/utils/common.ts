@@ -18,7 +18,7 @@ const NAMING_PATTERNS = {
 const FILE_PATTERNS = {
   COMPONENT: ["/components/", "/pages/", "/app/"],
   HOOK: ["/hooks/"],
-  API: ["/app/api/", "/pages/api/", "/route.ts", "/route.js"],
+  API: ["/app/api/", "/pages/api/"],
   UTIL: ["/utils/", "/lib/", "/helpers/"],
   TEST: ["__tests__", ".test.", ".spec."],
   STYLE: [".css", ".scss", ".sass", ".less"],
@@ -122,10 +122,21 @@ export function isHookPath(filename: string): boolean {
 }
 
 /**
- * Check if a file path is likely an API route
+ * Check if a file path is a Next.js API route.
+ *
+ * Matches:
+ * - app/api/** /route.{ts,js} (App Router API routes)
+ * - app/** /route.{ts,js} inside an api/ ancestor (App Router)
+ * - pages/api/** (Pages Router API routes)
  */
+const APP_ROUTE_HANDLER_RE = /\/app\/.*\/route\.[tj]s$/;
+
 export function isApiRoute(filename: string): boolean {
-  return FILE_PATTERNS.API.some((pattern) => filename.includes(pattern));
+  const normalized = filename.replace(/\\/g, "/");
+  if (FILE_PATTERNS.API.some((pattern) => normalized.includes(pattern))) {
+    return true;
+  }
+  return APP_ROUTE_HANDLER_RE.test(normalized);
 }
 
 /**
