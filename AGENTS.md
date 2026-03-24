@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides comprehensive guidance to Claude Code (claude.ai/code) and developers when working with code in this repository. It contains everything needed to start contributing on day one.
+This file provides comprehensive guidance to Codex (Codex.ai/code) and developers when working with code in this repository. It contains everything needed to start contributing on day one.
 
 ## Repository Overview
 

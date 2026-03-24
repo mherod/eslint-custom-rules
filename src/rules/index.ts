@@ -82,6 +82,7 @@ import enforceApiPatterns from "./typescript/enforce-api-patterns";
 import enforceDocumentation from "./typescript/enforce-documentation";
 import enforceTypescriptPatterns from "./typescript/enforce-typescript-patterns";
 import enforceZodSchemaNaming from "./typescript/enforce-zod-schema-naming";
+import noComplexTypeGymnastics from "./typescript/no-complex-type-gymnastics";
 import noEmptyFunctionImplementations from "./typescript/no-empty-function-implementations";
 import noUnsafeTypeAssertion from "./typescript/no-unsafe-type-assertion";
 
@@ -97,6 +98,7 @@ export const rules = {
   "no-async-server-component-in-client": noAsyncServerComponentInClient,
   "no-conflicting-directives": noConflictingDirectives,
   "no-context-provider-in-server-component": noContextProviderInServerComponent,
+  "no-complex-type-gymnastics": noComplexTypeGymnastics,
   "no-empty-function-implementations": noEmptyFunctionImplementations,
   "no-unsafe-type-assertion": noUnsafeTypeAssertion,
   "no-event-handlers-to-client-props": noEventHandlersToClientProps,

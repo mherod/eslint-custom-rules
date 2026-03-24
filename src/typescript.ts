@@ -4,6 +4,7 @@ import enforceApiPatterns from "./rules/typescript/enforce-api-patterns";
 import enforceDocumentation from "./rules/typescript/enforce-documentation";
 import enforceTypescriptPatterns from "./rules/typescript/enforce-typescript-patterns";
 import enforceZodSchemaNaming from "./rules/typescript/enforce-zod-schema-naming";
+import noComplexTypeGymnastics from "./rules/typescript/no-complex-type-gymnastics";
 import noEmptyFunctionImplementations from "./rules/typescript/no-empty-function-implementations";
 import noUnsafeTypeAssertion from "./rules/typescript/no-unsafe-type-assertion";
 
@@ -11,6 +12,7 @@ import noUnsafeTypeAssertion from "./rules/typescript/no-unsafe-type-assertion";
 export const TYPESCRIPT_RECOMMENDED_SEVERITIES = {
   "enforce-typescript-patterns": "warn",
   "enforce-zod-schema-naming": "warn",
+  "no-complex-type-gymnastics": "warn",
   "no-empty-function-implementations": "warn",
   "no-unsafe-type-assertion": "warn",
 } as const;
@@ -21,6 +23,7 @@ export const TYPESCRIPT_STRICT_SEVERITIES = {
   "enforce-documentation": "warn",
   "enforce-typescript-patterns": "error",
   "enforce-zod-schema-naming": "error",
+  "no-complex-type-gymnastics": "error",
   "no-empty-function-implementations": "error",
 } as const;
 
@@ -29,6 +32,7 @@ export const typescriptRules = {
   "enforce-documentation": enforceDocumentation,
   "enforce-typescript-patterns": enforceTypescriptPatterns,
   "enforce-zod-schema-naming": enforceZodSchemaNaming,
+  "no-complex-type-gymnastics": noComplexTypeGymnastics,
   "no-empty-function-implementations": noEmptyFunctionImplementations,
   "no-unsafe-type-assertion": noUnsafeTypeAssertion,
 };
