@@ -1,6 +1,7 @@
 import {
   AST_NODE_TYPES,
   ESLintUtils,
+  type TSESLint,
   type TSESTree,
 } from "@typescript-eslint/utils";
 import { hasUseClientDirective } from "../utils/component-type-utils";
@@ -52,14 +53,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
 });
 
-// Using any for context type to avoid complex type inference issues
 function checkComponentProps(
   node:
     | TSESTree.FunctionDeclaration
     | TSESTree.ArrowFunctionExpression
     | TSESTree.FunctionExpression,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: any
+  context: Readonly<TSESLint.RuleContext<MessageIds, Options>>
 ): void {
   if (node.params.length === 0) {
     return;

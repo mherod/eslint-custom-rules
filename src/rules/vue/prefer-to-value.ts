@@ -1,14 +1,12 @@
 import {
   AST_NODE_TYPES,
   ESLintUtils,
+  type TSESLint,
   type TSESTree,
 } from "@typescript-eslint/utils";
 
-// Using any for fixer type to avoid complex type resolution issues
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type RuleFixer = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type RuleFix = any;
+type RuleFixer = TSESLint.RuleFixer;
+type RuleFix = TSESLint.RuleFix;
 
 export const RULE_NAME = "prefer-to-value";
 

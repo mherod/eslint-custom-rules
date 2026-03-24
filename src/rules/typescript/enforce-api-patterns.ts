@@ -1,6 +1,7 @@
 import {
   AST_NODE_TYPES,
   ESLintUtils,
+  type TSESLint,
   type TSESTree,
 } from "@typescript-eslint/utils";
 import {
@@ -10,10 +11,6 @@ import {
   isHttpMethod,
   isProtectedRoute,
 } from "../utils/common";
-
-// Using any for context type to avoid complex type inference issues
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type RuleContext = any;
 
 export const RULE_NAME = "enforce-api-patterns";
 
@@ -224,14 +221,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 });
 
 function validateApiHandler(
-  context: RuleContext,
+  context: Readonly<TSESLint.RuleContext<MessageIds, Options>>,
   node: TSESTree.FunctionDeclaration,
   routeName: string
 ): void {
   // Check if function has proper parameters
   if (node.params.length < 1) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    (context as any).report({
+    context.report({
       node,
       messageId: "missingResponseType",
       data: { route: routeName },
@@ -240,8 +236,7 @@ function validateApiHandler(
 
   // Check if function has return type annotation
   if (!node.returnType) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    (context as any).report({
+    context.report({
       node,
       messageId: "missingResponseType",
       data: { route: routeName },
