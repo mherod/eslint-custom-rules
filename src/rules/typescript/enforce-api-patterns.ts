@@ -25,9 +25,7 @@ type MessageIds =
   | "missingResponseType"
   | "unsafeDirectDbAccess"
   | "missingAuthCheck"
-  | "missingRateLimit"
-  | "improperErrorResponse"
-  | "missingCorsHeaders";
+  | "improperErrorResponse";
 
 type Options = [];
 
@@ -54,12 +52,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         "API route '{{route}}' should not directly access database - use repository pattern",
       missingAuthCheck:
         "API route '{{route}}' should implement authentication checks for protected endpoints",
-      missingRateLimit:
-        "API route '{{route}}' should implement rate limiting for public endpoints",
       improperErrorResponse:
         "API route '{{route}}' should return consistent error response format",
-      missingCorsHeaders:
-        "API route '{{route}}' should set proper CORS headers for cross-origin requests",
     },
   },
   defaultOptions: [],
@@ -204,7 +198,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         if (hasErrorHandling && !hasProperErrorResponse) {
           context.report({
             node: sourceCode.ast,
-            messageId: "improperStatusCode",
+            messageId: "improperErrorResponse",
             data: { route: routeName },
           });
         }

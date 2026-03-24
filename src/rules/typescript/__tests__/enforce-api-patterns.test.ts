@@ -73,5 +73,21 @@ ruleTester.run(RULE_NAME, rule, {
         { messageId: "improperStatusCode" },
       ],
     },
+    // Has error handling (try-catch) but no NextResponse — fires improperErrorResponse
+    {
+      code: `export function GET() {
+        try { return Response.json({ ok: true }); }
+        catch (e) { return Response.json({ error: 'fail' }); }
+      }`,
+      filename: "/project/app/api/data/route.ts",
+      errors: [
+        { messageId: "missingInputValidation" },
+        { messageId: "missingRequestMethodCheck" },
+        { messageId: "improperStatusCode" },
+        { messageId: "improperErrorResponse" },
+        { messageId: "missingResponseType" },
+        { messageId: "missingResponseType" },
+      ],
+    },
   ],
 });
