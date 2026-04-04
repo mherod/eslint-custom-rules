@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-04-04
+
+### New Features
+
+- Added a resect-backed refactor surface in `@mherod/eslint-plugin-custom/refactors`
+  for symbol renames, Zod schema renames, and file moves across the project graph.
+- `prefer-direct-imports` now resolves real leaf modules and can split mixed
+  barrel imports into direct imports.
+- `no-long-relative-imports` now offers canonical import fixes when a stable
+  alias, workspace import, or shorter relative path exists.
+- Added `no-unresolvable-imports` for import, export, dynamic import, require,
+  and mock calls that TypeScript cannot resolve.
+
 ## 2026-03-18
 
 ### New Features

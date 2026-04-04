@@ -27,11 +27,19 @@ ruleTester.run(RULE_NAME, rule, {
       filename: FIXTURE_FILE,
     },
     {
+      code: 'export * from "../existing";',
+      filename: FIXTURE_FILE,
+    },
+    {
       code: 'import { existing } from "../existing";',
       filename: FIXTURE_FILE,
     },
     {
       code: 'const feature = require("./feature");',
+      filename: FIXTURE_FILE,
+    },
+    {
+      code: 'vi.mock("./feature");',
       filename: FIXTURE_FILE,
     },
   ],
@@ -43,6 +51,11 @@ ruleTester.run(RULE_NAME, rule, {
     },
     {
       code: 'export { missing } from "./missing";',
+      errors: [{ messageId: "unresolvableImport" }],
+      filename: FIXTURE_FILE,
+    },
+    {
+      code: 'export * from "./missing-all";',
       errors: [{ messageId: "unresolvableImport" }],
       filename: FIXTURE_FILE,
     },
@@ -63,6 +76,16 @@ ruleTester.run(RULE_NAME, rule, {
     },
     {
       code: 'jest.mock("@/missing-mock");',
+      errors: [{ messageId: "unresolvableImport" }],
+      filename: FIXTURE_FILE,
+    },
+    {
+      code: 'vi.mock("./missing-vi");',
+      errors: [{ messageId: "unresolvableImport" }],
+      filename: FIXTURE_FILE,
+    },
+    {
+      code: 'vitest.doMock("./missing-vitest");',
       errors: [{ messageId: "unresolvableImport" }],
       filename: FIXTURE_FILE,
     },

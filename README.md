@@ -190,7 +190,7 @@ export default [
 }
 ```
 
-#### Available Rules (44 rules)
+#### Available Rules (49 rules)
 
 **Server/Client Separation:**
 - `enforce-admin-separation` - Isolates admin-only functionality
@@ -351,7 +351,7 @@ export default [
 }
 ```
 
-#### Available Rules (12 rules)
+#### Available Rules (16 rules)
 
 - `enforce-security-patterns` - Comprehensive security pattern enforcement
 - `no-hardcoded-secrets` - Prevents hardcoded API keys, tokens, and passwords
