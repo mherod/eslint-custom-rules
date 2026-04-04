@@ -62,7 +62,18 @@ ruleTester.run("no-unstable-math-random", noUnstableMathRandom, {
       `,
       errors: [
         {
-          messageId: "avoidMathRandomInRender",
+          messageId: "avoidMathRandomInRender" as const,
+          suggestions: [
+            {
+              messageId: "wrapInUseMemo" as const,
+              output: `
+        function MyComponent() {
+          const value = useMemo(() => Math.random(), []);
+          return <div>{value}</div>;
+        }
+      `,
+            },
+          ],
         },
       ],
     },
@@ -75,7 +86,17 @@ ruleTester.run("no-unstable-math-random", noUnstableMathRandom, {
       `,
       errors: [
         {
-          messageId: "avoidMathRandomInJSX",
+          messageId: "avoidMathRandomInJSX" as const,
+          suggestions: [
+            {
+              messageId: "wrapInUseMemo" as const,
+              output: `
+        function MyComponent() {
+          return <div>{useMemo(() => Math.random(), [])}</div>;
+        }
+      `,
+            },
+          ],
         },
       ],
     },
@@ -90,7 +111,19 @@ ruleTester.run("no-unstable-math-random", noUnstableMathRandom, {
       `,
       errors: [
         {
-          messageId: "avoidMathRandomInRender",
+          messageId: "avoidMathRandomInRender" as const,
+          suggestions: [
+            {
+              messageId: "wrapInUseMemo" as const,
+              output: `
+        function MyComponent() {
+          const messages = ["Hello", "Hi", "Hey"];
+          const message = messages[Math.floor(useMemo(() => Math.random(), []) * messages.length)];
+          return <div>{message}</div>;
+        }
+      `,
+            },
+          ],
         },
       ],
     },
@@ -104,7 +137,18 @@ ruleTester.run("no-unstable-math-random", noUnstableMathRandom, {
       `,
       errors: [
         {
-          messageId: "avoidMathRandomInUseMemo",
+          messageId: "avoidMathRandomInUseMemo" as const,
+          suggestions: [
+            {
+              messageId: "useEmptyDeps" as const,
+              output: `
+        function MyComponent({ data }) {
+          const value = useMemo(() => Math.random() * data.length, []);
+          return <div>{value}</div>;
+        }
+      `,
+            },
+          ],
         },
       ],
     },
@@ -120,7 +164,20 @@ ruleTester.run("no-unstable-math-random", noUnstableMathRandom, {
       `,
       errors: [
         {
-          messageId: "avoidMathRandomInUseCallback",
+          messageId: "avoidMathRandomInUseCallback" as const,
+          suggestions: [
+            {
+              messageId: "wrapInUseMemo" as const,
+              output: `
+        function MyComponent() {
+          const handleClick = useCallback(() => {
+            alert(useMemo(() => Math.random(), []));
+          }, []);
+          return <button onClick={handleClick}>Click</button>;
+        }
+      `,
+            },
+          ],
         },
       ],
     },
@@ -140,7 +197,24 @@ ruleTester.run("no-unstable-math-random", noUnstableMathRandom, {
       `,
       errors: [
         {
-          messageId: "avoidMathRandomInRender",
+          messageId: "avoidMathRandomInRender" as const,
+          suggestions: [
+            {
+              messageId: "wrapInUseMemo" as const,
+              output: `
+        function OnlineUsersBubble() {
+          const getBubbleText = () => {
+            const weekendMessages = [
+              "Working at the weekend? Dedicated!",
+              "Weekend warrior mode: activated",
+            ];
+            return weekendMessages[Math.floor(useMemo(() => Math.random(), []) * weekendMessages.length)];
+          };
+          return <div>{getBubbleText()}</div>;
+        }
+      `,
+            },
+          ],
         },
       ],
     },

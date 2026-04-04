@@ -12,6 +12,63 @@ import {
   isHookName,
 } from "../utils/common";
 
+/**
+ * Extracts parameter names from a function node for JSDoc generation.
+ */
+function getParamNames(
+  node:
+    | TSESTree.FunctionDeclaration
+    | TSESTree.ArrowFunctionExpression
+    | TSESTree.FunctionExpression
+): string[] {
+  return node.params
+    .map((param) => {
+      if (param.type === AST_NODE_TYPES.Identifier) {
+        return param.name;
+      }
+      if (
+        param.type === AST_NODE_TYPES.AssignmentPattern &&
+        param.left.type === AST_NODE_TYPES.Identifier
+      ) {
+        return param.left.name;
+      }
+      if (
+        param.type === AST_NODE_TYPES.RestElement &&
+        param.argument.type === AST_NODE_TYPES.Identifier
+      ) {
+        return `...${param.argument.name}`;
+      }
+      return null;
+    })
+    .filter((name): name is string => name !== null);
+}
+
+/**
+ * Generates a JSDoc stub comment for a given function or type.
+ */
+function generateJsDocStub(
+  name: string,
+  params: string[],
+  hasReturn: boolean,
+  indent: string
+): string {
+  const lines: string[] = [
+    `${indent}/**`,
+    `${indent} * Description of ${name}.`,
+  ];
+
+  for (const param of params) {
+    lines.push(`${indent} * @param ${param} - Description.`);
+  }
+
+  if (hasReturn) {
+    lines.push(`${indent} * @returns Description.`);
+  }
+
+  lines.push(`${indent} */`);
+  return `${lines.join("\n")}\n`;
+}
+
 export const RULE_NAME = "enforce-documentation";
 
 type MessageIds =
@@ -101,10 +158,25 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             messageId = "missingJSDocForUtility";
           }
 
+          const insertTarget =
+            node.parent?.type === AST_NODE_TYPES.ExportNamedDeclaration ||
+            node.parent?.type === AST_NODE_TYPES.ExportDefaultDeclaration
+              ? node.parent
+              : node;
+          const params = getParamNames(node);
+          const hasReturn = node.returnType !== undefined;
+          const col = insertTarget.loc.start.column;
+          const indent = " ".repeat(col);
+
           context.report({
             node,
             messageId,
             data: { name: functionName },
+            fix: (fixer: TSESLint.RuleFixer): TSESLint.RuleFix =>
+              fixer.insertTextBefore(
+                insertTarget,
+                generateJsDocStub(functionName, params, hasReturn, indent)
+              ),
           });
         }
 
@@ -136,10 +208,28 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               messageId = "missingJSDocForUtility";
             }
 
+            const fnNode = node.init as
+              | TSESTree.ArrowFunctionExpression
+              | TSESTree.FunctionExpression;
+            const varDecl = node.parent;
+            const insertTarget =
+              varDecl?.parent?.type === AST_NODE_TYPES.ExportNamedDeclaration
+                ? varDecl.parent
+                : (varDecl ?? node);
+            const params = getParamNames(fnNode);
+            const hasReturn = fnNode.returnType !== undefined;
+            const col = insertTarget.loc.start.column;
+            const indent = " ".repeat(col);
+
             context.report({
               node,
               messageId,
               data: { name: functionName },
+              fix: (fixer: TSESLint.RuleFixer): TSESLint.RuleFix =>
+                fixer.insertTextBefore(
+                  insertTarget,
+                  generateJsDocStub(functionName, params, hasReturn, indent)
+                ),
             });
           }
 
@@ -166,10 +256,22 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             : null);
 
         if (isExported && !jsDocComment && isComplexType(node.typeAnnotation)) {
+          const insertTarget =
+            node.parent?.type === AST_NODE_TYPES.ExportNamedDeclaration
+              ? node.parent
+              : node;
+          const col = insertTarget.loc.start.column;
+          const indent = " ".repeat(col);
+
           context.report({
             node,
             messageId: "missingTypeDocumentation",
             data: { name: typeName },
+            fix: (fixer: TSESLint.RuleFixer): TSESLint.RuleFix =>
+              fixer.insertTextBefore(
+                insertTarget,
+                generateJsDocStub(typeName, [], false, indent)
+              ),
           });
         }
       },
@@ -186,10 +288,22 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             : null);
 
         if (isExported && !jsDocComment) {
+          const insertTarget =
+            node.parent?.type === AST_NODE_TYPES.ExportNamedDeclaration
+              ? node.parent
+              : node;
+          const col = insertTarget.loc.start.column;
+          const indent = " ".repeat(col);
+
           context.report({
             node,
             messageId: "missingTypeDocumentation",
             data: { name: interfaceName },
+            fix: (fixer: TSESLint.RuleFixer): TSESLint.RuleFix =>
+              fixer.insertTextBefore(
+                insertTarget,
+                generateJsDocStub(interfaceName, [], false, indent)
+              ),
           });
         }
       },

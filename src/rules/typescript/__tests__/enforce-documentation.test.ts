@@ -42,6 +42,8 @@ ruleTester.run(RULE_NAME, rule, {
     // Exported interface without any JSDoc — should be flagged
     {
       code: "export interface BaseFilters { page: number; limit: number; }",
+      output:
+        "/**\n * Description of BaseFilters.\n */\nexport interface BaseFilters { page: number; limit: number; }",
       errors: [
         {
           messageId: "missingTypeDocumentation",
@@ -53,6 +55,8 @@ ruleTester.run(RULE_NAME, rule, {
     // Exported type alias with complex type (>3 members) and no JSDoc — should be flagged
     {
       code: "export type Config = { host: string; port: number; timeout: number; retries: number; };",
+      output:
+        "/**\n * Description of Config.\n */\nexport type Config = { host: string; port: number; timeout: number; retries: number; };",
       errors: [
         { messageId: "missingTypeDocumentation", data: { name: "Config" } },
       ],

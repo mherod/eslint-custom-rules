@@ -65,6 +65,7 @@
     "@biomejs/biome": "^2.4.4",
     "@commitlint/cli": "^20.4.2",
     "@commitlint/config-conventional": "^20.4.2",
+    "@mherod/resect": "^1.6.0",
     "@types/eslint": "^9.6.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.3.0",

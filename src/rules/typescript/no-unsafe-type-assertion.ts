@@ -1,6 +1,7 @@
 import {
   AST_NODE_TYPES,
   ESLintUtils,
+  type TSESLint,
   type TSESTree,
 } from "@typescript-eslint/utils";
 
@@ -9,7 +10,8 @@ export const RULE_NAME = "no-unsafe-type-assertion";
 type MessageIds =
   | "noIndexAccessCast"
   | "noObjectKeysKeyofCast"
-  | "noParametersTypeofIndexed";
+  | "noParametersTypeofIndexed"
+  | "extractNamedType";
 
 type Options = [];
 
@@ -161,7 +163,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Disallow type assertions used to bypass the type system for property access or Object.keys iteration",
     },
-    fixable: "code",
+    hasSuggestions: true,
     schema: [],
     messages: {
       noIndexAccessCast:
@@ -188,6 +190,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         "Prefer: extract and name the type explicitly — " +
         "`type MyParam = Parameters<typeof {{fn}}>[{{index}}]` at the declaration site, " +
         "then use `MyParam` directly — or refactor the function to accept a named options object.",
+
+      extractNamedType:
+        "Extract to a named type alias: `type {{typeName}} = {{typeExpr}}`",
     },
   },
   defaultOptions: [],
@@ -263,14 +268,33 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             : context.sourceCode.getText(typeQuery.exprName);
         const indexLiteral = (node.indexType as TSESTree.TSLiteralType)
           .literal as TSESTree.Literal;
+        const typeExpr = context.sourceCode.getText(node);
+        const capitalizedFn = fnName.charAt(0).toUpperCase() + fnName.slice(1);
+        const paramIndex = String(indexLiteral.value);
+        const suggestedTypeName =
+          utilityName === "Parameters"
+            ? `${capitalizedFn}Param${paramIndex}`
+            : `${capitalizedFn}${utilityName}`;
+
         context.report({
           node,
           messageId: "noParametersTypeofIndexed",
           data: {
             utility: utilityName,
             fn: fnName,
-            index: String(indexLiteral.value),
+            index: paramIndex,
           },
+          suggest: [
+            {
+              messageId: "extractNamedType" as const,
+              data: {
+                typeName: suggestedTypeName,
+                typeExpr,
+              },
+              fix: (fixer: TSESLint.RuleFixer): TSESLint.RuleFix =>
+                fixer.replaceText(node, suggestedTypeName),
+            },
+          ],
         });
       },
     };

@@ -104,8 +104,18 @@ ruleTester.run("no-unsafe-type-assertion", rule, {
       code: "type P = Parameters<typeof withQuery>[1];",
       errors: [
         {
-          messageId: "noParametersTypeofIndexed",
+          messageId: "noParametersTypeofIndexed" as const,
           data: { utility: "Parameters", fn: "withQuery", index: "1" },
+          suggestions: [
+            {
+              messageId: "extractNamedType" as const,
+              data: {
+                typeName: "WithQueryParam1",
+                typeExpr: "Parameters<typeof withQuery>[1]",
+              },
+              output: "type P = WithQueryParam1;",
+            },
+          ],
         },
       ],
     },
@@ -113,8 +123,18 @@ ruleTester.run("no-unsafe-type-assertion", rule, {
       code: "type First = Parameters<typeof myFn>[0];",
       errors: [
         {
-          messageId: "noParametersTypeofIndexed",
+          messageId: "noParametersTypeofIndexed" as const,
           data: { utility: "Parameters", fn: "myFn", index: "0" },
+          suggestions: [
+            {
+              messageId: "extractNamedType" as const,
+              data: {
+                typeName: "MyFnParam0",
+                typeExpr: "Parameters<typeof myFn>[0]",
+              },
+              output: "type First = MyFnParam0;",
+            },
+          ],
         },
       ],
     },
@@ -123,8 +143,18 @@ ruleTester.run("no-unsafe-type-assertion", rule, {
       code: "function wrap(opts: Parameters<typeof withQuery>[1]) {}",
       errors: [
         {
-          messageId: "noParametersTypeofIndexed",
+          messageId: "noParametersTypeofIndexed" as const,
           data: { utility: "Parameters", fn: "withQuery", index: "1" },
+          suggestions: [
+            {
+              messageId: "extractNamedType" as const,
+              data: {
+                typeName: "WithQueryParam1",
+                typeExpr: "Parameters<typeof withQuery>[1]",
+              },
+              output: "function wrap(opts: WithQueryParam1) {}",
+            },
+          ],
         },
       ],
     },
@@ -133,8 +163,22 @@ ruleTester.run("no-unsafe-type-assertion", rule, {
       code: "type Arg = ConstructorParameters<typeof MyClass>[0];",
       errors: [
         {
-          messageId: "noParametersTypeofIndexed",
-          data: { utility: "ConstructorParameters", fn: "MyClass", index: "0" },
+          messageId: "noParametersTypeofIndexed" as const,
+          data: {
+            utility: "ConstructorParameters",
+            fn: "MyClass",
+            index: "0",
+          },
+          suggestions: [
+            {
+              messageId: "extractNamedType" as const,
+              data: {
+                typeName: "MyClassConstructorParameters",
+                typeExpr: "ConstructorParameters<typeof MyClass>[0]",
+              },
+              output: "type Arg = MyClassConstructorParameters;",
+            },
+          ],
         },
       ],
     },

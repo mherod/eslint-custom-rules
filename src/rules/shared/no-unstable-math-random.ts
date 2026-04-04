@@ -1,6 +1,7 @@
 import {
   AST_NODE_TYPES,
   ESLintUtils,
+  type TSESLint,
   type TSESTree,
 } from "@typescript-eslint/utils";
 
@@ -10,7 +11,9 @@ type MessageIds =
   | "avoidMathRandomInRender"
   | "avoidMathRandomInUseMemo"
   | "avoidMathRandomInUseCallback"
-  | "avoidMathRandomInJSX";
+  | "avoidMathRandomInJSX"
+  | "wrapInUseMemo"
+  | "useEmptyDeps";
 
 type Options = [];
 
@@ -21,7 +24,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Prevent usage of Math.random() in React components that can cause state instability and unwanted re-renders",
     },
-    fixable: "code",
+    hasSuggestions: true,
     schema: [],
     messages: {
       avoidMathRandomInRender:
@@ -32,6 +35,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         "Math.random() in useCallback can cause the callback to change unexpectedly. Consider using a stable value or ref.",
       avoidMathRandomInJSX:
         "Math.random() in JSX expressions will generate different values on each render. Use a stable value from state or useMemo instead.",
+      wrapInUseMemo:
+        "Wrap in useMemo with empty deps to stabilize across renders",
+      useEmptyDeps:
+        "Use empty dependency array [] to make the memoized value stable",
     },
   },
   defaultOptions: [],
@@ -198,9 +205,19 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
                 useMemoNode.arguments[1].elements.length === 0;
 
               if (!hasEmptyDeps) {
+                const depsNode = useMemoNode.arguments[1];
                 context.report({
                   node,
                   messageId: "avoidMathRandomInUseMemo",
+                  suggest: depsNode
+                    ? [
+                        {
+                          messageId: "useEmptyDeps" as const,
+                          fix: (fixer: TSESLint.RuleFixer): TSESLint.RuleFix =>
+                            fixer.replaceText(depsNode, "[]"),
+                        },
+                      ]
+                    : [],
                 });
               }
             }
@@ -208,6 +225,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             context.report({
               node,
               messageId: "avoidMathRandomInUseCallback",
+              suggest: [
+                {
+                  messageId: "wrapInUseMemo" as const,
+                  fix: (fixer: TSESLint.RuleFixer): TSESLint.RuleFix =>
+                    fixer.replaceText(node, "useMemo(() => Math.random(), [])"),
+                },
+              ],
             });
           } else {
             // Check if we're in JSX
@@ -225,15 +249,25 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
               parent = parent.parent;
             }
 
+            const suggestWrapInUseMemo = [
+              {
+                messageId: "wrapInUseMemo" as const,
+                fix: (fixer: TSESLint.RuleFixer): TSESLint.RuleFix =>
+                  fixer.replaceText(node, "useMemo(() => Math.random(), [])"),
+              },
+            ];
+
             if (inJsx) {
               context.report({
                 node,
                 messageId: "avoidMathRandomInJSX",
+                suggest: suggestWrapInUseMemo,
               });
             } else {
               context.report({
                 node,
                 messageId: "avoidMathRandomInRender",
+                suggest: suggestWrapInUseMemo,
               });
             }
           }

@@ -23,6 +23,9 @@ importers:
       '@commitlint/config-conventional':
         specifier: ^20.4.2
         version: 20.4.2
+      '@mherod/resect':
+        specifier: ^1.6.0
+        version: 1.6.0
       '@types/eslint':
         specifier: ^9.6.1
         version: 9.6.1
@@ -702,6 +705,11 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@mherod/resect@1.6.0':
+    resolution: {integrity: sha512-jjVZxU6tpCPaXxtFi+HdNbhH+E/U8C1SMji5aHv7rDncHc4A3O84usu/svPVz/2N1kwMfm9RYfGNCDfxacCmbw==}
+    engines: {bun: '>=1.0.0'}
+    hasBin: true
 
   '@napi-rs/wasm-runtime@0.2.12':
     resolution: {integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==}
@@ -3337,6 +3345,10 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@mherod/resect@1.6.0':
+    dependencies:
+      typescript: 5.9.3
 
   '@napi-rs/wasm-runtime@0.2.12':
     dependencies:
