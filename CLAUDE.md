@@ -86,6 +86,8 @@ pnpm exec jest src/rules/__tests__/[rule-name].test.ts
 pnpm exec jest --listTests
 ```
 
+**DO**: Run `pnpm install` before `pnpm typecheck` or `pnpm build` when `git status` shows modified `package.json` or `pnpm-lock.yaml`. Dirty lockfiles indicate out-of-sync `node_modules` — typecheck will fail with "Cannot find type definition file" errors until dependencies are installed.
+
 ## Architecture
 
 ### Plugin Structure
@@ -713,9 +715,17 @@ gh secret set NPM_TOKEN --body "$AUTH_TOKEN"
 
 **DO**: Set `hasSuggestions: true` in rule meta when providing `suggest` arrays in `context.report()`. ESLint requires this flag for rules that offer suggestion fixes. Without it, the rule silently drops suggestions.
 
+**DO**: When switching a rule from `fixable: "code"` (auto-fix) to `suggest`-only, remove `fixable: "code"` and add `hasSuggestions: true`. These are independent flags — `fixable` is for `fix()` callbacks applied by `--fix`, `hasSuggestions` is for `suggest` arrays shown as IDE quick-fixes. A rule that only has `suggest` must not declare `fixable`.
+
+**DO**: When writing tests for rules with `suggest`, add `suggestions` arrays on each error object. The RuleTester enforces this — if a reported error has suggestions but the test doesn't specify them, the test fails with "Error has suggestions. Please specify 'suggestions' property."
+
+**DO**: When writing tests for fixable rules, run the test once with a deliberately wrong `output` to see what ESLint actually produces after applying the fix. The fixer inserts `async` before the `function` keyword (not before `export`), and ESLint deduplicates overlapping fixes from multiple reports on the same node. Do not guess fix output positions.
+
 **DO**: Add explicit `TSESLint.RuleFix` return type annotations to `fix()` functions inside `suggest` arrays. The project's `@typescript-eslint/explicit-function-return-type` lint rule requires them. Import with `import type { TSESLint } from "@typescript-eslint/utils"`. The top-level `fix()` callback in `context.report()` infers its return type from the overload, but suggest-level fix functions do not.
 
 **DO**: Only provide auto-fix (`fix()`) for non-serializable prop types with a single well-defined conversion. Date has `.toISOString()` (safe default). For types with no universal conversion (functions, Map, Set, classes), use `suggest` (IDE-only suggestions) or diagnostic messages with remediation guidance — never auto-fix.
+
+**DO**: When walking AST nodes with generic property iteration (e.g., `Object.keys(node)`), use the double-cast `(node as unknown as Record<string, unknown>)[key]`. TypeScript strict mode rejects direct `(node as Record<string, unknown>)` because `TSESTree.Node` doesn't overlap with `Record<string, unknown>`. Always skip the `"parent"` key to avoid circular references.
 
 **DO**: When using `resect similar` to find duplicate code, evaluate matches by **domain and purpose**, not just structural similarity score. Functions with the same `.some(item => str.includes(item))` pattern but operating on different domain concepts (admin paths vs hook paths vs protected routes) are not true duplicates. Only extract when functions share both the same shape and the same conceptual responsibility.
 
@@ -789,15 +799,15 @@ See `package.json` exports field for entry points. Each exports CJS (`.js`), ESM
 
 ## Test Coverage
 
-Current test files (48 test suites, 828 tests total):
-- **React**: 26 test files
+Current test files (60 test suites, 1020 tests total):
+- **React**: 27 test files
 - **General**: 14 test files
-- **TypeScript**: 2 test files
+- **TypeScript**: 4 test files
 - **Shared**: 1 test file (no-unstable-math-random)
 - **Vue**: 1 test file (prefer-to-value)
-- **Security**: 0 test files
+- **Security**: 1 test file (require-rate-limiting)
 
-**Note**: Security rules have no test files yet. Several React rules also lack test coverage (e.g. `prevent-environment-poisoning`). When creating new rules or modifying existing rule logic, always include comprehensive tests.
+**Note**: Most security rules lack test files. Several React rules also lack test coverage (e.g. `prevent-environment-poisoning`). When creating new rules or modifying existing rule logic, always include comprehensive tests.
 
 ## Common Patterns & Conventions
 
