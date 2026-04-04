@@ -55,6 +55,91 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
 });
 
+/**
+ * Checks whether every reference to a variable is used exclusively as a
+ * JSX attribute value — the delegation pattern for Partial Prerendering.
+ *
+ * Example: `<HomeContent searchParams={searchParams} />`
+ */
+function isOnlyDelegatedAsJsxProp(
+  paramName: string,
+  body: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode
+): boolean {
+  const scope = sourceCode.getScope(body);
+  const variable = scope.set.get(paramName);
+  if (!variable || variable.references.length === 0) {
+    return false;
+  }
+
+  return variable.references.every((ref) => {
+    if (ref.isWriteOnly()) {
+      return true;
+    }
+    const id = ref.identifier;
+    return (
+      id.parent?.type === AST_NODE_TYPES.JSXExpressionContainer &&
+      id.parent.parent?.type === AST_NODE_TYPES.JSXAttribute
+    );
+  });
+}
+
+/**
+ * Checks whether every usage of `props.params` or `props.searchParams` in
+ * the function body is exclusively a JSX attribute value.
+ */
+function isMemberOnlyDelegatedAsJsxProp(
+  propsName: string,
+  paramNames: string[],
+  body: TSESTree.Node
+): boolean {
+  let totalRefs = 0;
+  let jsxPropRefs = 0;
+
+  function visit(node: TSESTree.Node): void {
+    if (
+      node.type === AST_NODE_TYPES.MemberExpression &&
+      !node.computed &&
+      node.object.type === AST_NODE_TYPES.Identifier &&
+      node.object.name === propsName &&
+      node.property.type === AST_NODE_TYPES.Identifier &&
+      paramNames.includes(node.property.name)
+    ) {
+      totalRefs++;
+      if (
+        node.parent?.type === AST_NODE_TYPES.JSXExpressionContainer &&
+        node.parent.parent?.type === AST_NODE_TYPES.JSXAttribute
+      ) {
+        jsxPropRefs++;
+      }
+      return;
+    }
+
+    for (const key of Object.keys(node)) {
+      if (key === "parent") {
+        continue;
+      }
+      const value = (node as unknown as Record<string, unknown>)[key];
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          if (item && typeof item === "object" && "type" in item) {
+            visit(item as TSESTree.Node);
+          }
+        }
+      } else if (
+        value &&
+        typeof value === "object" &&
+        "type" in (value as Record<string, unknown>)
+      ) {
+        visit(value as TSESTree.Node);
+      }
+    }
+  }
+
+  visit(body);
+  return totalRefs > 0 && totalRefs === jsxPropRefs;
+}
+
 function checkPageProps(
   node:
     | TSESTree.FunctionDeclaration
@@ -77,6 +162,19 @@ function checkPageProps(
         if (["params", "searchParams"].includes(prop.key.name)) {
           // Flag if the function is not async, as they CANNOT await it.
           if (!node.async) {
+            // Get the local binding name (handles renaming: { params: p })
+            const localName =
+              prop.value.type === AST_NODE_TYPES.Identifier
+                ? prop.value.name
+                : prop.key.name;
+
+            // Skip if the param is only passed as a JSX prop (delegation/PPR pattern)
+            if (
+              isOnlyDelegatedAsJsxProp(localName, node.body, context.sourceCode)
+            ) {
+              continue;
+            }
+
             context.report({
               node: prop,
               messageId: "awaitParams",
@@ -91,16 +189,7 @@ function checkPageProps(
   }
   // 2. Check if using named props: function Page(props)
   else if (propsParam && propsParam.type === AST_NODE_TYPES.Identifier) {
-    // If the function is not async, any usage of props.params is problematic (cannot be awaited)
-    // We can flag the prop declaration itself if we detect usage, or just flag it if it's not async and likely a page.
-    // For now, let's flag the function param if `!node.async` and we are fairly sure it's a page component (checked by filename).
     if (!node.async) {
-      // We can't be 100% sure they use params, but if they define `props` in a Page,
-      // and don't make it async, they are blocking the ability to await params.
-      // Next.js 15 basically forces async pages if you use params.
-      // Only if they DON'T use params is it safe.
-      // But we shouldn't report unless we see usage.
-      // Scanning body for `props.params` or `props.searchParams`.
       const propsName = propsParam.name;
       const sourceCode = context.sourceCode;
       const text: string = sourceCode.getText(node.body) as string;
@@ -108,6 +197,17 @@ function checkPageProps(
         text.includes(`${propsName}.params`) ||
         text.includes(`${propsName}.searchParams`)
       ) {
+        // Skip if the params are only passed as JSX props (delegation/PPR pattern)
+        if (
+          isMemberOnlyDelegatedAsJsxProp(
+            propsName,
+            ["params", "searchParams"],
+            node.body
+          )
+        ) {
+          return;
+        }
+
         context.report({
           node: propsParam,
           messageId: "awaitParams",
