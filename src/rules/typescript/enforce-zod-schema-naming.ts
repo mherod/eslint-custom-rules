@@ -1,9 +1,14 @@
 import {
   AST_NODE_TYPES,
   ESLintUtils,
+  type TSESLint,
   type TSESTree,
 } from "@typescript-eslint/utils";
-import { isZodMethod } from "../utils/zod-utils";
+import {
+  isPascalCaseWithSchemaSuffix,
+  isZodMethod,
+  toPascalCaseWithSchemaSuffix,
+} from "../utils/zod-utils";
 
 export const RULE_NAME = "enforce-zod-schema-naming";
 
@@ -39,16 +44,17 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
           // Check if the name follows PascalCase and ends with 'Schema'
           if (!isPascalCaseWithSchemaSuffix(schemaName)) {
+            const nextName = toPascalCaseWithSchemaSuffix(schemaName);
+
             context.report({
               node: node.id,
               messageId: "zodSchemaMustBePascalCaseWithSuffix",
               data: { name: schemaName },
-              fix(fixer) {
-                return fixer.replaceText(
-                  node.id,
-                  toPascalCaseWithSchemaSuffix(schemaName)
-                );
-              },
+              fix:
+                nextName === null
+                  ? null
+                  : (fixer): TSESLint.RuleFix =>
+                      fixer.replaceText(node.id, nextName),
             });
           }
         }
@@ -87,31 +93,4 @@ function isZodSchemaCall(node: TSESTree.Node): boolean {
   }
 
   return false;
-}
-
-function toPascalCaseWithSchemaSuffix(name: string): string {
-  // Strip existing Schema suffix if present
-  const base = name.endsWith("Schema") ? name.slice(0, -6) : name;
-  // Convert first char to uppercase for PascalCase
-  const pascal = base.charAt(0).toUpperCase() + base.slice(1);
-  return `${pascal}Schema`;
-}
-
-function isPascalCaseWithSchemaSuffix(name: string): boolean {
-  // Must end with 'Schema'
-  if (!name.endsWith("Schema")) {
-    return false;
-  }
-
-  // Must be PascalCase (starts with uppercase letter, followed by alphanumeric)
-  if (!/^[A-Z][a-zA-Z0-9]*$/.test(name)) {
-    return false;
-  }
-
-  // Must have at least one character before 'Schema'
-  if (name === "Schema") {
-    return false;
-  }
-
-  return true;
 }

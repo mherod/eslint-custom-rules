@@ -5,6 +5,11 @@ export {
   generalRules,
 } from "./general";
 export { default as reactPlugin, reactConfigs, reactRules } from "./react";
+export {
+  moveFileWithResect,
+  renameSymbolWithResect,
+  renameZodSchemaWithResect,
+} from "./refactors";
 export { rules } from "./rules";
 export {
   default as securityPlugin,

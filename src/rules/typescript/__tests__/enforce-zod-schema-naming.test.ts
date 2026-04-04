@@ -60,7 +60,7 @@ ruleTester.run(RULE_NAME, rule, {
           data: { name: "user_form_schema" },
         },
       ],
-      output: "const User_form_schemaSchema = z.object({});",
+      output: "const UserFormSchema = z.object({});",
     },
 
     // Invalid: missing Schema suffix

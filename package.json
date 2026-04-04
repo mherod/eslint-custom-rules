@@ -34,6 +34,11 @@
       "types": "./dist/security.d.ts",
       "import": "./dist/security.mjs",
       "require": "./dist/security.js"
+    },
+    "./refactors": {
+      "types": "./dist/refactors.d.ts",
+      "import": "./dist/refactors.mjs",
+      "require": "./dist/refactors.js"
     }
   },
   "files": [

@@ -7,6 +7,7 @@ import noDebugComments from "./rules/general/no-debug-comments";
 import noDeprecatedDeclarations from "./rules/general/no-deprecated-declarations";
 import noImportTypeQueries from "./rules/general/no-import-type-queries";
 import noLongRelativeImports from "./rules/general/no-long-relative-imports";
+import noUnresolvableImports from "./rules/general/no-unresolvable-imports";
 import preferDateFns from "./rules/general/prefer-date-fns";
 import preferDateFnsOverDateOperations from "./rules/general/prefer-date-fns-over-date-operations";
 import preferDirectImports from "./rules/general/prefer-direct-imports";
@@ -23,7 +24,9 @@ export const GENERAL_RECOMMENDED_SEVERITIES = {
   "no-barrel-file-imports": "warn",
   "no-debug-comments": "warn",
   "no-deprecated-declarations": "warn",
+  "no-import-type-queries": "warn",
   "no-long-relative-imports": "warn",
+  "no-unresolvable-imports": "warn",
   "prefer-date-fns": "warn",
   "prefer-date-fns-over-date-operations": "warn",
   "prefer-direct-imports": "warn",
@@ -52,6 +55,7 @@ export const generalRules = {
   "no-deprecated-declarations": noDeprecatedDeclarations,
   "no-import-type-queries": noImportTypeQueries,
   "no-long-relative-imports": noLongRelativeImports,
+  "no-unresolvable-imports": noUnresolvableImports,
   "prefer-date-fns-over-date-operations": preferDateFnsOverDateOperations,
   "prefer-date-fns": preferDateFns,
   "prefer-direct-imports": preferDirectImports,

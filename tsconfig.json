@@ -15,6 +15,10 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
+      "@mherod/resect": ["./node_modules/@mherod/resect/dist/index.d.ts"],
+      "@mherod/resect/node": [
+        "./node_modules/@mherod/resect/dist/runtime/node.d.ts"
+      ],
       "@typescript-eslint/rule-tester": [
         "./node_modules/@typescript-eslint/rule-tester/dist/index.d.ts"
       ]

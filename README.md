@@ -21,13 +21,13 @@ pnpm add -D @mherod/eslint-plugin-custom
 
 ## Available Plugins
 
-This package provides five specialised plugins with 76 rules total:
+This package provides five specialised plugins:
 
-- **`@mherod/typescript`** (5 rules) - TypeScript-specific rules for better type safety and code patterns
-- **`@mherod/react`** (44 rules) - React and Next.js rules for component patterns and SSR/CSR separation
-- **`@mherod/vue`** (1 rule) - Vue.js rules for composition API best practices and reactivity patterns
-- **`@mherod/general`** (14 rules) - General code organisation rules (imports, naming, etc.)
-- **`@mherod/security`** (12 rules) - Security-focused rules to prevent common vulnerabilities
+- **`@mherod/typescript`** - TypeScript-specific rules for better type safety and code patterns
+- **`@mherod/react`** - React and Next.js rules for component patterns and SSR/CSR separation
+- **`@mherod/vue`** - Vue.js rules for composition API best practices and reactivity patterns
+- **`@mherod/general`** - General code organisation rules (imports, naming, and module boundaries)
+- **`@mherod/security`** - Security-focused rules to prevent common vulnerabilities
 
 ## Quick Start
 
@@ -292,17 +292,19 @@ export default [
 }
 ```
 
-#### Available Rules (14 rules)
+#### Available Rules
 
 - `enforce-file-naming` - Enforces consistent file naming conventions
 - `enforce-import-order` - Enforces consistent import ordering (external → internal → relative)
+- `no-barrel-file-imports` - Prevents importing through known barrel-style package entry points
 - `no-debug-comments` - Flags TODO, FIXME, HACK, and other debug comments
 - `no-deprecated-declarations` - Warns on usage of deprecated APIs and patterns
 - `no-import-type-queries` - Prevents `import type` queries (strict only)
-- `no-long-relative-imports` - Warns against deeply nested relative imports
+- `no-long-relative-imports` - Warns against deeply nested relative imports and auto-fixes to a canonical alias or stable specifier when possible
+- `no-unresolvable-imports` - Flags imports, exports, `require`, `require.resolve`, and Jest/Vitest mocks that TypeScript cannot resolve
 - `prefer-date-fns` - Prefer date-fns library over native Date methods
 - `prefer-date-fns-over-date-operations` - Use date-fns for date arithmetic and formatting
-- `prefer-direct-imports` - Prefer direct module imports over barrel file re-exports
+- `prefer-direct-imports` - Prefer direct module imports over barrel file re-exports and auto-split mixed imports onto the real source modules
 - `prefer-lodash-es-imports` - Prefer lodash-es imports over lodash for tree-shaking
 - `prefer-lodash-uniq-over-set` - Use lodash uniq over Set for array deduplication
 - `prefer-ufo-with-query` - Use ufo library's `withQuery` for URL query manipulation
@@ -700,7 +702,29 @@ import reactPlugin from '@mherod/eslint-plugin-custom/react';
 import vuePlugin from '@mherod/eslint-plugin-custom/vue';
 import generalPlugin from '@mherod/eslint-plugin-custom/general';
 import securityPlugin from '@mherod/eslint-plugin-custom/security';
+
+// Optional multi-file refactor helpers
+import {
+  moveFileWithResect,
+  renameSymbolWithResect,
+  renameZodSchemaWithResect,
+} from '@mherod/eslint-plugin-custom/refactors';
 ```
+
+### Programmatic Refactors
+
+The optional `@mherod/eslint-plugin-custom/refactors` entry point exposes resect-backed helpers for multi-file operations that ESLint fixes cannot safely perform on their own.
+
+```ts
+import { renameZodSchemaWithResect } from '@mherod/eslint-plugin-custom/refactors';
+
+await renameZodSchemaWithResect({
+  filePath: 'src/schemas/user-form.ts',
+  oldName: 'userForm',
+});
+```
+
+These helpers resolve the active `tsconfig.json`, load the project graph, and update dependent imports across the workspace. They require `@mherod/resect` to be available at runtime.
 
 ## Contributing
 

@@ -8,6 +8,7 @@ import noDebugComments from "./general/no-debug-comments";
 import noDeprecatedDeclarations from "./general/no-deprecated-declarations";
 import noImportTypeQueries from "./general/no-import-type-queries";
 import noLongRelativeImports from "./general/no-long-relative-imports";
+import noUnresolvableImports from "./general/no-unresolvable-imports";
 import preferDateFns from "./general/prefer-date-fns";
 import preferDateFnsOverDateOperations from "./general/prefer-date-fns-over-date-operations";
 import preferDirectImports from "./general/prefer-direct-imports";
@@ -94,6 +95,7 @@ export const rules = {
   "no-dynamic-tailwind-classes": noDynamicTailwindClasses,
   "no-import-type-queries": noImportTypeQueries,
   "no-long-relative-imports": noLongRelativeImports,
+  "no-unresolvable-imports": noUnresolvableImports,
   // React/Next.js rules
   "no-async-server-component-in-client": noAsyncServerComponentInClient,
   "no-conflicting-directives": noConflictingDirectives,

@@ -1,6 +1,22 @@
+import * as path from "node:path";
 import * as parser from "@typescript-eslint/parser";
 import { RuleTester } from "@typescript-eslint/rule-tester";
 import rule, { RULE_NAME } from "../no-long-relative-imports";
+
+const FIXTURE_ROOT = path.join(
+  __dirname,
+  "fixtures",
+  "no-long-relative-imports"
+);
+const FIXTURE_FILE = path.join(
+  FIXTURE_ROOT,
+  "src",
+  "features",
+  "dashboard",
+  "routes",
+  "pages",
+  "view.tsx"
+);
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -46,8 +62,19 @@ ruleTester.run(RULE_NAME, rule, {
       code: 'import { something } from "../../../../too-deep";', // 4 levels (default limit is 3)
       errors: [
         {
+          data: { depth: 3, strategy: "alias" },
           messageId: "noLongRelativeImports",
-          data: { depth: 3 },
+        },
+      ],
+    },
+    {
+      filename: FIXTURE_FILE,
+      code: 'import { button } from "../../../../components/ui/button";',
+      output: 'import { button } from "@/components/ui/button";',
+      errors: [
+        {
+          data: { depth: 3, strategy: "alias" },
+          messageId: "noLongRelativeImports",
         },
       ],
     },
@@ -55,8 +82,8 @@ ruleTester.run(RULE_NAME, rule, {
       code: 'import { something } from "../../../../../way-too-deep";',
       errors: [
         {
+          data: { depth: 3, strategy: "alias" },
           messageId: "noLongRelativeImports",
-          data: { depth: 3 },
         },
       ],
     },
@@ -66,8 +93,8 @@ ruleTester.run(RULE_NAME, rule, {
       options: [{ maxDepth: 2 }],
       errors: [
         {
+          data: { depth: 2, strategy: "alias" },
           messageId: "noLongRelativeImports",
-          data: { depth: 2 },
         },
       ],
     },
