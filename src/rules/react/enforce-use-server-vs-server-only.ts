@@ -64,6 +64,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     const filename = context.filename;
     const sourceCode = context.sourceCode;
 
+    // Route Handler files (route.ts/js) export HTTP methods (GET, POST, etc.),
+    // not Server Actions. Skip entirely — adding "use server" is wrong here.
+    if (/\/route\.(ts|js|tsx|jsx)$/.test(filename)) {
+      return {};
+    }
+
     let hasUseServerDirective = false;
     let hasServerOnlyImport = false;
     let hasClientOnlyImport = false;

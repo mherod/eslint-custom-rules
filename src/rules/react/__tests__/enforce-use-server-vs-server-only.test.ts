@@ -681,6 +681,44 @@ ruleTester.run("enforce-use-server-vs-server-only (edge cases)", rule, {
         };
       `,
     },
+    // ==========================================
+    // CORRECT: Route Handler files are excluded
+    // ==========================================
+    {
+      name: "Route handler with Request param — not a server action",
+      filename: "/app/share/[base64]/route.ts",
+      code: `
+        import { type NextRequest, NextResponse } from "next/server";
+
+        export async function GET(request: NextRequest) {
+          return NextResponse.json({ ok: true });
+        }
+      `,
+    },
+    {
+      name: "Route handler with multiple HTTP methods",
+      filename: "/app/api/users/route.ts",
+      code: `
+        import { NextResponse } from "next/server";
+
+        export async function GET(request: Request) {
+          return NextResponse.json([]);
+        }
+
+        export async function POST(request: Request) {
+          return NextResponse.json({ created: true });
+        }
+      `,
+    },
+    {
+      name: "Route handler .js extension",
+      filename: "/app/webhooks/route.js",
+      code: `
+        export async function POST(request) {
+          return new Response("ok");
+        }
+      `,
+    },
   ],
   invalid: [],
 });
