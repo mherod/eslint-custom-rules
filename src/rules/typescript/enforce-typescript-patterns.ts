@@ -25,6 +25,31 @@ type MessageIds =
 
 type Options = [];
 
+const ALLOWED_TYPE_SUFFIXES: readonly string[] = [
+  "Type",
+  "Props",
+  "Return",
+  "State",
+  "Config",
+  "Options",
+  "Params",
+  "Payload",
+  "Context",
+  "Result",
+  "Error",
+  "Response",
+  "Request",
+];
+
+function hasAllowedTypeSuffix(name: string): boolean {
+  for (const suffix of ALLOWED_TYPE_SUFFIXES) {
+    if (name.endsWith(suffix)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   meta: {
     type: "problem",
@@ -84,24 +109,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         }
 
         // Check if complex types should end with a recognised role suffix
-        const ALLOWED_TYPE_SUFFIXES = [
-          "Type",
-          "Props",
-          "Return",
-          "State",
-          "Config",
-          "Options",
-          "Params",
-          "Payload",
-          "Context",
-          "Result",
-          "Error",
-          "Response",
-          "Request",
-        ];
         if (
           isComplexType(node.typeAnnotation) &&
-          !ALLOWED_TYPE_SUFFIXES.some((suffix) => typeName.endsWith(suffix))
+          !hasAllowedTypeSuffix(typeName)
         ) {
           context.report({
             node,

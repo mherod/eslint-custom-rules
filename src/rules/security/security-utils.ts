@@ -1,29 +1,35 @@
 import { AST_NODE_TYPES, type TSESTree } from "@typescript-eslint/utils";
 
-export function isHardcodedSecret(value: string): boolean {
-  const secretPatterns = [
-    /^sk_[a-zA-Z0-9]{20,}$/, // Stripe secret keys
-    /^[a-zA-Z0-9]{32,}$/, // Generic long alphanumeric (potential API keys)
-    /^[A-Za-z0-9+/]{40,}={0,2}$/, // Base64 encoded secrets
-    /^[0-9a-f]{32,}$/, // Hex encoded secrets
-    /^ey[A-Za-z0-9+/=]+$/, // JWT tokens
-  ];
+const SECRET_PATTERNS: readonly RegExp[] = [
+  /^sk_[a-zA-Z0-9]{20,}$/, // Stripe secret keys
+  /^[a-zA-Z0-9]{32,}$/, // Generic long alphanumeric (potential API keys)
+  /^[A-Za-z0-9+/]{40,}={0,2}$/, // Base64 encoded secrets
+  /^[0-9a-f]{32,}$/, // Hex encoded secrets
+  /^ey[A-Za-z0-9+/=]+$/, // JWT tokens
+];
 
-  return (
-    secretPatterns.some((pattern) => pattern.test(value)) && value.length > 20
-  );
+export function isHardcodedSecret(value: string): boolean {
+  if (value.length <= 20) {
+    return false;
+  }
+  for (const pattern of SECRET_PATTERNS) {
+    if (pattern.test(value)) {
+      return true;
+    }
+  }
+  return false;
 }
+
+const WEAK_CRYPTO_FUNCTIONS = new Set(["md5", "sha1", "des", "rc4", "crc32"]);
 
 export function isWeakCryptoFunction(functionName: string): boolean {
-  const weakFunctions = ["md5", "sha1", "des", "rc4", "crc32"];
-
-  return weakFunctions.includes(functionName.toLowerCase());
+  return WEAK_CRYPTO_FUNCTIONS.has(functionName.toLowerCase());
 }
 
-export function isSqlFunction(functionName: string): boolean {
-  const sqlFunctions = ["query", "execute", "raw", "sql", "exec"];
+const SQL_FUNCTIONS = new Set(["query", "execute", "raw", "sql", "exec"]);
 
-  return sqlFunctions.includes(functionName.toLowerCase());
+export function isSqlFunction(functionName: string): boolean {
+  return SQL_FUNCTIONS.has(functionName.toLowerCase());
 }
 
 export function hasStringConcatenation(
@@ -38,35 +44,41 @@ export function hasStringConcatenation(
   );
 }
 
+const CONSOLE_METHODS = new Set(["log", "info", "warn", "error", "debug"]);
+
 export function isLoggingFunction(node: TSESTree.CallExpression): boolean {
-  if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
-    const object = node.callee.object;
-    const property = node.callee.property;
-
-    if (
-      object.type === AST_NODE_TYPES.Identifier &&
-      object.name === "console" &&
-      property.type === AST_NODE_TYPES.Identifier
-    ) {
-      return ["log", "info", "warn", "error", "debug"].includes(property.name);
-    }
+  if (node.callee.type !== AST_NODE_TYPES.MemberExpression) {
+    return false;
   }
-
-  return false;
+  const object = node.callee.object;
+  const property = node.callee.property;
+  return (
+    object.type === AST_NODE_TYPES.Identifier &&
+    object.name === "console" &&
+    property.type === AST_NODE_TYPES.Identifier &&
+    CONSOLE_METHODS.has(property.name)
+  );
 }
+
+const SECRET_SUBSTRINGS: readonly string[] = [
+  "secret",
+  "key",
+  "token",
+  "password",
+];
 
 export function hasSecretInArguments(
   args: TSESTree.CallExpressionArgument[]
 ): boolean {
   return args.some((arg) => {
-    if (arg.type === AST_NODE_TYPES.Identifier) {
-      const varName = arg.name.toLowerCase();
-      return (
-        varName.includes("secret") ||
-        varName.includes("key") ||
-        varName.includes("token") ||
-        varName.includes("password")
-      );
+    if (arg.type !== AST_NODE_TYPES.Identifier) {
+      return false;
+    }
+    const varName = arg.name.toLowerCase();
+    for (const sub of SECRET_SUBSTRINGS) {
+      if (varName.includes(sub)) {
+        return true;
+      }
     }
     return false;
   });
@@ -85,85 +97,93 @@ export function isDangerousVariableName(varName: string): boolean {
   return DANGEROUS_VARIABLE_NAMES.has(varName);
 }
 
+const SAFE_NAMES = new Set([
+  "safeparamname",
+  "validtype",
+  "defaultvalue",
+  "status",
+  "message",
+  "error",
+  "success",
+  "valid",
+  "result",
+  "data",
+  "value",
+  "config",
+  "options",
+  "settings",
+  "constants",
+  "min",
+  "max",
+  "allowfloat",
+]);
+
+const SAFE_PREFIXES: readonly string[] = [
+  "safe",
+  "validated",
+  "sanitized",
+  "clean",
+  "parsed",
+];
+
+const VALIDATION_INDICATORS: readonly string[] = [
+  "validation",
+  "schema",
+  "result",
+  "processed",
+  "filtered",
+];
+
 export function isSafeVariable(varName: string): boolean {
-  const safeNames = [
-    "safeparamname",
-    "validtype",
-    "defaultvalue",
-    "status",
-    "message",
-    "error",
-    "success",
-    "valid",
-    "result",
-    "data",
-    "value",
-    "config",
-    "options",
-    "settings",
-    "constants",
-    "min",
-    "max",
-    "allowfloat",
-  ];
-
-  if (safeNames.includes(varName)) {
+  if (SAFE_NAMES.has(varName)) {
     return true;
   }
-
-  const safePrefixes = ["safe", "validated", "sanitized", "clean", "parsed"];
-  if (safePrefixes.some((prefix) => varName.startsWith(prefix))) {
-    return true;
+  for (const prefix of SAFE_PREFIXES) {
+    if (varName.startsWith(prefix)) {
+      return true;
+    }
   }
-
-  const validationIndicators = [
-    "validation",
-    "schema",
-    "result",
-    "processed",
-    "filtered",
-  ];
-  if (validationIndicators.some((indicator) => varName.includes(indicator))) {
-    return true;
+  for (const indicator of VALIDATION_INDICATORS) {
+    if (varName.includes(indicator)) {
+      return true;
+    }
   }
-
   return false;
 }
 
-export function isObviouslyDangerousVariable(varName: string): boolean {
-  const dangerousPatterns = [
-    /^req\.body$/,
-    /^req\.query$/,
-    /^req\.params$/,
-    /^request\.body$/,
-    /^request\.query$/,
-    /^request\.params$/,
-    /^userinput$/,
-    /^rawbody$/,
-    /^rawquery$/,
-    /^unsanitizedinput$/,
-  ];
+const OBVIOUSLY_DANGEROUS_NAMES = new Set([
+  "req.body",
+  "req.query",
+  "req.params",
+  "request.body",
+  "request.query",
+  "request.params",
+  "userinput",
+  "rawbody",
+  "rawquery",
+  "unsanitizedinput",
+]);
 
-  return dangerousPatterns.some((pattern) => pattern.test(varName));
+export function isObviouslyDangerousVariable(varName: string): boolean {
+  return OBVIOUSLY_DANGEROUS_NAMES.has(varName);
 }
+
+const REQUEST_PROPS = new Set(["body", "query", "params"]);
 
 export function isDirectRequestAccess(
   expr: TSESTree.MemberExpression
 ): boolean {
   if (
-    expr.object.type === AST_NODE_TYPES.Identifier &&
-    expr.property.type === AST_NODE_TYPES.Identifier
+    expr.object.type !== AST_NODE_TYPES.Identifier ||
+    expr.property.type !== AST_NODE_TYPES.Identifier
   ) {
-    const objName = expr.object.name.toLowerCase();
-    const propName = expr.property.name.toLowerCase();
-
-    return (
-      (objName === "req" || objName === "request") &&
-      ["body", "query", "params"].includes(propName)
-    );
+    return false;
   }
-
-  return false;
+  const objName = expr.object.name.toLowerCase();
+  if (objName !== "req" && objName !== "request") {
+    return false;
+  }
+  return REQUEST_PROPS.has(expr.property.name.toLowerCase());
 }
 
 export function _hasUnsanitizedInput(node: TSESTree.TemplateLiteral): boolean {
@@ -225,7 +245,7 @@ export function isLoggingContext(node: TSESTree.Node): boolean {
         obj.type === AST_NODE_TYPES.Identifier &&
         obj.name === "console" &&
         prop.type === AST_NODE_TYPES.Identifier &&
-        ["log", "info", "warn", "error", "debug"].includes(prop.name)
+        CONSOLE_METHODS.has(prop.name)
       ) {
         return true;
       }
@@ -244,21 +264,24 @@ export function isValidationContext(node: TSESTree.Node): boolean {
   return false;
 }
 
+const DANGEROUS_CALLEES = new Set([
+  "eval",
+  "execute",
+  "query",
+  "exec",
+  "system",
+  "spawn",
+]);
+
 export function isDangerousContext(node: TSESTree.Node): boolean {
   let current = node.parent;
   while (current) {
     if (
       current.type === AST_NODE_TYPES.CallExpression &&
-      current.callee.type === AST_NODE_TYPES.Identifier
+      current.callee.type === AST_NODE_TYPES.Identifier &&
+      DANGEROUS_CALLEES.has(current.callee.name.toLowerCase())
     ) {
-      const functionName = current.callee.name.toLowerCase();
-      if (
-        ["eval", "execute", "query", "exec", "system", "spawn"].includes(
-          functionName
-        )
-      ) {
-        return true;
-      }
+      return true;
     }
     current = current.parent;
   }
@@ -285,12 +308,11 @@ export function _isRiskyTemplateContext(
   return isDangerousContext(parent);
 }
 
+// The previous implementation tested three regex patterns; the last (/zod/i)
+// subsumed the first two, so we keep only the loosest case-insensitive check.
+const ZOD_PATTERN = /zod/i;
 export function hasZodImport(sourceCode: { text: string }): boolean {
-  const fileText = sourceCode.text;
-
-  const zodPatterns = [/from\s*["']zod["']/i, /import.*zod/i, /zod/i];
-
-  return zodPatterns.some((pattern) => pattern.test(fileText));
+  return ZOD_PATTERN.test(sourceCode.text);
 }
 
 export function hasDangerousTemplateUsage(
@@ -310,19 +332,24 @@ export function hasDangerousTemplateUsage(
   });
 }
 
-export function isProtectedRoute(filename: string): boolean {
-  const protectedPatterns = [
-    "/admin/",
-    "/dashboard/",
-    "/profile/",
-    "/settings/",
-    "/account/",
-    "/user/",
-    "/private/",
-    "/protected/",
-  ];
+const PROTECTED_ROUTE_PATTERNS: readonly string[] = [
+  "/admin/",
+  "/dashboard/",
+  "/profile/",
+  "/settings/",
+  "/account/",
+  "/user/",
+  "/private/",
+  "/protected/",
+];
 
-  return protectedPatterns.some((pattern) => filename.includes(pattern));
+export function isProtectedRoute(filename: string): boolean {
+  for (const pattern of PROTECTED_ROUTE_PATTERNS) {
+    if (filename.includes(pattern)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function bodyContainsKeywords(
@@ -331,19 +358,21 @@ function bodyContainsKeywords(
   keywords: readonly string[]
 ): boolean {
   const bodyText = sourceCode.getText(node.body);
-  return keywords.some((keyword) => bodyText.includes(keyword));
+  for (const keyword of keywords) {
+    if (bodyText.includes(keyword)) {
+      return true;
+    }
+  }
+  return false;
 }
+
+const AUTH_KEYWORDS = ["auth", "verify", "authenticate", "authorize"] as const;
 
 export function hasAuthValidation(
   node: TSESTree.FunctionDeclaration,
   sourceCode: { getText(node: TSESTree.Node): string }
 ): boolean {
-  return bodyContainsKeywords(node, sourceCode, [
-    "auth",
-    "verify",
-    "authenticate",
-    "authorize",
-  ]);
+  return bodyContainsKeywords(node, sourceCode, AUTH_KEYWORDS);
 }
 
 const RATE_LIMIT_KEYWORDS = ["rateLimit", "throttle", "limit"] as const;
@@ -355,17 +384,22 @@ export function hasRateLimit(
   return bodyContainsKeywords(node, sourceCode, RATE_LIMIT_KEYWORDS);
 }
 
-export function isApiKeyOrSecret(value: string): boolean {
-  const apiKeyPatterns = [
-    /^sk_/, // Stripe
-    /^pk_/, // Public keys
-    /^AIza/, // Google API keys
-    /^ya29/, // Google OAuth tokens
-    /^ghp_/, // GitHub tokens
-    /^xoxb/, // Slack tokens
-    /^[0-9a-f]{32}$/, // 32 character hex
-    /^[A-Za-z0-9+/]{40,}={0,2}$/, // Base64 encoded
-  ];
+const API_KEY_PATTERNS: readonly RegExp[] = [
+  /^sk_/, // Stripe
+  /^pk_/, // Public keys
+  /^AIza/, // Google API keys
+  /^ya29/, // Google OAuth tokens
+  /^ghp_/, // GitHub tokens
+  /^xoxb/, // Slack tokens
+  /^[0-9a-f]{32}$/, // 32 character hex
+  /^[A-Za-z0-9+/]{40,}={0,2}$/, // Base64 encoded
+];
 
-  return apiKeyPatterns.some((pattern) => pattern.test(value));
+export function isApiKeyOrSecret(value: string): boolean {
+  for (const pattern of API_KEY_PATTERNS) {
+    if (pattern.test(value)) {
+      return true;
+    }
+  }
+  return false;
 }

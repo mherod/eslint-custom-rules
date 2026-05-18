@@ -12,6 +12,8 @@ type MessageIds = "awaitParams";
 
 type Options = [];
 
+const PAGE_FILE_REGEX = /page\.(tsx|jsx|js|ts)$/;
+
 export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   meta: {
     type: "problem",
@@ -31,7 +33,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     const filename = context.filename;
 
     // Only check page files
-    if (!/page\.(tsx|jsx|js|ts)$/.test(filename)) {
+    if (!PAGE_FILE_REGEX.test(filename)) {
       return {};
     }
 

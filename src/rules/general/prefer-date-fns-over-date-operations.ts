@@ -14,6 +14,87 @@ type MessageIds =
 
 type Options = [];
 
+const COMPARISON_OPS = new Set([
+  "<",
+  ">",
+  "<=",
+  ">=",
+  "==",
+  "===",
+  "!=",
+  "!==",
+]);
+
+function isNewDateCall(node: TSESTree.Node | null | undefined): boolean {
+  return (
+    !!node &&
+    node.type === AST_NODE_TYPES.NewExpression &&
+    node.callee.type === AST_NODE_TYPES.Identifier &&
+    node.callee.name === "Date"
+  );
+}
+
+function isGetTimeCall(node: TSESTree.Node | null | undefined): boolean {
+  return (
+    !!node &&
+    node.type === AST_NODE_TYPES.CallExpression &&
+    node.callee.type === AST_NODE_TYPES.MemberExpression &&
+    node.callee.property.type === AST_NODE_TYPES.Identifier &&
+    node.callee.property.name === "getTime"
+  );
+}
+
+function isDateOp(node: TSESTree.Node | null | undefined): boolean {
+  return isGetTimeCall(node) || isNewDateCall(node);
+}
+
+function isSortCallback(
+  node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression
+): boolean {
+  const parent = node.parent;
+  if (!parent || parent.type !== AST_NODE_TYPES.CallExpression) {
+    return false;
+  }
+  if (parent.arguments[0] !== node) {
+    return false;
+  }
+  const callee = parent.callee;
+  return (
+    callee.type === AST_NODE_TYPES.MemberExpression &&
+    callee.property.type === AST_NODE_TYPES.Identifier &&
+    callee.property.name === "sort"
+  );
+}
+
+function isDateSubtractionSort(
+  node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression
+): boolean {
+  const body = node.body;
+  if (!body || body.type !== AST_NODE_TYPES.BinaryExpression) {
+    return false;
+  }
+  if (body.operator !== "-") {
+    return false;
+  }
+
+  const left = body.left;
+  const right = body.right;
+  const leftOk =
+    left.type === AST_NODE_TYPES.CallExpression &&
+    left.callee.type === AST_NODE_TYPES.MemberExpression &&
+    isGetTimeCall(left) &&
+    isNewDateCall(left.callee.object);
+  if (!leftOk) {
+    return false;
+  }
+  const rightOk =
+    right.type === AST_NODE_TYPES.CallExpression &&
+    right.callee.type === AST_NODE_TYPES.MemberExpression &&
+    isGetTimeCall(right) &&
+    isNewDateCall(right.callee.object);
+  return rightOk;
+}
+
 export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   meta: {
     type: "suggestion",
@@ -33,151 +114,98 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       preferDateFnsArithmetic:
         "Prefer date-fns functions for date arithmetic. Consider using add, sub, addDays, subDays, or other date-fns utilities.",
     },
-    // No auto-fix as it requires understanding the context
   },
   defaultOptions: [],
   create(context) {
-    // Track if date-fns is imported
     let hasDateFnsImport = false;
+    // Tracks nesting inside .sort() callbacks so we can skip the parent-walk
+    // on every BinaryExpression (a very hot AST node).
+    let sortCallbackDepth = 0;
 
-    // Helper function to check if a node represents a new Date() call
-    function isNewDateCall(node: TSESTree.Node): boolean {
-      return (
-        node.type === AST_NODE_TYPES.NewExpression &&
-        node.callee.type === AST_NODE_TYPES.Identifier &&
-        node.callee.name === "Date"
-      );
-    }
-
-    // Helper function to check if a node represents .getTime() call
-    function isGetTimeCall(node: TSESTree.Node): boolean {
-      return (
-        node.type === AST_NODE_TYPES.CallExpression &&
-        node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        node.callee.property.type === AST_NODE_TYPES.Identifier &&
-        node.callee.property.name === "getTime"
-      );
-    }
-
-    // Helper function to check if this is a date operation pattern
-    function isDateOperationInSort(
+    function enterCallback(
       node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression
-    ): boolean {
-      if (!node.body || node.body.type !== AST_NODE_TYPES.BinaryExpression) {
-        return false;
+    ): void {
+      if (isSortCallback(node)) {
+        sortCallbackDepth++;
       }
-
-      const body = node.body as TSESTree.BinaryExpression;
-
-      // Check for patterns like: new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      if (body.operator === "-") {
-        const leftIsDateOperation =
-          isGetTimeCall(body.left) &&
-          body.left.type === AST_NODE_TYPES.CallExpression &&
-          body.left.callee.type === AST_NODE_TYPES.MemberExpression &&
-          isNewDateCall(body.left.callee.object);
-
-        const rightIsDateOperation =
-          isGetTimeCall(body.right) &&
-          body.right.type === AST_NODE_TYPES.CallExpression &&
-          body.right.callee.type === AST_NODE_TYPES.MemberExpression &&
-          isNewDateCall(body.right.callee.object);
-
-        return leftIsDateOperation && rightIsDateOperation;
+    }
+    function exitCallback(
+      node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression
+    ): void {
+      if (isSortCallback(node)) {
+        sortCallbackDepth--;
       }
-
-      return false;
     }
 
     return {
-      // Track date-fns imports
       ImportDeclaration(node: TSESTree.ImportDeclaration): void {
+        if (hasDateFnsImport) {
+          return;
+        }
+        const value = node.source.value;
         if (
-          node.source.value === "date-fns" ||
-          (typeof node.source.value === "string" &&
-            node.source.value.startsWith("date-fns/"))
+          typeof value === "string" &&
+          (value === "date-fns" || value.startsWith("date-fns/"))
         ) {
           hasDateFnsImport = true;
         }
       },
 
-      // Check for sort functions with date operations
-      CallExpression(node: TSESTree.CallExpression): void {
-        // Look for .sort() calls
-        if (
-          node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          node.callee.property.name === "sort" &&
-          node.arguments.length > 0
-        ) {
-          const sortFunction = node.arguments[0];
+      ArrowFunctionExpression: enterCallback,
+      "ArrowFunctionExpression:exit": exitCallback,
+      FunctionExpression: enterCallback,
+      "FunctionExpression:exit": exitCallback,
 
-          if (
-            sortFunction &&
-            (sortFunction.type === AST_NODE_TYPES.ArrowFunctionExpression ||
-              sortFunction.type === AST_NODE_TYPES.FunctionExpression) &&
-            isDateOperationInSort(sortFunction) &&
-            !hasDateFnsImport // Only warn if date-fns is not already imported
-          ) {
-            context.report({
-              node: sortFunction,
-              messageId: "preferDateFnsSort",
-            });
-          }
+      CallExpression(node: TSESTree.CallExpression): void {
+        if (hasDateFnsImport) {
+          return;
+        }
+        const callee = node.callee;
+        if (
+          callee.type !== AST_NODE_TYPES.MemberExpression ||
+          callee.property.type !== AST_NODE_TYPES.Identifier ||
+          callee.property.name !== "sort" ||
+          node.arguments.length === 0
+        ) {
+          return;
+        }
+        const sortFn = node.arguments[0];
+        if (
+          !sortFn ||
+          (sortFn.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
+            sortFn.type !== AST_NODE_TYPES.FunctionExpression)
+        ) {
+          return;
+        }
+        if (isDateSubtractionSort(sortFn)) {
+          context.report({ node: sortFn, messageId: "preferDateFnsSort" });
         }
       },
 
-      // Check for binary expressions with date operations
       BinaryExpression(node: TSESTree.BinaryExpression): void {
-        // Skip if this is already inside a sort function (handled above)
-        let parent: TSESTree.Node | undefined = node.parent;
-        while (parent) {
-          if (
-            (parent.type === AST_NODE_TYPES.ArrowFunctionExpression ||
-              parent.type === AST_NODE_TYPES.FunctionExpression) &&
-            parent.parent?.type === AST_NODE_TYPES.CallExpression &&
-            parent.parent.callee.type === AST_NODE_TYPES.MemberExpression &&
-            parent.parent.callee.property.type === AST_NODE_TYPES.Identifier &&
-            parent.parent.callee.property.name === "sort"
-          ) {
-            return; // Skip, already handled by sort check
-          }
-          parent = parent.parent;
+        if (hasDateFnsImport) {
+          return;
+        }
+        if (sortCallbackDepth > 0) {
+          return;
         }
 
-        const { left, right, operator } = node;
-
-        // Check for date comparison operations (>, <, >=, <=, ==, ===, !=, !==)
-        if (
-          ["<", ">", "<=", ">=", "==", "===", "!=", "!=="].includes(operator)
-        ) {
-          const leftIsDateOp = isGetTimeCall(left) || isNewDateCall(left);
-          const rightIsDateOp = isGetTimeCall(right) || isNewDateCall(right);
-
-          if ((leftIsDateOp || rightIsDateOp) && !hasDateFnsImport) {
-            context.report({
-              node,
-              messageId: "preferDateFnsComparison",
-            });
-          }
+        const op = node.operator;
+        let messageId: MessageIds | null = null;
+        if (op === "-") {
+          messageId = "preferDateFnsSubtraction";
+        } else if (op === "+") {
+          messageId = "preferDateFnsArithmetic";
+        } else if (COMPARISON_OPS.has(op)) {
+          messageId = "preferDateFnsComparison";
+        } else {
+          return;
         }
 
-        // Check for date arithmetic operations (-, +)
-        if (["-", "+"].includes(operator)) {
-          const leftIsDateOp = isGetTimeCall(left) || isNewDateCall(left);
-          const rightIsDateOp = isGetTimeCall(right) || isNewDateCall(right);
-
-          if ((leftIsDateOp || rightIsDateOp) && !hasDateFnsImport) {
-            const messageId =
-              operator === "-"
-                ? "preferDateFnsSubtraction"
-                : "preferDateFnsArithmetic";
-            context.report({
-              node,
-              messageId,
-            });
-          }
+        if (!(isDateOp(node.left) || isDateOp(node.right))) {
+          return;
         }
+        context.report({ node, messageId });
       },
     };
   },

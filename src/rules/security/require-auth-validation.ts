@@ -21,17 +21,16 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   defaultOptions: [],
   create(context) {
     const filename = context.filename;
-    const isApiFile = filename.includes("/api/");
+    // Cheap path-based gates first — skip non-API and non-protected files
+    // entirely so the AST visitor never runs on them.
+    if (!(filename.includes("/api/") && isProtectedRoute(filename))) {
+      return {};
+    }
     const sourceCode = context.sourceCode;
 
     return {
       FunctionDeclaration(node: TSESTree.FunctionDeclaration): void {
-        if (
-          isApiFile &&
-          node.id &&
-          isProtectedRoute(filename) &&
-          !hasAuthValidation(node, sourceCode)
-        ) {
+        if (node.id && !hasAuthValidation(node, sourceCode)) {
           context.report({
             node,
             messageId: "requireAuthValidation",

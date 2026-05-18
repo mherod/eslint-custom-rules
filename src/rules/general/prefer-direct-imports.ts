@@ -54,7 +54,16 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           return;
         }
 
-        const lastSegment = source.split("/").filter(Boolean).at(-1) ?? "";
+        // Extract last path segment without allocating split/filter arrays.
+        let lastSegmentEnd = source.length;
+        while (
+          lastSegmentEnd > 0 &&
+          source.charCodeAt(lastSegmentEnd - 1) === 47 /* "/" */
+        ) {
+          lastSegmentEnd--;
+        }
+        const lastSep = source.lastIndexOf("/", lastSegmentEnd - 1);
+        const lastSegment = source.slice(lastSep + 1, lastSegmentEnd);
         if (
           WHITELISTED_BARREL_FOLDERS.has(lastSegment) ||
           source.endsWith("/hooks")
@@ -62,18 +71,14 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           return;
         }
 
-        if (
-          node.specifiers.some(
-            (specifier) => specifier.type !== AST_NODE_TYPES.ImportSpecifier
-          )
-        ) {
-          return;
+        // Single pass: bail on any non-ImportSpecifier, otherwise collect.
+        const valueSpecifiers: TSESTree.ImportSpecifier[] = [];
+        for (const specifier of node.specifiers) {
+          if (specifier.type !== AST_NODE_TYPES.ImportSpecifier) {
+            return;
+          }
+          valueSpecifiers.push(specifier);
         }
-
-        const valueSpecifiers = node.specifiers.filter(
-          (specifier): specifier is TSESTree.ImportSpecifier =>
-            specifier.type === AST_NODE_TYPES.ImportSpecifier
-        );
 
         if (valueSpecifiers.length === 0) {
           return;
