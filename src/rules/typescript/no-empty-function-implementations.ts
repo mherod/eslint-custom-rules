@@ -10,6 +10,8 @@ type MessageIds = "emptyFunctionImplementation";
 
 type Options = [];
 
+const EMPTY_BLOCK_RE = /\{\s*\}/;
+
 export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   meta: {
     type: "problem",
@@ -26,6 +28,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
+    // Fast path: an empty function body is always an empty block (`{}` with
+    // optional whitespace). If the source contains no such pattern, no visitor
+    // can fire — skip them all.
+    if (!EMPTY_BLOCK_RE.test(context.sourceCode.text)) {
+      return {};
+    }
+
     // Track reported nodes to avoid double reporting
     const reportedNodes = new Set<TSESTree.Node>();
 

@@ -109,6 +109,11 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
+    // Fast path: this rule only matters when `useMemo` is actually invoked.
+    if (!context.sourceCode.text.includes("useMemo")) {
+      return {};
+    }
+
     return {
       CallExpression(node): void {
         // Must be useMemo(...)

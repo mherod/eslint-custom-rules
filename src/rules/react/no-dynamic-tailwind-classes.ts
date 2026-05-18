@@ -26,6 +26,13 @@ type Options = [
 const COMMON_CLASS_PROPS = ["className", "class"];
 const COMMON_UTILITY_FUNCTIONS = ["cn", "clsx", "classNames", "twMerge", "cx"];
 
+// Fast-path probe: a file must contain at least one of these tokens before
+// any visitor in this rule can produce a report. The regex is intentionally
+// loose — false positives are fine, the goal is to skip files that obviously
+// have no class-related content.
+const CLASS_RULE_PROBE_RE =
+  /className|class=|\b(?:cn|clsx|classNames|twMerge|cx)\(/;
+
 /**
  * ESLint rule to prevent dynamic Tailwind CSS class construction that breaks static analysis.
  *
@@ -103,6 +110,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     },
   ],
   create(context, [options]) {
+    // Fast path: skip the whole visitor set when nothing remotely
+    // class-related appears in the source. Saves the per-CallExpression /
+    // per-TemplateLiteral overhead on the long tail of unrelated files.
+    if (!CLASS_RULE_PROBE_RE.test(context.sourceCode.text)) {
+      return {};
+    }
+
     const allowedDynamicClasses = options?.allowedDynamicClasses || [];
     const allowConditionalClasses = options?.allowConditionalClasses ?? true;
 

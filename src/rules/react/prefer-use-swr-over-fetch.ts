@@ -28,9 +28,18 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
+    // Fast paths: rule only fires inside client components and only on
+    // `fetch(` calls. Skip files lacking either signal.
+    if (!hasUseClientDirective(context.sourceCode)) {
+      return {};
+    }
+    if (!context.sourceCode.text.includes("fetch(")) {
+      return {};
+    }
+
     // Track context information
     let isInCustomHook = false;
-    const hasUseClient = hasUseClientDirective(context.sourceCode);
+    const hasUseClient = true;
     let componentOrHookContext = false; // Track if we're anywhere inside a component or hook
 
     // Check if a function name looks like a React component

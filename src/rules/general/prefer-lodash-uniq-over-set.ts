@@ -30,6 +30,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   create(context) {
     const sourceCode = context.sourceCode;
 
+    // Fast path: if the file never mentions `Set`, no visitor can match.
+    // This skips the O(N²) BlockStatement walk for the vast majority of files.
+    if (!sourceCode.text.includes("Set")) {
+      return {};
+    }
+
     // Track if lodash-es is imported
     let hasLodashImport = false;
     let lodashImportNode: TSESTree.ImportDeclaration | null = null;

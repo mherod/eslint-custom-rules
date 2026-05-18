@@ -56,8 +56,17 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       return {};
     }
 
+    // The admin/public import-direction checks only fire when the current file
+    // is classified as admin OR public; if it's neither (e.g. a build script
+    // outside both worlds), the import visitor would do work for no possible
+    // report.
+    const checkImports = isAdminFile || isPublicFile;
+
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration): void {
+        if (!checkImports) {
+          return;
+        }
         const importSource = node.source.value;
 
         if (typeof importSource !== "string") {
@@ -91,11 +100,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
       // Check for JSX usage of admin components in public files
       JSXOpeningElement(node: TSESTree.JSXOpeningElement): void {
+        if (!isPublicFile) {
+          return;
+        }
         if (node.name.type === AST_NODE_TYPES.JSXIdentifier) {
           const componentName = node.name.name;
-
-          // Check if a public file is using an admin component
-          if (isPublicFile && isAdminComponentName(componentName)) {
+          if (isAdminComponentName(componentName)) {
             context.report({
               node,
               messageId: "adminComponentInPublic",
@@ -107,6 +117,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
       // Dynamic import() expressions
       ImportExpression(node: TSESTree.ImportExpression): void {
+        if (!checkImports) {
+          return;
+        }
         const source = node.source;
         if (
           source.type === AST_NODE_TYPES.Literal &&
@@ -138,10 +151,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
       // Check for admin utilities being called in public files
       CallExpression(node: TSESTree.CallExpression): void {
+        if (!isPublicFile) {
+          return;
+        }
         if (node.callee.type === AST_NODE_TYPES.Identifier) {
           const functionName = node.callee.name;
-
-          if (isPublicFile && isAdminUtilityName(functionName)) {
+          if (isAdminUtilityName(functionName)) {
             context.report({
               node,
               messageId: "adminUtilInPublic",
@@ -244,51 +259,59 @@ function validateImport(
   }
 }
 
+const ADMIN_COMPONENT_PREFIXES: readonly string[] = [
+  "Admin",
+  "Dashboard",
+  "Management",
+  "Manager",
+  "Control",
+  "Panel",
+  "Console",
+  "Settings",
+  "Config",
+  "Moderator",
+  "Supervisor",
+];
+
+const ADMIN_COMPONENT_SUFFIXES: readonly string[] = [
+  "Admin",
+  "Dashboard",
+  "Panel",
+  "Console",
+  "Manager",
+  "Control",
+  "Settings",
+];
+
 function isAdminComponentName(componentName: string): boolean {
-  // Admin components typically have these prefixes/patterns
-  const adminPrefixes = [
-    "Admin",
-    "Dashboard",
-    "Management",
-    "Manager",
-    "Control",
-    "Panel",
-    "Console",
-    "Settings",
-    "Config",
-    "Moderator",
-    "Supervisor",
-  ];
-
-  const adminSuffixes = [
-    "Admin",
-    "Dashboard",
-    "Panel",
-    "Console",
-    "Manager",
-    "Control",
-    "Settings",
-  ];
-
-  return (
-    adminPrefixes.some((prefix) => componentName.startsWith(prefix)) ||
-    adminSuffixes.some((suffix) => componentName.endsWith(suffix))
-  );
+  for (const prefix of ADMIN_COMPONENT_PREFIXES) {
+    if (componentName.startsWith(prefix)) {
+      return true;
+    }
+  }
+  for (const suffix of ADMIN_COMPONENT_SUFFIXES) {
+    if (componentName.endsWith(suffix)) {
+      return true;
+    }
+  }
+  return false;
 }
 
-function isAdminUtilityName(functionName: string): boolean {
-  // Only flag functions with explicitly admin-related prefixes
-  const adminPrefixes = [
-    "admin",
-    "moderate",
-    "supervise",
-    "banUser",
-    "unbanUser",
-    "suspendUser",
-  ];
+const ADMIN_UTILITY_PREFIXES: readonly string[] = [
+  "admin",
+  "moderate",
+  "supervise",
+  "banuser",
+  "unbanuser",
+  "suspenduser",
+];
 
-  const lowerFunctionName = functionName.toLowerCase();
-  return adminPrefixes.some((pattern) =>
-    lowerFunctionName.startsWith(pattern.toLowerCase())
-  );
+function isAdminUtilityName(functionName: string): boolean {
+  const lower = functionName.toLowerCase();
+  for (const prefix of ADMIN_UTILITY_PREFIXES) {
+    if (lower.startsWith(prefix)) {
+      return true;
+    }
+  }
+  return false;
 }

@@ -70,19 +70,17 @@ const BARREL_PACKAGES: ReadonlySet<string> = new Set([
  *   import { X } from 'lucide-react'          <-- barrel (bad)
  *   import X from 'lucide-react/icons/check'   <-- direct (fine)
  */
+const RADIX_BARREL_RE = /^@radix-ui\/react-[^/]+$/;
+
 function isBarrelImport(source: string): boolean {
   // Exact match against the known barrel package set
   if (BARREL_PACKAGES.has(source)) {
     return true;
   }
 
-  // @radix-ui/react-* (e.g. @radix-ui/react-dialog)
-  // The barrel is the package root, subpaths like @radix-ui/react-dialog/src/... are direct
-  if (/^@radix-ui\/react-[^/]+$/.test(source)) {
-    return true;
-  }
-
-  return false;
+  // @radix-ui/react-* (e.g. @radix-ui/react-dialog). Cheap startsWith gate
+  // before paying for the regex — most imports don't begin with "@".
+  return source.charCodeAt(0) === 64 /* '@' */ && RADIX_BARREL_RE.test(source);
 }
 
 export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
@@ -126,10 +124,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         // Only flag when there are named specifiers — side-effect-only imports
         // (`import 'lucide-react'`) are a separate concern.
-        const hasNamedSpecifiers = node.specifiers.some(
-          (s): s is TSESTree.ImportSpecifier =>
-            s.type === AST_NODE_TYPES.ImportSpecifier
-        );
+        let hasNamedSpecifiers = false;
+        for (const s of node.specifiers) {
+          if (s.type === AST_NODE_TYPES.ImportSpecifier) {
+            hasNamedSpecifiers = true;
+            break;
+          }
+        }
 
         if (!hasNamedSpecifiers) {
           return;

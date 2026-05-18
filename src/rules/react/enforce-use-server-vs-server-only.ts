@@ -23,6 +23,48 @@ type MessageIds =
 
 type Options = [];
 
+const DB_IDENTIFIERS = new Set([
+  "db",
+  "database",
+  "prisma",
+  "mongoose",
+  "firestore",
+  "sql",
+  "knex",
+  "drizzle",
+]);
+
+const DB_NESTED_IDENTIFIERS = new Set([
+  "prisma",
+  "mongoose",
+  "firestore",
+  "db",
+]);
+
+const SENSITIVE_ENV_PATTERNS: readonly string[] = [
+  "KEY",
+  "SECRET",
+  "TOKEN",
+  "PASSWORD",
+  "PRIVATE",
+  "CREDENTIAL",
+];
+
+const ROUTE_HANDLER_RE = /\/route\.(ts|js|tsx|jsx)$/;
+
+function envVarIsSensitive(envVar: string): boolean {
+  if (envVar.startsWith("NEXT_PUBLIC_") || envVar.startsWith("REACT_APP_")) {
+    return false;
+  }
+  const upper = envVar.toUpperCase();
+  for (const pattern of SENSITIVE_ENV_PATTERNS) {
+    if (upper.includes(pattern)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   meta: {
     type: "problem",
@@ -66,7 +108,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     // Route Handler files (route.ts/js) export HTTP methods (GET, POST, etc.),
     // not Server Actions. Skip entirely — adding "use server" is wrong here.
-    if (/\/route\.(ts|js|tsx|jsx)$/.test(filename)) {
+    if (ROUTE_HANDLER_RE.test(filename)) {
       return {};
     }
 
@@ -157,64 +199,43 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       CallExpression(node: TSESTree.CallExpression): void {
-        if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
-          const obj = node.callee.object;
-          const prop = node.callee.property;
-          if (
-            obj.type === AST_NODE_TYPES.Identifier &&
-            prop.type === AST_NODE_TYPES.Identifier
-          ) {
-            const dbPatterns = [
-              "db",
-              "database",
-              "prisma",
-              "mongoose",
-              "firestore",
-              "sql",
-              "knex",
-              "drizzle",
-            ];
-            if (dbPatterns.includes(obj.name)) {
-              hasDatabaseOperations = true;
-            }
-          }
-          if (
-            obj.type === AST_NODE_TYPES.MemberExpression &&
-            obj.object.type === AST_NODE_TYPES.Identifier
-          ) {
-            const dbPatterns = ["prisma", "mongoose", "firestore", "db"];
-            if (dbPatterns.includes(obj.object.name)) {
-              hasDatabaseOperations = true;
-            }
-          }
+        if (hasDatabaseOperations) {
+          return;
+        }
+        if (node.callee.type !== AST_NODE_TYPES.MemberExpression) {
+          return;
+        }
+        const obj = node.callee.object;
+        if (
+          obj.type === AST_NODE_TYPES.Identifier &&
+          DB_IDENTIFIERS.has(obj.name)
+        ) {
+          hasDatabaseOperations = true;
+          return;
+        }
+        if (
+          obj.type === AST_NODE_TYPES.MemberExpression &&
+          obj.object.type === AST_NODE_TYPES.Identifier &&
+          DB_NESTED_IDENTIFIERS.has(obj.object.name)
+        ) {
+          hasDatabaseOperations = true;
         }
       },
 
       MemberExpression(node: TSESTree.MemberExpression): void {
+        if (hasApiKeyUsage) {
+          return;
+        }
         if (
           node.object.type === AST_NODE_TYPES.MemberExpression &&
           node.object.object.type === AST_NODE_TYPES.Identifier &&
           node.object.object.name === "process" &&
           node.object.property.type === AST_NODE_TYPES.Identifier &&
           node.object.property.name === "env" &&
-          node.property.type === AST_NODE_TYPES.Identifier
+          node.property.type === AST_NODE_TYPES.Identifier &&
+          envVarIsSensitive(node.property.name)
         ) {
-          const envVar = node.property.name;
-          const sensitivePatterns = [
-            "KEY",
-            "SECRET",
-            "TOKEN",
-            "PASSWORD",
-            "PRIVATE",
-            "CREDENTIAL",
-          ];
-          if (
-            sensitivePatterns.some((p) => envVar.toUpperCase().includes(p)) &&
-            !envVar.startsWith("NEXT_PUBLIC_") &&
-            !envVar.startsWith("REACT_APP_")
-          ) {
-            hasApiKeyUsage = true;
-          }
+          hasApiKeyUsage = true;
         }
       },
 
@@ -227,8 +248,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           filename.endsWith("/middleware.ts") ||
           filename.endsWith("/middleware.js");
         const hasSensitiveOperations = hasDatabaseOperations || hasApiKeyUsage;
-        const isExplicitClient =
-          hasUseClientDirective(sourceCode) || hasClientOnlyImport;
+        const useClientDirective = hasUseClientDirective(sourceCode);
+        const isExplicitClient = useClientDirective || hasClientOnlyImport;
 
         if (hasUseServerDirective && hasServerOnlyImport) {
           context.report({
@@ -285,7 +306,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           hasServerActionPatterns &&
           !hasUseServerDirective &&
           !hasServerOnlyImport &&
-          !hasUseClientDirective(sourceCode) &&
+          !useClientDirective &&
           !isApiRoute &&
           !isMiddleware
         ) {

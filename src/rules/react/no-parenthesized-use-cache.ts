@@ -26,6 +26,11 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   defaultOptions: [],
   create(context) {
     const sourceCode = context.sourceCode;
+    // Fast path: the rule only fires when both "use cache" and a parenthesised
+    // directive form exist. Cheap text check skips every other file.
+    if (!sourceCode.text.includes("use cache")) {
+      return {};
+    }
     const parenthesizedDirectivePattern =
       /^\s*\(+\s*(['"])use cache\1\s*\)+\s*;?\s*$/;
 

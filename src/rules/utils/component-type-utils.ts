@@ -37,25 +37,34 @@ export function hasDirective(
     }
   }
 
-  // Check comments at the top of the file
-  const comments = sourceCode.getAllComments();
+  // Fast path: if line 1 doesn't even contain the directive substring,
+  // we can skip both the line-quoting check and the (more expensive) full
+  // comment scan. The directive is always near the start of line 1 when
+  // present, so a single substring check is enough to short-circuit.
   const firstLine = sourceCode.lines[0];
+  if (!firstLine?.includes(directive)) {
+    return false;
+  }
 
   // Simple string check for the first line
   if (
-    firstLine?.includes(`"${directive}"`) ||
-    firstLine?.includes(`'${directive}'`)
+    firstLine.includes(`"${directive}"`) ||
+    firstLine.includes(`'${directive}'`)
   ) {
     return true;
   }
 
-  // Check comments specifically
-  return comments.some(
-    (comment: TSESTree.Comment) =>
-      comment.loc?.start.line === 1 &&
-      (comment.value.includes(`"${directive}"`) ||
-        comment.value.includes(`'${directive}'`))
-  );
+  // Check comments specifically (rare branch — only reached when line 1
+  // contains the directive substring but neither the statement nor the
+  // quoted-string forms matched, e.g. a comment-wrapped directive).
+  return sourceCode
+    .getAllComments()
+    .some(
+      (comment: TSESTree.Comment) =>
+        comment.loc?.start.line === 1 &&
+        (comment.value.includes(`"${directive}"`) ||
+          comment.value.includes(`'${directive}'`))
+    );
 }
 
 /**

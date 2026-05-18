@@ -25,6 +25,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
+    // Fast path: the literal "force-dynamic" must appear verbatim for the
+    // rule to fire, so skip every VariableDeclaration visit in files that
+    // don't contain it.
+    if (!context.sourceCode.text.includes("force-dynamic")) {
+      return {};
+    }
+
     return {
       VariableDeclaration(node: TSESTree.VariableDeclaration): void {
         // Check if this is an export declaration

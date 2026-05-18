@@ -28,25 +28,27 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const isClientComponent = hasUseClientDirective(context.sourceCode);
+    // Rule only applies to Client Components. Skip the visitor set entirely
+    // (vs. early-returning inside each visitor) so non-client files pay only
+    // the directive check and avoid every per-function callback.
+    if (!hasUseClientDirective(context.sourceCode)) {
+      return {};
+    }
+
+    // Fast path: the only reportable name pattern ends in "Promise". If the
+    // file never contains that token, no path can fire.
+    if (!context.sourceCode.text.includes("Promise")) {
+      return {};
+    }
 
     return {
       FunctionDeclaration(node): void {
-        if (!isClientComponent) {
-          return;
-        }
         checkComponentProps(node, context);
       },
       ArrowFunctionExpression(node): void {
-        if (!isClientComponent) {
-          return;
-        }
         checkComponentProps(node, context);
       },
       FunctionExpression(node): void {
-        if (!isClientComponent) {
-          return;
-        }
         checkComponentProps(node, context);
       },
     };

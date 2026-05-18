@@ -197,6 +197,16 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
+    const text = context.sourceCode.text;
+    const hasAs = text.includes(" as ");
+    const hasTypeof = text.includes("typeof");
+    // Fast path: noIndexAccessCast & noObjectKeysKeyofCast need ` as `;
+    // noParametersTypeofIndexed needs `typeof` inside a utility-type generic.
+    // If neither token appears anywhere, no visitor can fire.
+    if (!(hasAs || hasTypeof)) {
+      return {};
+    }
+
     return {
       /**
        * Detects: (expr as Record<string, ...>)[key]
