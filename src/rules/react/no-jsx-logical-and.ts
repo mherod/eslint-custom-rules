@@ -69,6 +69,21 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
+    // Fast path: the JSX conditional-render pattern can only exist in files
+    // that contain JSX. The rule walks every LogicalExpression and inspects
+    // ancestors; bailing out for non-JSX files skips that work entirely.
+    const filename = context.filename;
+    if (
+      !(
+        filename.endsWith(".tsx") ||
+        filename.endsWith(".jsx") ||
+        filename.endsWith(".mtsx") ||
+        filename.endsWith(".mjsx")
+      )
+    ) {
+      return {};
+    }
+
     return {
       LogicalExpression(node): void {
         // Only check logical AND (&&) expressions
