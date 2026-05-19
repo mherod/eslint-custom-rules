@@ -50,26 +50,20 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         let hasUrlInChain = false;
 
         // Helper to check if a node is z.string()
-        const isZodString = (node: TSESTree.CallExpression): boolean => {
-          return (
-            node.callee.type === AST_NODE_TYPES.MemberExpression &&
-            node.callee.object.type === AST_NODE_TYPES.Identifier &&
-            node.callee.object.name === "z" &&
-            node.callee.property.type === AST_NODE_TYPES.Identifier &&
-            node.callee.property.name === "string"
-          );
-        };
+        const isZodString = (node: TSESTree.CallExpression): boolean =>
+          node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          node.callee.object.type === AST_NODE_TYPES.Identifier &&
+          node.callee.object.name === "z" &&
+          node.callee.property.type === AST_NODE_TYPES.Identifier &&
+          node.callee.property.name === "string";
 
         // Helper to check if a node is z.url()
-        const isZodUrl = (node: TSESTree.CallExpression): boolean => {
-          return (
-            node.callee.type === AST_NODE_TYPES.MemberExpression &&
-            node.callee.object.type === AST_NODE_TYPES.Identifier &&
-            node.callee.object.name === "z" &&
-            node.callee.property.type === AST_NODE_TYPES.Identifier &&
-            node.callee.property.name === "url"
-          );
-        };
+        const isZodUrl = (node: TSESTree.CallExpression): boolean =>
+          node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          node.callee.object.type === AST_NODE_TYPES.Identifier &&
+          node.callee.object.name === "z" &&
+          node.callee.property.type === AST_NODE_TYPES.Identifier &&
+          node.callee.property.name === "url";
 
         // Recursive search down the chain
         let currentNode: TSESTree.Node = value;

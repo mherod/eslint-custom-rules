@@ -115,7 +115,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           context.report({
             node,
             messageId: "noHardcodedSecrets",
-            data: { secret: `${node.value.substring(0, 10)}...` },
+            data: { secret: `${node.value.slice(0, 10)}...` },
           });
         }
       },

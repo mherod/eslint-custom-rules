@@ -21,4 +21,4 @@ export function useWindowSizeUtil() {
 // Bracket notation access to secrets (should error)
 const _stripeSecret = process.env.STRIPE_SECRET_KEY;
 
-export { apiKey, dbPassword, fs, createConnection };
+export { apiKey, createConnection, dbPassword, fs };

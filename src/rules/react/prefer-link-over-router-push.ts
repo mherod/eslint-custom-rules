@@ -82,7 +82,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         current = current.parent;
       }
 
-      return undefined;
+      return;
     }
 
     return {

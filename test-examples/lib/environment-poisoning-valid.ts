@@ -13,4 +13,4 @@ import { createConnection } from "mysql2";
 const publicUrl = process.env.NEXT_PUBLIC_APP_URL;
 const publicKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
-export { apiKey, dbPassword, fs, createConnection, publicUrl, publicKey };
+export { apiKey, createConnection, dbPassword, fs, publicKey, publicUrl };

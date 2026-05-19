@@ -67,7 +67,7 @@ Entry points (`package.json#exports`): `@mherod/eslint-plugin-custom` and `/type
 - **Build (`tsup`)**: emits CJS + ESM + `.d.ts/.d.mts` for `src/index.ts`, each category file, and every non-test rule. Externals: `@typescript-eslint/utils`, `@typescript-eslint/parser`, `eslint`, `typescript`. Target Node 18+.
 - **Jest** (`jest.config.js`): ts-jest, Node env. Test globs: `**/__tests__/**/*.test.(ts|tsx)`, `**/*.(test|spec).(ts|tsx)`. Coverage from `src/**/*.{ts,tsx}` (excludes `.d.ts`, tests, index files).
 - **Lefthook** (`lefthook.yml`): pre-commit runs `npx ultracite fix` on staged TS/JS/JSON/JSONC/CSS and stages fixes; commit-msg runs `npx commitlint --edit`.
-- **Biome** (`biome.jsonc`): extends `ultracite/core` (NOT `ultracite` — v7+). `noExplicitAny: error`, `noExcessiveCognitiveComplexity: 30`. Test files relax `noExplicitAny`/`noUndeclaredVariables`. DO: use `interface` over `type` for object shapes.
+- **Biome** (`biome.jsonc`): extends `ultracite/biome/core` (path moved from `ultracite/core` in v7.7+; v7.6 and earlier still use `ultracite/core`). `noExplicitAny: error`, `noExcessiveCognitiveComplexity: 30`. Test files relax `noExplicitAny`/`noUndeclaredVariables`. DO: use `interface` over `type` for object shapes.
 - **Commitlint**: Conventional Commits. Types: feat/fix/docs/style/refactor/test/chore/ci/perf/build/revert. `subject-case: sentence-case`, subject ≤72 chars, body/footer line ≤100.
 
 Engines: Node ≥18. Production deps: none. Peer deps: `@typescript-eslint/parser ^8`, `eslint ^8 || ^9`, `typescript ^5`.
