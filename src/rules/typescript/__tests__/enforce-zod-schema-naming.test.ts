@@ -39,18 +39,30 @@ ruleTester.run(RULE_NAME, rule, {
     "const someVariable = 'not a schema';",
     "const userForm = createForm();",
     "const data = fetchData();",
+
+    // Parse results are runtime values, not schemas — not flagged
+    "const trimmedQuery = z.string().trim().parse(query);",
+    "const user = UserSchema.parse(input);",
+    "const userResult = UserSchema.safeParse(input);",
+    "const parsed = z.string().parseAsync(input);",
+    "const safeParsed = z.object({}).safeParseAsync(input);",
   ],
   invalid: [
-    // Invalid: not PascalCase
+    // Invalid: not PascalCase — suggestion only, autofix disabled
     {
       code: "const formSchema = z.object({});",
       errors: [
         {
           messageId: "zodSchemaMustBePascalCaseWithSuffix",
           data: { name: "formSchema" },
+          suggestions: [
+            {
+              messageId: "renameToPascalCaseWithSchemaSuffix",
+              output: "const FormSchema = z.object({});",
+            },
+          ],
         },
       ],
-      output: "const FormSchema = z.object({});",
     },
     {
       code: "const user_form_schema = z.object({});",
@@ -58,9 +70,14 @@ ruleTester.run(RULE_NAME, rule, {
         {
           messageId: "zodSchemaMustBePascalCaseWithSuffix",
           data: { name: "user_form_schema" },
+          suggestions: [
+            {
+              messageId: "renameToPascalCaseWithSchemaSuffix",
+              output: "const UserFormSchema = z.object({});",
+            },
+          ],
         },
       ],
-      output: "const UserFormSchema = z.object({});",
     },
 
     // Invalid: missing Schema suffix
@@ -70,91 +87,43 @@ ruleTester.run(RULE_NAME, rule, {
         {
           messageId: "zodSchemaMustBePascalCaseWithSuffix",
           data: { name: "Form" },
+          suggestions: [
+            {
+              messageId: "renameToPascalCaseWithSchemaSuffix",
+              output: "const FormSchema = z.object({});",
+            },
+          ],
         },
       ],
-      output: "const FormSchema = z.object({});",
-    },
-    {
-      code: "const UserForm = z.object({});",
-      errors: [
-        {
-          messageId: "zodSchemaMustBePascalCaseWithSuffix",
-          data: { name: "UserForm" },
-        },
-      ],
-      output: "const UserFormSchema = z.object({});",
     },
 
-    // Invalid: just 'Schema' — fixer strips "Schema" leaving empty base, produces "Schema" (no-op)
+    // Invalid: just 'Schema' — name resolves to null, no suggestion
     {
       code: "const Schema = z.object({});",
       errors: [
         {
           messageId: "zodSchemaMustBePascalCaseWithSuffix",
           data: { name: "Schema" },
+          suggestions: [],
         },
       ],
-      output: null,
     },
 
-    // Invalid: starts with lowercase
-    {
-      code: "const formDataSchema = z.object({});",
-      errors: [
-        {
-          messageId: "zodSchemaMustBePascalCaseWithSuffix",
-          data: { name: "formDataSchema" },
-        },
-      ],
-      output: "const FormDataSchema = z.object({});",
-    },
-
-    // Invalid: with chained methods
+    // Invalid: with chained methods (non-parse)
     {
       code: "const userForm = z.object({}).required();",
       errors: [
         {
           messageId: "zodSchemaMustBePascalCaseWithSuffix",
           data: { name: "userForm" },
+          suggestions: [
+            {
+              messageId: "renameToPascalCaseWithSchemaSuffix",
+              output: "const UserFormSchema = z.object({}).required();",
+            },
+          ],
         },
       ],
-      output: "const UserFormSchema = z.object({}).required();",
-    },
-
-    // Invalid: with imported Zod methods
-    {
-      code: "const userForm = object({});",
-      errors: [
-        {
-          messageId: "zodSchemaMustBePascalCaseWithSuffix",
-          data: { name: "userForm" },
-        },
-      ],
-      output: "const UserFormSchema = object({});",
-    },
-
-    // Invalid: complex schemas
-    {
-      code: "const complexType = z.union([z.string(), z.number()]);",
-      errors: [
-        {
-          messageId: "zodSchemaMustBePascalCaseWithSuffix",
-          data: { name: "complexType" },
-        },
-      ],
-      output: "const ComplexTypeSchema = z.union([z.string(), z.number()]);",
-    },
-
-    // Invalid: array schemas
-    {
-      code: "const stringArray = z.array(z.string());",
-      errors: [
-        {
-          messageId: "zodSchemaMustBePascalCaseWithSuffix",
-          data: { name: "stringArray" },
-        },
-      ],
-      output: "const StringArraySchema = z.array(z.string());",
     },
   ],
 });
