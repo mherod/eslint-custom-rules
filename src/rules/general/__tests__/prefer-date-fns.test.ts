@@ -7,6 +7,9 @@ const ruleTester = new RuleTester({
     parserOptions: {
       ecmaVersion: 2020,
       sourceType: "module",
+      ecmaFeatures: {
+        jsx: true,
+      },
     },
   },
 });
@@ -48,11 +51,28 @@ ruleTester.run(RULE_NAME, rule, {
         const time = date.getTime();
       `,
     },
+    // Unknown receivers may be non-Date values, so the rule stays conservative
+    {
+      code: `
+        const formatted = value.toLocaleString();
+        const dateString = value.toLocaleDateString();
+        const timeString = value.toLocaleTimeString();
+      `,
+    },
+    // Number formatting should not be converted to date-fns formatting
+    {
+      code: `
+        const itemCount: number = 1000;
+        const formatted = itemCount.toLocaleString();
+        const element = <span>{itemCount.toLocaleString()} items</span>;
+      `,
+    },
   ],
   invalid: [
     // toLocaleDateString
     {
       code: `
+        const date = new Date();
         const formatted = date.toLocaleDateString();
       `,
       errors: [
@@ -61,12 +81,14 @@ ruleTester.run(RULE_NAME, rule, {
         },
       ],
       output: `
+        const date = new Date();
         const formatted = format(date, 'PP');
       `,
     },
     // toLocaleTimeString
     {
       code: `
+        const date = new Date();
         const time = date.toLocaleTimeString();
       `,
       errors: [
@@ -75,12 +97,14 @@ ruleTester.run(RULE_NAME, rule, {
         },
       ],
       output: `
+        const date = new Date();
         const time = format(date, 'PP');
       `,
     },
     // toLocaleString
     {
       code: `
+        const date = new Date();
         const str = date.toLocaleString();
       `,
       errors: [
@@ -89,12 +113,14 @@ ruleTester.run(RULE_NAME, rule, {
         },
       ],
       output: `
+        const date = new Date();
         const str = format(date, 'PP');
       `,
     },
     // toDateString
     {
       code: `
+        const date = new Date();
         const str = date.toDateString();
       `,
       errors: [
@@ -103,12 +129,14 @@ ruleTester.run(RULE_NAME, rule, {
         },
       ],
       output: `
+        const date = new Date();
         const str = format(date, 'PP');
       `,
     },
     // toTimeString
     {
       code: `
+        const date = new Date();
         const str = date.toTimeString();
       `,
       errors: [
@@ -117,12 +145,28 @@ ruleTester.run(RULE_NAME, rule, {
         },
       ],
       output: `
+        const date = new Date();
         const str = format(date, 'PP');
+      `,
+    },
+    // Direct new Date() receiver
+    {
+      code: `
+        const str = new Date().toLocaleString();
+      `,
+      errors: [
+        {
+          messageId: "preferDateFnsFormat",
+        },
+      ],
+      output: `
+        const str = format(new Date(), 'PP');
       `,
     },
     // toISOString
     {
       code: `
+        const date: Date = getDate();
         const iso = date.toISOString();
       `,
       errors: [
@@ -131,6 +175,7 @@ ruleTester.run(RULE_NAME, rule, {
         },
       ],
       output: `
+        const date: Date = getDate();
         const iso = formatISO(date);
       `,
     },
@@ -151,6 +196,7 @@ ruleTester.run(RULE_NAME, rule, {
     // Multiple violations
     {
       code: `
+        const date = new Date();
         const dateStr = date.toLocaleDateString();
         const iso = date.toISOString();
         const parsed = Date.parse('2023-01-01');
@@ -167,6 +213,7 @@ ruleTester.run(RULE_NAME, rule, {
         },
       ],
       output: `
+        const date = new Date();
         const dateStr = format(date, 'PP');
         const iso = formatISO(date);
         const parsed = parseISO('2023-01-01');
