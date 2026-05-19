@@ -1,4 +1,6 @@
 import { spawnSync } from "node:child_process";
+import { TextDecoder, TextEncoder } from "node:util";
+import { Worker } from "node:worker_threads";
 
 export interface DirectImportBindingRequest {
   importedName: string;
@@ -49,39 +51,133 @@ type SyncBridgeRequest =
       sourceText: string;
     };
 
+type BridgeResponse<TResult> =
+  | { ok: true; result: TResult }
+  | { error: string; ok: false };
+
+interface BridgeWorkerState {
+  control: Int32Array;
+  requestBuffer: Uint8Array;
+  responseBuffer: Uint8Array;
+  worker: Worker;
+}
+
+interface WorkerBridgeResult<TResult> {
+  handled: boolean;
+  result: TResult | null;
+}
+
 const bridgeResultCache = new Map<string, unknown>();
 
-const RESECT_SYNC_BRIDGE_SCRIPT = String.raw`
-import fs from "node:fs";
-import path from "node:path";
-import ts from "typescript";
+const STATE_IDLE = 0;
+const STATE_REQUEST = 1;
+const STATE_RESPONSE = 2;
+const BRIDGE_STATE_INDEX = 0;
+const BRIDGE_REQUEST_LENGTH_INDEX = 1;
+const BRIDGE_RESPONSE_LENGTH_INDEX = 2;
+const BRIDGE_CONTROL_SLOTS = 4;
+const BRIDGE_CONTROL_BYTE_LENGTH =
+  Int32Array.BYTES_PER_ELEMENT * BRIDGE_CONTROL_SLOTS;
+const BRIDGE_REQUEST_BYTE_LENGTH = 1024 * 1024 * 16;
+const BRIDGE_RESPONSE_BYTE_LENGTH = 1024 * 1024 * 16;
+const BRIDGE_REQUEST_OFFSET = BRIDGE_CONTROL_BYTE_LENGTH;
+const BRIDGE_RESPONSE_OFFSET =
+  BRIDGE_REQUEST_OFFSET + BRIDGE_REQUEST_BYTE_LENGTH;
+const BRIDGE_SHARED_BUFFER_BYTE_LENGTH =
+  BRIDGE_CONTROL_BYTE_LENGTH +
+  BRIDGE_REQUEST_BYTE_LENGTH +
+  BRIDGE_RESPONSE_BYTE_LENGTH;
+const BRIDGE_WORKER_TIMEOUT_MS = 60_000;
+
+let bridgeWorkerState: BridgeWorkerState | null = null;
+let bridgeWorkerDisabled = false;
+
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
+
+const RESECT_BRIDGE_CORE_SCRIPT = String.raw`
+const fs = require("node:fs");
+const path = require("node:path");
+const ts = require("typescript");
 
 globalThis.Bun ??= { Glob: class Glob {} };
 
-const [resect, resectNode] = await Promise.all([
-  import("@mherod/resect"),
-  import("@mherod/resect/node"),
-]);
-
-resect.setRuntime(resectNode.nodeRuntime);
-
 const KNOWN_EXTENSIONS = /\.(tsx?|jsx?|mts|cts|mjs|cjs|vue)$/u;
-const request = JSON.parse(process.env.RESECT_BRIDGE_REQUEST ?? "{}");
+let resectApiPromise = null;
+const projectDiscoveryCache = new Map();
+const projectContextCache = new Map();
+const workspaceCache = new Map();
 
 function printResult(value) {
   process.stdout.write(JSON.stringify(value));
 }
 
-function getProjectContext(filePath) {
-  const tsconfigPath = resect.resolveTsConfig(undefined, path.dirname(filePath));
+async function loadResectApi() {
+  if (!resectApiPromise) {
+    resectApiPromise = Promise.all([
+      import("@mherod/resect"),
+      import("@mherod/resect/node"),
+    ]).then(([resect, resectNode]) => {
+      resect.setRuntime(resectNode.nodeRuntime);
+      return resect;
+    });
+  }
+
+  return resectApiPromise;
+}
+
+async function getProjectContext(filePath) {
+  const resect = await loadResectApi();
+  const normalizedFilePath = path.resolve(filePath);
+  const tsconfigPath = resect.resolveTsConfig(
+    undefined,
+    path.dirname(normalizedFilePath)
+  );
+
   if (!tsconfigPath) {
     return null;
   }
 
+  const projectDir = path.dirname(tsconfigPath);
+  let discovery = projectDiscoveryCache.get(projectDir);
+  if (!discovery && typeof resect.discoverProject === "function") {
+    discovery = resect.discoverProject(projectDir);
+    projectDiscoveryCache.set(projectDir, discovery);
+  }
+
+  const owningConfig =
+    discovery && typeof resect.findOwningConfig === "function"
+      ? resect.findOwningConfig(normalizedFilePath, discovery)
+      : undefined;
+  const effectiveTsconfigPath = owningConfig?.path ?? tsconfigPath;
+
+  let project = projectContextCache.get(effectiveTsconfigPath);
+  if (!project) {
+    project = resect.loadProject(
+      effectiveTsconfigPath,
+      owningConfig ? undefined : normalizedFilePath
+    );
+    projectContextCache.set(effectiveTsconfigPath, project);
+  }
+
   return {
-    project: resect.loadProject(tsconfigPath, filePath),
-    projectRoot: path.dirname(tsconfigPath),
+    project,
+    projectRoot: path.dirname(effectiveTsconfigPath),
+    resect,
   };
+}
+
+async function getWorkspace(projectContext) {
+  const cachedWorkspace = workspaceCache.get(projectContext.projectRoot);
+  if (cachedWorkspace !== undefined) {
+    return cachedWorkspace;
+  }
+
+  const workspace = await projectContext.resect.discoverWorkspace(
+    projectContext.projectRoot
+  );
+  workspaceCache.set(projectContext.projectRoot, workspace);
+  return workspace;
 }
 
 function parseSourceFileFromDisk(filePath) {
@@ -141,7 +237,13 @@ function buildAliasSpecifier(targetPath, project) {
   return null;
 }
 
-function resolveExportOwner(modulePath, exportName, project, visited = new Set()) {
+function resolveExportOwner(
+  modulePath,
+  exportName,
+  project,
+  resect,
+  visited = new Set()
+) {
   if (visited.has(modulePath)) {
     return null;
   }
@@ -172,6 +274,7 @@ function resolveExportOwner(modulePath, exportName, project, visited = new Set()
               barrel.resolvedPath,
               entry.name ?? exportName,
               project,
+              resect,
               visited
             ) ?? barrel.resolvedPath
           );
@@ -183,6 +286,7 @@ function resolveExportOwner(modulePath, exportName, project, visited = new Set()
           barrel.resolvedPath,
           exportName,
           project,
+          resect,
           visited
         );
 
@@ -197,15 +301,16 @@ function resolveExportOwner(modulePath, exportName, project, visited = new Set()
 }
 
 async function resolveDirectImports(payload) {
-  const projectContext = getProjectContext(payload.filePath);
+  const projectContext = await getProjectContext(payload.filePath);
   if (!projectContext) {
     return [];
   }
 
+  const { project, resect } = projectContext;
   const resolved = resect.resolveModuleSpecifier(
     payload.specifier,
     payload.filePath,
-    projectContext.project
+    project
   );
 
   if (resolved.kind !== "resolved") {
@@ -217,14 +322,15 @@ async function resolveDirectImports(payload) {
       const ownerPath = resolveExportOwner(
         resolved.path,
         binding.importedName,
-        projectContext.project
+        project,
+        resect
       );
 
       if (!ownerPath || ownerPath === resolved.path) {
         return null;
       }
 
-      const aliasSpecifier = buildAliasSpecifier(ownerPath, projectContext.project);
+      const aliasSpecifier = buildAliasSpecifier(ownerPath, project);
       const newSpecifier =
         aliasSpecifier ??
         resect.calculateNewSpecifier(
@@ -232,7 +338,7 @@ async function resolveDirectImports(payload) {
           payload.filePath,
           resolved.path,
           ownerPath,
-          projectContext.project
+          project
         );
 
       if (!newSpecifier || newSpecifier === payload.specifier) {
@@ -250,15 +356,16 @@ async function resolveDirectImports(payload) {
 }
 
 async function canonicalizeImport(payload) {
-  const projectContext = getProjectContext(payload.filePath);
+  const projectContext = await getProjectContext(payload.filePath);
   if (!projectContext) {
     return null;
   }
 
+  const { project, resect } = projectContext;
   const resolved = resect.resolveModuleSpecifier(
     payload.specifier,
     payload.filePath,
-    projectContext.project
+    project
   );
 
   if (resolved.kind !== "resolved") {
@@ -267,14 +374,14 @@ async function canonicalizeImport(payload) {
 
   const candidates = [];
   const aliasSpecifier =
-    buildAliasSpecifier(resolved.path, projectContext.project) ??
-    resect.findAliasForPath(resolved.path, projectContext.project);
+    buildAliasSpecifier(resolved.path, project) ??
+    resect.findAliasForPath(resolved.path, project);
   const relativeSpecifier = resect.calculateRelativeSpecifier(
     payload.filePath,
     resolved.path,
     payload.specifier
   );
-  const workspace = await resect.discoverWorkspace(projectContext.projectRoot);
+  const workspace = await getWorkspace(projectContext);
   const workspaceSpecifier = workspace
     ? resect.findCrossPackageImport(resolved.path, workspace, false)
     : null;
@@ -328,12 +435,13 @@ async function canonicalizeImport(payload) {
   );
 }
 
-function collectUnresolvableImports(payload) {
-  const projectContext = getProjectContext(payload.filePath);
+async function collectUnresolvableImports(payload) {
+  const projectContext = await getProjectContext(payload.filePath);
   if (!projectContext) {
     return [];
   }
 
+  const { project, resect } = projectContext;
   const sourceFile = ts.createSourceFile(
     payload.filePath,
     payload.sourceText,
@@ -350,7 +458,7 @@ function collectUnresolvableImports(payload) {
     const resolved = resect.resolveModuleSpecifier(
       specifier,
       payload.filePath,
-      projectContext.project
+      project
     );
 
     if (resolved.kind === "resolved") {
@@ -417,46 +525,291 @@ function collectUnresolvableImports(payload) {
   return diagnostics;
 }
 
-try {
-  let result = null;
-
+async function handleBridgeRequest(request) {
   if (request.operation === "resolve-direct-imports") {
-    result = await resolveDirectImports(request);
-  } else if (request.operation === "canonicalize-import") {
-    result = await canonicalizeImport(request);
-  } else if (request.operation === "scan-unresolvable-imports") {
-    result = collectUnresolvableImports(request);
-  } else {
-    result = null;
+    return resolveDirectImports(request);
   }
 
+  if (request.operation === "canonicalize-import") {
+    return canonicalizeImport(request);
+  }
+
+  if (request.operation === "scan-unresolvable-imports") {
+    return collectUnresolvableImports(request);
+  }
+
+  return null;
+}
+`;
+
+const RESECT_SYNC_BRIDGE_SCRIPT = `
+${RESECT_BRIDGE_CORE_SCRIPT}
+
+async function runSingleRequest() {
+  const request = JSON.parse(process.env.RESECT_BRIDGE_REQUEST ?? "{}");
+  const result = await handleBridgeRequest(request);
   printResult({
     ok: true,
     result,
   });
-} catch (error) {
+}
+
+runSingleRequest().catch((error) => {
   printResult({
     ok: false,
     error: error instanceof Error ? error.message : String(error),
   });
   process.exitCode = 1;
+});
+`;
+
+const RESECT_SYNC_BRIDGE_WORKER_SCRIPT = `
+const { workerData } = require("node:worker_threads");
+${RESECT_BRIDGE_CORE_SCRIPT}
+
+const STATE_IDLE = ${STATE_IDLE};
+const STATE_REQUEST = ${STATE_REQUEST};
+const STATE_RESPONSE = ${STATE_RESPONSE};
+const BRIDGE_STATE_INDEX = ${BRIDGE_STATE_INDEX};
+const BRIDGE_REQUEST_LENGTH_INDEX = ${BRIDGE_REQUEST_LENGTH_INDEX};
+const BRIDGE_RESPONSE_LENGTH_INDEX = ${BRIDGE_RESPONSE_LENGTH_INDEX};
+const control = new Int32Array(
+  workerData.sharedBuffer,
+  0,
+  ${BRIDGE_CONTROL_SLOTS}
+);
+const requestBuffer = new Uint8Array(
+  workerData.sharedBuffer,
+  ${BRIDGE_REQUEST_OFFSET},
+  workerData.requestByteLength
+);
+const responseBuffer = new Uint8Array(
+  workerData.sharedBuffer,
+  ${BRIDGE_RESPONSE_OFFSET},
+  workerData.responseByteLength
+);
+const workerTextEncoder = new TextEncoder();
+const workerTextDecoder = new TextDecoder();
+
+function writeWorkerResponse(value) {
+  let encoded = workerTextEncoder.encode(JSON.stringify(value));
+  if (encoded.byteLength > responseBuffer.byteLength) {
+    encoded = workerTextEncoder.encode(
+      JSON.stringify({
+        ok: false,
+        error: "Bridge response exceeded shared buffer size",
+      })
+    );
+  }
+
+  responseBuffer.fill(0);
+  responseBuffer.set(encoded);
+  Atomics.store(
+    control,
+    BRIDGE_RESPONSE_LENGTH_INDEX,
+    encoded.byteLength
+  );
+  Atomics.store(control, BRIDGE_STATE_INDEX, STATE_RESPONSE);
+  Atomics.notify(control, BRIDGE_STATE_INDEX);
 }
+
+async function handleCurrentRequest() {
+  const requestLength = Atomics.load(control, BRIDGE_REQUEST_LENGTH_INDEX);
+  const requestText = workerTextDecoder.decode(
+    requestBuffer.subarray(0, requestLength)
+  );
+
+  try {
+    const request = JSON.parse(requestText);
+    const result = await handleBridgeRequest(request);
+    writeWorkerResponse({
+      ok: true,
+      result,
+    });
+  } catch (error) {
+    writeWorkerResponse({
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
+async function runWorkerLoop() {
+  while (true) {
+    Atomics.wait(control, BRIDGE_STATE_INDEX, STATE_IDLE);
+    if (Atomics.load(control, BRIDGE_STATE_INDEX) !== STATE_REQUEST) {
+      continue;
+    }
+
+    await handleCurrentRequest();
+  }
+}
+
+runWorkerLoop().catch((error) => {
+  writeWorkerResponse({
+    ok: false,
+    error: error instanceof Error ? error.message : String(error),
+  });
+});
 `;
 
 function getCacheKey(request: SyncBridgeRequest): string {
   return JSON.stringify(request);
 }
 
-function runBridgeRequest<TResult>(request: SyncBridgeRequest): TResult | null {
-  const cacheKey = getCacheKey(request);
-  const cachedResult = bridgeResultCache.get(cacheKey);
-  if (cachedResult !== undefined) {
-    return cachedResult as TResult | null;
+function clearBridgeWorker(state: BridgeWorkerState): void {
+  if (bridgeWorkerState === state) {
+    bridgeWorkerState = null;
+  }
+}
+
+function disableBridgeWorker(state: BridgeWorkerState): void {
+  bridgeWorkerDisabled = true;
+  clearBridgeWorker(state);
+  state.worker.terminate();
+}
+
+function getBridgeWorker(): BridgeWorkerState | null {
+  if (bridgeWorkerDisabled) {
+    return null;
   }
 
+  if (bridgeWorkerState) {
+    return bridgeWorkerState;
+  }
+
+  try {
+    const sharedBuffer = new SharedArrayBuffer(
+      BRIDGE_SHARED_BUFFER_BYTE_LENGTH
+    );
+    const control = new Int32Array(sharedBuffer, 0, BRIDGE_CONTROL_SLOTS);
+    const requestBuffer = new Uint8Array(
+      sharedBuffer,
+      BRIDGE_REQUEST_OFFSET,
+      BRIDGE_REQUEST_BYTE_LENGTH
+    );
+    const responseBuffer = new Uint8Array(
+      sharedBuffer,
+      BRIDGE_RESPONSE_OFFSET,
+      BRIDGE_RESPONSE_BYTE_LENGTH
+    );
+    const worker = new Worker(RESECT_SYNC_BRIDGE_WORKER_SCRIPT, {
+      eval: true,
+      workerData: {
+        requestByteLength: BRIDGE_REQUEST_BYTE_LENGTH,
+        responseByteLength: BRIDGE_RESPONSE_BYTE_LENGTH,
+        sharedBuffer,
+      },
+    });
+
+    const state = {
+      control,
+      requestBuffer,
+      responseBuffer,
+      worker,
+    };
+
+    worker.unref();
+    worker.once("error", () => {
+      bridgeWorkerDisabled = true;
+      clearBridgeWorker(state);
+    });
+    worker.once("exit", () => {
+      clearBridgeWorker(state);
+    });
+
+    bridgeWorkerState = state;
+    return state;
+  } catch {
+    bridgeWorkerDisabled = true;
+    return null;
+  }
+}
+
+function runBridgeWorkerRequest<TResult>(
+  cacheKey: string
+): WorkerBridgeResult<TResult> {
+  const state = getBridgeWorker();
+  if (
+    !state ||
+    Atomics.load(state.control, BRIDGE_STATE_INDEX) !== STATE_IDLE
+  ) {
+    return {
+      handled: false,
+      result: null,
+    };
+  }
+
+  const encodedRequest = textEncoder.encode(cacheKey);
+  if (encodedRequest.byteLength > state.requestBuffer.byteLength) {
+    return {
+      handled: false,
+      result: null,
+    };
+  }
+
+  state.requestBuffer.fill(0);
+  state.requestBuffer.set(encodedRequest);
+  Atomics.store(
+    state.control,
+    BRIDGE_REQUEST_LENGTH_INDEX,
+    encodedRequest.byteLength
+  );
+  Atomics.store(state.control, BRIDGE_STATE_INDEX, STATE_REQUEST);
+  Atomics.notify(state.control, BRIDGE_STATE_INDEX);
+
+  const waitResult = Atomics.wait(
+    state.control,
+    BRIDGE_STATE_INDEX,
+    STATE_REQUEST,
+    BRIDGE_WORKER_TIMEOUT_MS
+  );
+
+  if (waitResult === "timed-out") {
+    disableBridgeWorker(state);
+    return {
+      handled: false,
+      result: null,
+    };
+  }
+
+  if (Atomics.load(state.control, BRIDGE_STATE_INDEX) !== STATE_RESPONSE) {
+    disableBridgeWorker(state);
+    return {
+      handled: false,
+      result: null,
+    };
+  }
+
+  const responseLength = Atomics.load(
+    state.control,
+    BRIDGE_RESPONSE_LENGTH_INDEX
+  );
+  const responseText = textDecoder.decode(
+    state.responseBuffer.subarray(0, responseLength)
+  );
+  Atomics.store(state.control, BRIDGE_STATE_INDEX, STATE_IDLE);
+  Atomics.notify(state.control, BRIDGE_STATE_INDEX);
+
+  try {
+    const parsed = JSON.parse(responseText) as BridgeResponse<TResult>;
+    return {
+      handled: true,
+      result: parsed.ok ? parsed.result : null,
+    };
+  } catch {
+    disableBridgeWorker(state);
+    return {
+      handled: false,
+      result: null,
+    };
+  }
+}
+
+function runSpawnBridgeRequest<TResult>(cacheKey: string): TResult | null {
   const result = spawnSync(
     process.execPath,
-    ["--input-type=module", "-e", RESECT_SYNC_BRIDGE_SCRIPT],
+    ["-e", RESECT_SYNC_BRIDGE_SCRIPT],
     {
       encoding: "utf8",
       env: {
@@ -468,26 +821,38 @@ function runBridgeRequest<TResult>(request: SyncBridgeRequest): TResult | null {
   );
 
   if (result.status !== 0 || !result.stdout) {
-    bridgeResultCache.set(cacheKey, null);
     return null;
   }
 
   try {
-    const parsed = JSON.parse(result.stdout) as
-      | { ok: true; result: TResult }
-      | { error: string; ok: false };
+    const parsed = JSON.parse(result.stdout) as BridgeResponse<TResult>;
 
     if (!parsed.ok) {
-      bridgeResultCache.set(cacheKey, null);
       return null;
     }
 
-    bridgeResultCache.set(cacheKey, parsed.result);
     return parsed.result;
   } catch {
-    bridgeResultCache.set(cacheKey, null);
     return null;
   }
+}
+
+function runBridgeRequest<TResult>(request: SyncBridgeRequest): TResult | null {
+  const cacheKey = getCacheKey(request);
+  const cachedResult = bridgeResultCache.get(cacheKey);
+  if (cachedResult !== undefined) {
+    return cachedResult as TResult | null;
+  }
+
+  const workerResult = runBridgeWorkerRequest<TResult>(cacheKey);
+  if (workerResult.handled) {
+    bridgeResultCache.set(cacheKey, workerResult.result);
+    return workerResult.result;
+  }
+
+  const result = runSpawnBridgeRequest<TResult>(cacheKey);
+  bridgeResultCache.set(cacheKey, result);
+  return result;
 }
 
 export function resolveDirectImportsSync(request: {

@@ -1,843 +1,176 @@
 # AGENTS.md
 
-This file provides comprehensive guidance to Codex (Codex.ai/code) and developers when working with code in this repository. It contains everything needed to start contributing on day one.
+Concise guidance for working in `@mherod/eslint-plugin-custom`, a TypeScript ESLint plugin with rule packs for TypeScript, React/Next.js, Vue, General, Security, and Shared rules.
 
-## Repository Overview
+## Setup And Commands
 
-This is a custom ESLint plugin (`@mherod/eslint-plugin-custom`) containing custom linting rules for TypeScript, React/Next.js, Vue.js, and general development practices. The plugin provides rules for enforcing code patterns, security practices, and architectural constraints.
+Prerequisites: Node.js >=18, pnpm, Git, ESLint-capable editor.
 
-### Key Features
-- **Modular Architecture**: Five category-specific plugins that can be used independently
-- **TypeScript First**: Written in TypeScript with full type definitions
-- **Auto-fixable Rules**: Many rules provide automatic fixes
-- **Framework Support**: Specialized rules for React/Next.js and Vue.js
-- **ESLint 9 Support**: Both flat config and legacy config formats supported
-- **Comprehensive Testing**: 48 test suites with 828 tests
-
-## Quick Start for New Developers
-
-### Prerequisites
-- Node.js 18+ (check with `node --version`)
-- npm 9+ (check with `npm --version`)
-- Git
-- A code editor with ESLint support (VS Code recommended)
-
-### Initial Setup
+Use these commands:
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd eslint-custom-rules
-
-# Install dependencies
-npm install
-
-# Build the plugin
-npm run build
-
-# Run tests to verify setup
-npm test
-
-# Start development mode with watch
-npm run dev
-```
-
-### VS Code Setup
-
-Install recommended extensions:
-- ESLint (dbaeumer.vscode-eslint)
-- TypeScript and JavaScript Language Features (built-in)
-
-## Development Commands
-
-```bash
-# Build the plugin
+pnpm install
 pnpm build
-
-# Development mode with watch
 pnpm dev
-
-# Run tests
 pnpm test
-
-# Run tests in watch mode
 pnpm test:watch
-
-# Type checking
 pnpm typecheck
-
-# Linting
-pnpm lint         # Check for linting issues
-pnpm lint:fix     # Auto-fix linting issues
-
-# Clean build output
+pnpm lint
+pnpm lint:fix
 pnpm clean
-
-# Commit linting (checks commit messages)
 pnpm commitlint
-
-# Prepare for publishing (runs clean, build, typecheck, and tests)
 pnpm prepublishOnly
-
-# Run a specific test file — use pnpm exec jest, NOT npx jest
-pnpm exec jest src/rules/__tests__/[rule-name].test.ts
-
-# List all test files jest can discover
+pnpm exec jest src/rules/[category]/__tests__/[rule-name].test.ts
 pnpm exec jest --listTests
+pnpm audit --prod
 ```
 
-## Architecture
+Use `pnpm exec jest`, not `npx jest`. For test discovery issues, run `pnpm exec jest --listTests` before changing Jest config. Do not use shell pipes in `--testPathPattern`; run full `pnpm test` or pass explicit file paths.
 
-### Plugin Structure
+Publishing:
 
-The plugin is organized into five category-specific plugins, each with its own entry point:
-
-```
-src/
-├── index.ts        # Combined plugin (backward compatibility)
-├── typescript.ts   # TypeScript-specific rules
-├── react.ts        # React/Next.js rules
-├── vue.ts          # Vue.js rules
-├── general.ts      # General code organization
-├── security.ts     # Security patterns
-└── rules/          # Rule implementations
-    ├── typescript/
-    ├── react/
-    ├── vue/
-    ├── general/
-    └── security/
-```
-
-Each plugin exports:
-- `rules` - The rule implementations
-- `configs.recommended` - Balanced rule set
-- `configs.strict` - Stricter rule set
-- Both legacy and flat config formats
-
-### Rule Organization
-
-Rules are organized by category in subdirectories:
-```
-src/rules/
-├── typescript/     # TypeScript-specific rules (5 rules)
-│   ├── enforce-api-patterns.ts
-│   ├── enforce-documentation.ts
-│   ├── enforce-typescript-patterns.ts
-│   ├── enforce-zod-schema-naming.ts
-│   ├── no-empty-function-implementations.ts
-│   └── __tests__/  # Test files for TypeScript rules
-├── react/         # React/Next.js rules (27 rules)
-│   ├── enforce-admin-separation.ts
-│   ├── enforce-component-patterns.ts
-│   ├── enforce-server-client-separation.ts
-│   ├── no-context-provider-in-server-component.ts
-│   ├── no-dynamic-tailwind-classes.ts
-│   ├── no-event-handlers-to-client-props.ts
-│   ├── no-internal-fetch-in-server-component.ts
-│   ├── no-non-serializable-props.ts
-│   ├── no-react-hooks-in-server-component.ts
-│   ├── no-sequential-data-fetching.ts
-│   ├── no-unstable-math-random.ts
-│   ├── no-use-client-in-layout.ts
-│   ├── no-use-client-in-page.ts
-│   ├── no-use-params-in-client-component.ts
-│   ├── no-use-state-in-async-component.ts
-│   ├── prefer-async-page-component.ts
-│   ├── prefer-await-params-in-page.ts
-│   ├── prefer-cache-api.ts
-│   ├── prefer-link-over-router-push.ts
-│   ├── prefer-next-navigation.ts
-│   ├── prefer-react-destructured-imports.ts
-│   ├── prefer-reusable-swr-hooks.ts
-│   ├── prefer-ui-promise-handling.ts
-│   ├── prefer-use-hook-for-promise-props.ts
-│   ├── prefer-use-swr-over-fetch.ts
-│   ├── prevent-environment-poisoning.ts
-│   ├── suggest-server-component-pages.ts
-│   └── __tests__/  # Test files for React rules
-├── general/       # General code organization (7 rules)
-│   ├── enforce-file-naming.ts
-│   ├── enforce-import-order.ts
-│   ├── prefer-date-fns.ts
-│   ├── prefer-date-fns-over-date-operations.ts
-│   ├── prefer-lodash-es-imports.ts
-│   ├── prefer-lodash-uniq-over-set.ts
-│   ├── prefer-ufo-with-query.ts
-│   └── __tests__/  # Test files for general rules
-├── security/      # Security-focused rules (11 rules)
-│   ├── enforce-security-patterns.ts
-│   ├── no-hardcoded-secrets.ts
-│   ├── no-log-secrets.ts
-│   ├── no-sql-injection.ts
-│   ├── no-unsafe-eval.ts
-│   ├── no-unsafe-inner-html.ts
-│   ├── no-unsafe-redirect.ts
-│   ├── no-unsafe-template-literals.ts
-│   ├── no-weak-crypto.ts
-│   ├── require-auth-validation.ts
-│   ├── require-rate-limiting.ts
-│   └── __tests__/  # Test files for security rules
-├── shared/        # Shared rules used by multiple plugins (1 rule)
-│   ├── no-unstable-math-random.ts
-│   └── __tests__/
-├── vue/          # Vue.js rules (1 rule)
-│   ├── prefer-to-value.ts
-│   └── __tests__/  # Test files for Vue rules
-├── utils/        # Shared utility functions
-│   ├── common.ts                # Common patterns, naming conventions, file patterns
-│   ├── component-type-utils.ts  # Server/client detection, directives, path normalization
-│   └── server-action-utils.ts   # Server action detection utilities
-└── index.ts      # Central export for all rules
-```
-
-### Utility Functions
-
-The project includes shared utility modules in `src/rules/utils/`:
-
-#### Component Type Utils (`component-type-utils.ts`)
-Server/client component detection and directive handling:
-- `normalizePath(filename)` - Normalize file paths to forward slashes (handles Windows backslashes). Use this instead of inline `filename.replace(/\\/g, "/")`.
-- `hasDirective(sourceCode, directive)` - Check if a file has a specific directive (`"use client"`, `"use server"`, `"use cache"`). Parameterized — use this instead of inline AST checks for directives.
-- `hasUseClientDirective(sourceCode)` - Convenience wrapper for `hasDirective(sourceCode, "use client")`
-- `isClientComponent(filename, sourceCode?)` - Check if file is a client component (via directive or naming convention)
-- `isServerComponent(filename, sourceCode?)` - Check if file is a server component
-- `isAppRouterComponent(filename)` - Check if file is an App Router component (page, layout, etc.)
-- `hasAsyncExport(program)` - Check if AST contains async exports
-- `isServerOnlyModule(moduleName)` - Check if module is server-only (Node.js builtins, database, auth)
-- `isClientOnlyModule(moduleName)` - Check if module is client-only (framer-motion, react-dom/client, etc.)
-- `isClientOnlyHook(hookName)` - Check if hook is client-only (useEventListener, useLocalStorage, etc.)
-- `isServerEnvVar(envVarName)` - Check if env var is server-only (contains SECRET, KEY, TOKEN, etc.)
-
-#### Server Action Utils (`server-action-utils.ts`)
-Server action detection utilities for React/Next.js rules.
-
-#### Common Utilities (`common.ts`)
-Common patterns and helpers:
-- **Naming Patterns**: `NAMING_PATTERNS` (COMPONENT, HOOK, CAMEL_CASE, PASCAL_CASE, KEBAB_CASE, SNAKE_CASE)
-- **File Patterns**: `FILE_PATTERNS` (COMPONENT, HOOK, API, UTIL, TEST, STYLE)
-- **HTTP Methods**: `HTTP_METHODS` constant array
-- **Database Objects**: `DATABASE_OBJECTS` constant array
-- **Protected Routes**: `PROTECTED_ROUTE_PATTERNS` constant array
-- `isComponentName(name)` - Check component naming convention
-- `isHookName(name)` - Check hook naming convention
-- `isComponentPath(filename)` - Check if file path is component
-- `isHookPath(filename)` - Check if file path is hook
-- `isApiRoute(filename)` - Check if file is API route
-- `isUtilityFile(filename)` - Check if file is utility/library
-- `isTestFile(filename)` - Check if file is test file
-- `isHttpMethod(functionName)` - Check if function name is HTTP method
-- `isDatabaseObject(objectName)` - Check if object is database-related
-- `isProtectedRoute(routeName)` - Check if route is protected
-- `isExportedFunction(node)` - Check if function is exported
-- `isExportedVariable(node)` - Check if variable is exported
-- `isExportedType(node)` - Check if type alias is exported
-- `isExportedInterface(node)` - Check if interface is exported
-- `isComplexType(typeAnnotation)` - Check if type is complex
-- `isComplexReturnType(returnType)` - Check if return type is complex
-- `getJsDocComment(node, sourceCode)` - Get JSDoc comment for node
-- `isAsyncFunction(node)` - Check if function is async
-- `getRouteName(filename)` - Extract route name from filename
-- `getFilename(context)` - Get filename from ESLint context
-
-### Entry Points
-
-The package exports multiple entry points via package.json exports field:
-- Main: `@mherod/eslint-plugin-custom` (all rules)
-- TypeScript: `@mherod/eslint-plugin-custom/typescript`
-- React: `@mherod/eslint-plugin-custom/react`
-- Vue: `@mherod/eslint-plugin-custom/vue`
-- General: `@mherod/eslint-plugin-custom/general`
-- Security: `@mherod/eslint-plugin-custom/security`
-
-## Development Workflow
-
-### Creating a New Rule
-
-1. **Choose the appropriate category** (typescript/react/vue/general/security)
-
-2. **Create the rule file**:
-```typescript
-// src/rules/[category]/my-new-rule.ts
-import { ESLintUtils } from '@typescript-eslint/utils';
-
-const createRule = ESLintUtils.RuleCreator(
-  name => `https://github.com/mherod/eslint-plugin-custom/tree/main/docs/rules/${name}.md`
-);
-
-export const myNewRule = createRule({
-  name: 'my-new-rule',
-  meta: {
-    type: 'problem', // or 'suggestion' or 'layout'
-    docs: {
-      description: 'Description of what the rule does',
-      recommended: 'warn',
-    },
-    fixable: 'code', // if rule provides fixes
-    schema: [], // for rule options
-    messages: {
-      myError: 'Error message with {{placeholder}}',
-    },
-  },
-  defaultOptions: [],
-  create(context) {
-    return {
-      // AST visitor functions
-      Identifier(node) {
-        context.report({
-          node,
-          messageId: 'myError',
-          data: { placeholder: 'value' },
-          fix(fixer) {
-            // return fixer.replaceText(node, 'fixed');
-          },
-        });
-      },
-    };
-  },
-});
-```
-
-3. **Create the test file**:
-```typescript
-// src/rules/[category]/__tests__/my-new-rule.test.ts
-import { RuleTester } from '@typescript-eslint/rule-tester';
-import myNewRule from '../my-new-rule';
-
-const ruleTester = new RuleTester({
-  parser: '@typescript-eslint/parser',
-  parserOptions: {
-    ecmaVersion: 2021,
-    sourceType: 'module',
-  },
-});
-
-ruleTester.run('my-new-rule', myNewRule, {
-  valid: [
-    {
-      code: 'const valid = true;',
-    },
-  ],
-  invalid: [
-    {
-      code: 'const invalid = true;',
-      errors: [{ messageId: 'myError' }],
-      output: 'const fixed = true;', // if fixable
-    },
-  ],
-});
-```
-
-4. **Export from rules/index.ts**:
-```typescript
-// src/rules/index.ts
-import myNewRule from "./[category]/my-new-rule";
-
-export const rules = {
-  "my-new-rule": myNewRule,
-  // ... other rules
-};
-```
-
-5. **Add to category plugin**:
-```typescript
-// src/[category].ts
-import myNewRule from "./rules/[category]/my-new-rule";
-
-export const [category]Rules = {
-  "my-new-rule": myNewRule,
-  // ... other rules
-};
-
-export const [category]Plugin = {
-  rules: [category]Rules,
-  configs: {
-    recommended: {
-      plugins: ["@mherod/[category]"],
-      rules: {
-        "@mherod/[category]/my-new-rule": "warn",
-      },
-    },
-    strict: {
-      plugins: ["@mherod/[category]"],
-      rules: {
-        "@mherod/[category]/my-new-rule": "error",
-      },
-    },
-  },
-};
-
-// Support for flat config
-export const [category]Configs = {
-  recommended: {
-    plugins: {
-      "@mherod/[category]": [category]Plugin,
-    },
-    rules: {
-      "@mherod/[category]/my-new-rule": "warn",
-    },
-  },
-  strict: {
-    plugins: {
-      "@mherod/[category]": [category]Plugin,
-    },
-    rules: {
-      "@mherod/[category]/my-new-rule": "error",
-    },
-  },
-};
-
-export default [category]Plugin;
-```
-
-6. **Add to main plugin exports** (if needed):
-```typescript
-// src/index.ts
-export { default as [category]Plugin, [category]Rules, [category]Configs } from "./[category]";
-```
-
-6. **Run tests**:
-```bash
-npm test src/rules/[category]/__tests__/my-new-rule.test.ts
-```
-
-**Note**: The main plugin (`src/index.ts`) already re-exports all category plugins, so step 5 is usually sufficient unless you need to modify the main plugin structure.
-
-### Rule Export Pattern
-
-Rules follow a consistent export pattern:
-1. **Rule files** use default export: `export default createRule({ ... })`
-2. **Rules index** (`src/rules/index.ts`) imports and re-exports all rules in a single object for the main plugin
-3. **Category plugins** (`src/[category].ts`) import from rules directory and create plugin objects with configs
-4. **Main index** (`src/index.ts`) re-exports all category plugins for backward compatibility
-
-This pattern allows:
-- Individual rule usage (if needed)
-- Category-specific plugins with their own namespaces
-- Combined plugin (all rules) for backward compatibility
-- Both legacy and flat config support automatically
-
-### Testing Best Practices
-
-- Always include both valid and invalid test cases
-- Test auto-fixes with `output` property
-- Test error messages and locations
-- Include edge cases and different code styles
-- Test with different parser options if needed
-- Use descriptive test case names
-
-**DO**: Use `pnpm exec jest --listTests` to verify jest discovers your test file before debugging discovery issues. Jest finds files by `testMatch` glob, not by `--testPathPattern` — if a file doesn't show in `--listTests`, the file path or glob doesn't match.
-
-**DON'T**: Use `pnpm test -- --testPathPattern="a|b"` with a pipe to run multiple patterns — the shell may interpret `|` as a pipe operator. Instead run `pnpm exec jest --listTests` first, then run `pnpm test` for the full suite.
-
-**DON'T**: Add JSX test cases to a `RuleTester` configured without `ecmaFeatures: { jsx: true }`. Tests with `<Component />` syntax will fail with "Parsing error: '>' expected". Either add JSX parser options or remove JSX test cases from rules that don't need JSX parsing.
-
-**DON'T**: Write `invalid` test cases where the rule logic cannot statically prove the condition. For example, a rule that flags `useMemo` returning a provably-primitive value cannot flag `useMemo(() => a || b, [])` when `a` and `b` are plain `Identifier` nodes — their types are unknown at parse time. Move such cases to `valid` with a comment explaining the limitation.
-
-Example test structure:
-```typescript
-ruleTester.run('rule-name', rule, {
-  valid: [
-    // Code that should NOT trigger the rule
-    'valid code here',
-    {
-      code: 'more complex valid code',
-      parserOptions: { ecmaVersion: 2022 },
-    },
-  ],
-  invalid: [
-    // Code that SHOULD trigger the rule
-    {
-      code: 'invalid code here',
-      errors: [
-        {
-          messageId: 'errorId',
-          line: 1,
-          column: 1,
-        },
-      ],
-      output: 'fixed code here', // if rule is fixable
-    },
-  ],
-});
-```
-
-## Build Configuration
-
-### TypeScript Configuration (tsconfig.json)
-- **Target**: ES2021
-- **Module**: CommonJS
-- **Module Resolution**: Node
-- **Strict Mode**: Enabled with all strict checks
-- **Strict Checks Enabled**:
-  - `strictNullChecks`: true
-  - `noImplicitAny`: true
-  - `noImplicitReturns`: true
-  - `noImplicitThis`: true
-  - `noFallthroughCasesInSwitch`: true
-  - `noUncheckedIndexedAccess`: true
-  - `exactOptionalPropertyTypes`: true
-- **Source Maps**: Declaration maps enabled (`declarationMap: true`)
-- **Declaration Files**: Generated for both CommonJS and ESM
-- **ES Module Interop**: Enabled
-- **Skip Lib Check**: Enabled for faster compilation
-- **Include**: `src/**/*.ts`, `src/**/*.tsx`
-- **Exclude**: `dist`, `node_modules`, `**/__tests__/**`, `**/*.test.ts`, `**/*.test.tsx`
-
-### Build Tool (tsup.config.ts)
-- **Build Tool**: `tsup` v8.1.0
-- **Output Formats**: Both CommonJS (.js) and ES Modules (.mjs)
-- **Target**: Node 18+
-- **TypeScript Declarations**: Enabled (.d.ts and .d.mts files)
-- **Source Maps**: Enabled for debugging (.js.map and .mjs.map)
-- **Entry Points**:
-  - Main plugin: `src/index.ts`
-  - Category plugins: `src/typescript.ts`, `src/react.ts`, `src/vue.ts`, `src/general.ts`, `src/security.ts`
-  - Individual rules: `src/rules/**/!(*.test).ts` (all rule files except tests)
-- **External Dependencies**: @typescript-eslint/utils, @typescript-eslint/parser, eslint, typescript
-- **Build Output**: `dist/` directory with organized plugin and rule files
-
-### Jest Configuration (jest.config.js)
-- **Test Framework**: Jest v29.7.0
-- **Test Environment**: Node.js
-- **TypeScript Support**: ts-jest v29.2.2
-- **Test Locations**: 
-  - `**/__tests__/**/*.test.(ts|tsx)` - Tests in __tests__ directories
-  - `**/*.(test|spec).(ts|tsx)` - Tests with .test or .spec suffix
-- **Coverage**:
-  - Enabled with collection from `src/**/*.{ts,tsx}`
-  - Excludes: declaration files, test files, index files
-  - Reports: text, lcov, html
-- **Module Name Mapper**: Maps @typescript-eslint/rule-tester for proper module resolution
-
-## Code Quality
-
-### Linting Rules Applied to This Project
-- TypeScript strict mode
-- Explicit function return types required
-- No explicit `any` types
-- No unsafe operations
-- No unused variables (except those prefixed with `_`)
-- Comprehensive type safety checks
-- **DO**: Use `interface` definitions instead of `type` aliases for object shapes (enforced by Biome)
-
-### Commit Message Format
-Uses Conventional Commits with commitlint:
-- `feat:` New features
-- `fix:` Bug fixes
-- `docs:` Documentation changes
-- `style:` Code style changes
-- `refactor:` Code refactoring
-- `test:` Test changes
-- `chore:` Maintenance tasks
-- `ci:` CI/CD changes
-- `perf:` Performance improvements
-- `build:` Build system changes
-- `revert:` Revert commits
-
-Example: `feat: Add new rule for enforcing import order`
-
-### Pre-commit Hooks
-Configured with **Lefthook** (v1.13.1):
-
-**Pre-commit Hook:**
-- Runs `npx ultracite fix` on staged files
-- File patterns: `*.js`, `*.jsx`, `*.ts`, `*.tsx`, `*.json`, `*.jsonc`, `*.css`
-- Automatically stages fixed files
-
-**Commit-msg Hook:**
-- Runs `npx commitlint --edit` to validate commit messages
-- Enforces Conventional Commits format
-
-### Linting & Formatting
-
-**Biome Configuration** (`biome.jsonc`):
-- Extends: `ultracite/core` preset (DO: Use `ultracite/core` for v7+, NOT `ultracite`)
-- **Linter Rules**:
-  - Performance: `noBarrelFile`, `useTopLevelRegex`, `noNamespaceImport` (all off)
-  - Complexity: `noExcessiveCognitiveComplexity` (max 30), `noForEach` (off)
-  - Suspicious: `noExplicitAny` (error)
-  - Style: `useNamingConvention` (strictCase: false), `noNestedTernary`, `noMagicNumbers`, `useCollapsedIf` (all off)
-- **Overrides**:
-  - Test files: Relaxed rules (noExplicitAny off, noUndeclaredVariables off)
-  - Specific files: Allow explicit any for complex rules
-  - ESLint config files: Filename convention disabled
-
-**Commitlint Configuration** (`commitlint.config.js`):
-- Extends: `@commitlint/config-conventional`
-- **Rules**:
-  - `type-enum`: feat, fix, docs, style, refactor, test, chore, ci, perf, build, revert
-  - `subject-case`: sentence-case
-  - `subject-max-length`: 72 characters
-  - `body-max-line-length`: 100 characters
-  - `footer-max-line-length`: 100 characters
-
-## Common Tasks
-
-### Running the Plugin Locally
-
-1. **Build the plugin**:
-```bash
-npm run build
-```
-
-2. **Link for local testing**:
-```bash
-npm link
-```
-
-3. **In your test project**:
-```bash
-npm link @mherod/eslint-plugin-custom
-```
-
-4. **Configure ESLint** in your test project:
-```javascript
-// eslint.config.js
-import customPlugin from '@mherod/eslint-plugin-custom';
-
-export default [{
-  plugins: {
-    '@mherod/custom': customPlugin,
-  },
-  rules: {
-    '@mherod/custom/your-rule': 'error',
-  },
-}];
-```
-
-### Debugging Rules
-
-1. **Add console.log in rule implementation**:
-```typescript
-create(context) {
-  return {
-    Identifier(node) {
-      console.log('Node:', node);
-      // rule logic
-    },
-  };
-}
-```
-
-2. **Run tests with Node debugging**:
-```bash
-node --inspect-brk node_modules/.bin/jest src/rules/__tests__/your-rule.test.ts
-```
-
-3. **Use VS Code debugger**:
-   - Set breakpoints in rule or test files
-   - Run "Debug: Jest Current File" from command palette
-
-### Publishing Process
-
-1. **Ensure all tests pass**:
-```bash
-npm test
-npm run typecheck
-npm run lint
-```
-
-2. **Update version**:
-```bash
-npm version patch|minor|major
-```
-
-3. **Run security audit**:
-```bash
-pnpm audit --prod  # Only check production dependencies (zero expected)
-```
-**DO**: Use `pnpm audit --prod` not `pnpm audit`. The full audit reports `minimatch` vulnerabilities from dev dependencies (`@typescript-eslint/eslint-plugin`, `eslint`) which are never shipped. `--prod` confirms zero production vulnerabilities and is the correct gate for release decisions.
-
-4. **Build and publish**:
-**DO**: Use 1Password CLI to get the OTP for npm publishing.
 ```bash
 pnpm build
-# Get OTP from 1Password (item: Npmjs)
 pnpm publish --access public --otp=$(op item get Npmjs --otp)
-```
-
-**GitHub Actions Release workflow** (`release.yml`) requires `secrets.NPM_TOKEN` to be set in the repository. If the workflow fails with `ENEEDAUTH`, the secret is missing or expired. To set it:
-```bash
-# Authenticate locally first (using 1Password non-interactive flow — see skill)
-# Then use the bearer token from ~/.npmrc as the GitHub secret:
 AUTH_TOKEN=$(cat ~/.npmrc | rg '_authToken=(.+)' -o -r '$1')
 gh secret set NPM_TOKEN --body "$AUTH_TOKEN"
 ```
-**DON'T** try to create a granular npm token via the REST API (`POST /npm/v1/tokens` with `scopes`) — it always creates read-only tokens regardless of `readonly: false`. Use the bearer token from the login flow, or create an automation token via the npm website UI (npmjs.com → Account Settings → Access Tokens).
+
+Do not create npm granular tokens through `POST /npm/v1/tokens`; use the npm website automation token or the bearer token from local login.
+
+## Architecture
+
+Entry points:
+
+- `src/index.ts` combined plugin
+- `src/typescript.ts`
+- `src/react.ts`
+- `src/vue.ts`
+- `src/general.ts`
+- `src/security.ts`
+- `src/refactors.ts`
+
+Rule folders:
+
+- `src/rules/typescript`
+- `src/rules/react`
+- `src/rules/vue`
+- `src/rules/general`
+- `src/rules/security`
+- `src/rules/shared`
+- `src/rules/utils`
+
+Each category plugin exports `rules`, `configs.recommended`, and `configs.strict` for legacy and flat config users. Package exports must keep CJS, ESM, and type entries aligned in `package.json`.
+
+Build settings:
+
+- `tsconfig.json`: CommonJS, ES2022 target, strict mode, declaration output, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`, `isolatedModules`.
+- `tsup.config.ts`: CJS and ESM output, Node 18 target, declarations, source maps, rule files as individual entries.
+- `jest.config.js`: Jest 30 + ts-jest, Node environment, tests under `__tests__` or `*.test.ts(x)`.
+
+## Rule Creation
+
+Use kebab-case filenames. Do not create camelCase rule files. Rule files default-export `ESLintUtils.RuleCreator.withoutDocs(...)` or the established local pattern.
+
+When adding a rule:
+
+1. Add `src/rules/[category]/rule-name.ts`.
+2. Add `src/rules/[category]/__tests__/rule-name.test.ts`.
+3. Export from `src/rules/index.ts`.
+4. Register in the category plugin file.
+5. Run focused Jest, `pnpm typecheck`, `pnpm lint`, and usually `pnpm test`.
+
+Use `interface` for object shapes. Avoid `any`; tests may use relaxed overrides already configured in Biome/ESLint.
+
+If a report uses `suggest`, set `meta.hasSuggestions: true`. Suggestion fixers need explicit `TSESLint.RuleFix` return types and `import type { TSESLint } from "@typescript-eslint/utils"`.
+
+Only add `fix()` when the conversion is unambiguous. For non-serializable prop types, Date can use `.toISOString()`. Functions, Map, Set, and classes should use suggestions or diagnostics, not autofix.
+
+## Testing Rules
+
+Always include valid and invalid cases. Test autofixes with `output`. Test messages, locations, parser options, and edge cases.
+
+For JSX test cases, set parser options with `ecmaFeatures: { jsx: true }`. Do not add JSX to a RuleTester that cannot parse JSX.
+
+Do not write invalid cases the rule cannot statically prove. Example: if identifiers have unknown primitive/object types, keep those cases valid and document the limitation.
+
+Security rules historically had less coverage; add tests when modifying security behavior.
+
+## Shared Utilities
+
+Prefer existing utilities over local copies:
+
+- `normalizePath()` from `src/rules/utils/component-type-utils.ts`
+- `hasDirective(sourceCode, "use client" | "use server" | "use cache")`
+- `hasUseClientDirective(sourceCode)`
+- `isClientComponent`, `isServerComponent`, `isAppRouterComponent`
+- `hasAsyncExport`
+- `isServerOnlyModule`, `isClientOnlyModule`, `isClientOnlyHook`, `isServerEnvVar`
+- `server-action-utils.ts` for server action detection
+- `common.ts` naming, file, HTTP method, database, protected-route, JSDoc, export, async, and filename helpers
+
+Use `context.filename` and `context.sourceCode`; do not use deprecated `context.getFilename()` or `context.getSourceCode()`.
+
+When replacing repeated path normalization or directive logic, add the import and replace the usage in the same edit per file.
+
+For rules tracking per-function state across nested functions, use a scope stack. Push on function entry, evaluate and pop on `:exit`. See `src/rules/react/no-waterfall-chains.ts`.
+
+## Project Conventions
+
+Biome/Ultracite:
+
+- Extends `ultracite/core`.
+- Filename convention requires kebab-case.
+- `noExplicitAny` is an error except configured overrides.
+- `noExcessiveCognitiveComplexity` max is 30.
+
+Commit messages use Conventional Commits: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `ci`, `perf`, `build`, `revert`. Subject max is 72 chars and sentence-case rules apply through commitlint.
+
+Lefthook:
+
+- Pre-commit runs `npx ultracite fix` on staged JS/TS/JSON/CSS-style files and stages fixes.
+- Commit-msg runs `npx commitlint --edit`.
+
+Do not bypass hooks. Fix lint/type/test failures directly.
+
+## Rule-Specific Notes
+
+Use `normalizePath()` instead of `filename.replace(/\\/g, "/")`.
+
+For `/components/` directory naming, accept both PascalCase (`UserProfile.tsx`) and kebab-case (`user-profile.tsx`). Keep camelCase invalid.
+
+For `BARREL_PACKAGES` in `no-barrel-file-imports.ts`, distinguish tree-shakeable root imports from true barrels. Do not flag `lucide-react`, `@tabler/icons-react`, `@phosphor-icons/react`, or `@headlessui/react`. Keep flagging `@mui/material`, `@mui/icons-material`, `react-icons/*`, `ramda`, `rxjs`, `react-use`, and `@radix-ui/react-*`.
+
+When using duplicate-code tools such as `resect similar`, judge by domain and purpose, not structural score alone. Do not extract helpers for identical shapes that represent different concepts.
+
+Security redirect rules should distinguish unsafe attacker-controlled redirects from internal Next.js navigation.
+
+Route Handlers (`app/**/route.{ts,tsx,js,jsx}`) are not Server Actions. Do not add `"use server"` to them.
+
+## Release And CI
+
+Before publishing or merging, run:
+
+```bash
+pnpm build
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm audit --prod
+```
+
+Use `pnpm audit --prod`; full audit includes dev dependency findings that are not shipped.
+
+If GitHub Actions release fails with `ENEEDAUTH`, refresh or set `NPM_TOKEN`.
 
 ## Troubleshooting
 
-### Common Issues and Solutions
+Build failures: run `pnpm typecheck` and fix TypeScript errors.
 
-#### Build Errors
-- **Issue**: TypeScript compilation errors
-- **Solution**: Run `npm run typecheck` to see detailed errors, ensure all types are properly imported
+Rule not found: verify exports in `src/rules/index.ts` and the category plugin.
 
-#### Test Failures
-- **Issue**: RuleTester parser errors
-- **Solution**: Ensure parser options match the code being tested, check for syntax errors in test code
+Autofix not applying: verify `meta.fixable`, return a valid fixer, and test with `output`.
 
-#### Rule Not Found
-- **Issue**: "Definition for rule was not found"
-- **Solution**: Verify rule is exported from both rules/index.ts and the appropriate category plugin file
+Parser errors in RuleTester: match parser options to syntax under test.
 
-#### Auto-fix Not Working
-- **Issue**: Rule has `fixable: 'code'` but fixes aren't applied
-- **Solution**: Ensure fix function returns a valid fixer operation, test with `output` property
-
-### Development Tips
-
-1. **Use TypeScript strict mode** - Catches many bugs at compile time
-2. **Write tests first** - TDD approach helps design better rules
-3. **Keep rules focused** - Each rule should do one thing well
-4. **Provide helpful error messages** - Include context and suggestions
-5. **Make rules fixable when possible** - Improves developer experience
-6. **Document edge cases** - In tests and rule descriptions
-7. **Use existing utilities** - Check @typescript-eslint/utils for helpers
-
-**DO**: When refactoring to use a shared utility across multiple files, add the import and replace the usage in the same edit per file. Splitting these into separate passes (replace all usages, then add all imports) causes TypeScript errors across every file.
-
-**DO**: Use `normalizePath()` from `component-type-utils.ts` instead of inline `filename.replace(/\\/g, "/")`. Use `hasDirective(sourceCode, "use client")` instead of inline AST checks for directive detection.
-
-**DO**: Use `context.filename` and `context.sourceCode` — not the deprecated `context.getFilename()` and `context.getSourceCode()`. Both deprecated forms still compile but emit TypeScript warnings and will be removed in a future `@typescript-eslint/utils` version.
-
-**DO**: Use a scope stack (`FunctionScope[]`) for rules that need to track per-function state across nested async functions. A flat module-level variable bleeds counts from inner functions into the outer scope. The pattern is `pushScope(node)` on `FunctionDeclaration`/`ArrowFunctionExpression`/`FunctionExpression` entry, evaluate and `popScope(node)` on `:exit`. See `src/rules/react/no-waterfall-chains.ts` for the reference implementation.
-
-**DON'T**: Create new rule files with camelCase in filenames (e.g., `no-unsafe-innerHTML.ts`). Biome enforces `useFilenamingConvention` with **kebab-case** — the correct name is `no-unsafe-inner-html.ts`. Run `pnpm lint` before committing new files to catch this early.
-
-**DO**: Run `pnpm lint` proactively after creating new files or renaming files. The pre-commit hook (`npx ultracite fix`) catches filename convention violations, but discovering them at commit time wastes a round-trip.
-
-**DO**: When evaluating whether a package belongs in `BARREL_PACKAGES` in `no-barrel-file-imports.ts`, distinguish packages designed for tree-shaking at their root entry from genuine barrels. `lucide-react`, `@tabler/icons-react`, `@phosphor-icons/react`, and `@headlessui/react` are all explicitly designed for named root imports with modern bundlers (webpack 5, turbopack, vite, esbuild) — they do **not** belong in the list. Genuine barrels that should stay flagged: `@mui/material`, `@mui/icons-material`, `react-icons/*`, `ramda`, `rxjs`, `react-use`, and `@radix-ui/react-*`.
-
-**DO**: When a rule targets `/components/` directory naming, accept **both** PascalCase (`UserProfile.tsx`) and kebab-case (`user-profile.tsx`) — both are established conventions. Next.js official docs and the broader community use kebab-case; traditional React tooling uses PascalCase. camelCase (`userProfile.tsx`) remains invalid under both conventions.
-
-**DO**: Set `hasSuggestions: true` in rule meta when providing `suggest` arrays in `context.report()`. ESLint requires this flag for rules that offer suggestion fixes. Without it, the rule silently drops suggestions.
-
-**DO**: Add explicit `TSESLint.RuleFix` return type annotations to `fix()` functions inside `suggest` arrays. The project's `@typescript-eslint/explicit-function-return-type` lint rule requires them. Import with `import type { TSESLint } from "@typescript-eslint/utils"`. The top-level `fix()` callback in `context.report()` infers its return type from the overload, but suggest-level fix functions do not.
-
-**DO**: Only provide auto-fix (`fix()`) for non-serializable prop types with a single well-defined conversion. Date has `.toISOString()` (safe default). For types with no universal conversion (functions, Map, Set, classes), use `suggest` (IDE-only suggestions) or diagnostic messages with remediation guidance — never auto-fix.
-
-**DO**: When using `resect similar` to find duplicate code, evaluate matches by **domain and purpose**, not just structural similarity score. Functions with the same `.some(item => str.includes(item))` pattern but operating on different domain concepts (admin paths vs hook paths vs protected routes) are not true duplicates. Only extract when functions share both the same shape and the same conceptual responsibility.
-
-## Available Rules
-
-All categories support `recommended` (warn) and `strict` (error) config presets.
-
-### Complete Rule List
-Total: **75 rules** registered in `src/rules/index.ts` across 5 categories + 1 shared
-
-**TypeScript (5 rules):** enforce-api-patterns, enforce-documentation, enforce-typescript-patterns, enforce-zod-schema-naming, no-empty-function-implementations
-
-**React/Next.js (44 rule files):** See `src/rules/react/` for the full list. Key rules include enforce-admin-separation, enforce-component-patterns, enforce-server-client-separation, enforce-use-server-vs-server-only, no-conflicting-directives, no-context-provider-in-server-component, no-dynamic-tailwind-classes, no-event-handlers-to-client-props, no-force-dynamic, no-jsx-logical-and, no-lazy-state-init, no-non-serializable-props, no-parenthesized-use-cache, no-react-hooks-in-server-component, no-reexports-in-use-server, no-request-access-in-use-cache, no-sequential-data-fetching, no-use-client-in-layout, no-use-client-in-page, no-usememo-for-primitives, no-waterfall-chains, prefer-async-page-component, prefer-await-params-in-page, prefer-cache-api, prefer-dynamic-import-for-heavy-libs, prefer-link-over-router-push, prefer-next-navigation, prefer-react-destructured-imports, prefer-reusable-swr-hooks, prefer-search-params-over-state, prefer-start-transition-for-server-actions, prefer-use-swr-over-fetch, prevent-environment-poisoning, require-directive-first, require-use-client-for-client-named-files, require-use-client-for-react-hooks, suggest-server-component-pages, use-after-for-non-blocking
-
-**General (14 rule files):** enforce-file-naming, enforce-import-order, no-debug-comments, no-deprecated-declarations, no-import-type-queries, no-long-relative-imports, prefer-date-fns, prefer-date-fns-over-date-operations, prefer-direct-imports, prefer-lodash-es-imports, prefer-lodash-uniq-over-set, prefer-ufo-with-query, prefer-zod-default-with-catch, prefer-zod-url
-
-**Security (11 rules):** enforce-security-patterns, no-hardcoded-secrets, no-log-secrets, no-sql-injection, no-unsafe-eval, no-unsafe-innerHTML, no-unsafe-redirect, no-unsafe-template-literals, no-weak-crypto, require-auth-validation, require-rate-limiting
-
-**Shared (1 rule):** no-unstable-math-random (used by both react and security plugins)
-
-**Vue.js (1 rule):** prefer-to-value
-
-## Dependencies
-
-### Production Dependencies
-None - this is a dev dependency only plugin
-
-### Peer Dependencies
-- `@typescript-eslint/parser`: ^8.0.0 (required for TypeScript projects)
-- `eslint`: ^8.0.0 || ^9.0.0 (supports both ESLint 8 and 9)
-- `typescript`: ^5.0.0 (required for TypeScript projects)
-
-### Dev Dependencies
-- **Core Development**:
-  - `typescript`: ^5.5.3
-  - `@typescript-eslint/eslint-plugin`: ^8.0.0
-  - `@typescript-eslint/parser`: ^8.0.0
-  - `@typescript-eslint/rule-tester`: ^8.44.0
-  - `@typescript-eslint/utils`: ^8.0.0
-  - `eslint`: ^8.57.0
-
-- **Build Tools**:
-  - `tsup`: ^8.1.0 (TypeScript bundler)
-
-- **Testing**:
-  - `jest`: ^29.7.0
-  - `ts-jest`: ^29.2.2
-  - `@types/jest`: ^29.5.12
-
-- **Code Quality**:
-  - `@biomejs/biome`: ^2.2.4 (Linter and formatter)
-  - `ultracite`: ^5.4.3 (Code formatter)
-
-- **Git Hooks**:
-  - `lefthook`: ^1.13.1 (Git hooks manager)
-  - `husky`: ^9.1.7 (Git hooks)
-  - `lint-staged`: ^16.1.6 (Run linters on staged files)
-  - `@commitlint/cli`: ^19.8.1
-  - `@commitlint/config-conventional`: ^19.8.1
-
-- **Type Definitions**:
-  - `@types/eslint`: ^8.56.10
-  - `@types/node`: ^20.14.10
-
-### Engine Requirements
-- **Node.js**: >=18.0.0
-
-## Package Exports & Build Output
-
-See `package.json` exports field for entry points. Each exports CJS (`.js`), ESM (`.mjs`), types (`.d.ts`/`.d.mts`), and source maps. Build output goes to `dist/`.
-
-## Test Coverage
-
-Current test files (48 test suites, 828 tests total):
-- **React**: 26 test files
-- **General**: 14 test files
-- **TypeScript**: 2 test files
-- **Shared**: 1 test file (no-unstable-math-random)
-- **Vue**: 1 test file (prefer-to-value)
-- **Security**: 0 test files
-
-**Note**: Security rules have no test files yet. Several React rules also lack test coverage (e.g. `prevent-environment-poisoning`). When creating new rules or modifying existing rule logic, always include comprehensive tests.
-
-## Common Patterns & Conventions
-
-### Phosphor Icons
-1. **Imports**: Use `@phosphor-icons/react` for Client Components ("use client") and `@phosphor-icons/react/ssr` for Server Components (default in App Router).
-2. **Styling**: Use `size` prop for dimensions (default 24). Use `className` with Tailwind for colors (e.g., `text-zinc-900 dark:text-zinc-100`). Do NOT use the `color` prop.
-3. **Deprecations**: Resolve deprecations by using the new name directly (e.g., `CaretUpDownIcon` instead of `CaretUpDown`), do not use aliases.
-4. **Accessibility**: Add `aria-label` to interactive icons; use `aria-hidden="true"` for decorative ones.
-
-## Resources
-
-### Documentation
-- [ESLint Documentation](https://eslint.org/docs/latest/)
-- [TypeScript ESLint](https://typescript-eslint.io/)
-- [AST Explorer](https://astexplorer.net/) - Explore AST nodes
-- [ESLint Rule Documentation](https://eslint.org/docs/latest/developer-guide/working-with-rules)
-
-### Project Files Reference
-- [Contributing Guidelines](./CONTRIBUTING.md) - Commit message format and contribution guidelines
-- [README](./README.md) - User-facing documentation with installation and usage examples
-- [Package.json](./package.json) - Package metadata, dependencies, and scripts
-- [tsconfig.json](./tsconfig.json) - TypeScript compiler configuration
-- [tsup.config.ts](./tsup.config.ts) - Build configuration
-- [jest.config.js](./jest.config.js) - Jest test configuration
-- [biome.jsonc](./biome.jsonc) - Biome linter and formatter configuration
-- [commitlint.config.js](./commitlint.config.js) - Commit message linting rules
-- [lefthook.yml](./lefthook.yml) - Git hooks configuration
-
-## Support
-
-For issues, questions, or contributions:
-1. Check existing issues on GitHub
-2. Create a new issue with reproduction steps
-3. Submit pull requests with tests
-4. Follow the commit message format
-
-## License
-
-MIT - See LICENSE file for details
-
-## Author
-
-Matthew Herod
+Lockfile or dependency issues: use pnpm; keep `pnpm-lock.yaml` committed when dependency metadata changes.
