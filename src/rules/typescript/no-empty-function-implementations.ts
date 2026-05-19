@@ -96,6 +96,18 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
       // Check method definitions (class methods, object methods)
       MethodDefinition(node: TSESTree.MethodDefinition): void {
+        // Skip private/protected constructors — a standard TypeScript pattern
+        // for singletons and static-only classes intentionally has an empty body.
+        if (
+          node.kind === "constructor" &&
+          (node.accessibility === "private" ||
+            node.accessibility === "protected")
+        ) {
+          if (node.value) {
+            reportedNodes.add(node.value);
+          }
+          return;
+        }
         if (
           node.value &&
           node.value.type === AST_NODE_TYPES.FunctionExpression &&

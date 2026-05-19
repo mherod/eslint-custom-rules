@@ -59,6 +59,29 @@ ruleTester.run("no-empty-function-implementations", rule, {
         const arrow = () => someValue;
       `,
     },
+    // Private constructors (singleton pattern) — intentionally empty
+    {
+      code: `
+        class SpeculationRulesManager {
+          private static instance: SpeculationRulesManager;
+          private constructor() {}
+          public static getInstance(): SpeculationRulesManager {
+            if (!SpeculationRulesManager.instance) {
+              SpeculationRulesManager.instance = new SpeculationRulesManager();
+            }
+            return SpeculationRulesManager.instance;
+          }
+        }
+      `,
+    },
+    // Protected constructors (subclass-only instantiation) — intentionally empty
+    {
+      code: `
+        class AbstractBase {
+          protected constructor() {}
+        }
+      `,
+    },
     // Functions with comments are still considered empty for our purposes
     // but this tests that the rule doesn't crash on them
   ],
