@@ -1,4 +1,3 @@
-import { spawnSync } from "node:child_process";
 import { TextDecoder, TextEncoder } from "node:util";
 import { Worker } from "node:worker_threads";
 
@@ -107,10 +106,6 @@ let resectApiPromise = null;
 const projectDiscoveryCache = new Map();
 const projectContextCache = new Map();
 const workspaceCache = new Map();
-
-function printResult(value) {
-  process.stdout.write(JSON.stringify(value));
-}
 
 async function loadResectApi() {
   if (!resectApiPromise) {
@@ -542,27 +537,6 @@ async function handleBridgeRequest(request) {
 }
 `;
 
-const RESECT_SYNC_BRIDGE_SCRIPT = `
-${RESECT_BRIDGE_CORE_SCRIPT}
-
-async function runSingleRequest() {
-  const request = JSON.parse(process.env.RESECT_BRIDGE_REQUEST ?? "{}");
-  const result = await handleBridgeRequest(request);
-  printResult({
-    ok: true,
-    result,
-  });
-}
-
-runSingleRequest().catch((error) => {
-  printResult({
-    ok: false,
-    error: error instanceof Error ? error.message : String(error),
-  });
-  process.exitCode = 1;
-});
-`;
-
 const RESECT_SYNC_BRIDGE_WORKER_SCRIPT = `
 const { workerData } = require("node:worker_threads");
 ${RESECT_BRIDGE_CORE_SCRIPT}
@@ -806,37 +780,6 @@ function runBridgeWorkerRequest<TResult>(
   }
 }
 
-function runSpawnBridgeRequest<TResult>(cacheKey: string): TResult | null {
-  const result = spawnSync(
-    process.execPath,
-    ["-e", RESECT_SYNC_BRIDGE_SCRIPT],
-    {
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        RESECT_BRIDGE_REQUEST: cacheKey,
-      },
-      maxBuffer: 1024 * 1024 * 8,
-    }
-  );
-
-  if (result.status !== 0 || !result.stdout) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(result.stdout) as BridgeResponse<TResult>;
-
-    if (!parsed.ok) {
-      return null;
-    }
-
-    return parsed.result;
-  } catch {
-    return null;
-  }
-}
-
 function runBridgeRequest<TResult>(request: SyncBridgeRequest): TResult | null {
   const cacheKey = getCacheKey(request);
   const cachedResult = bridgeResultCache.get(cacheKey);
@@ -850,9 +793,10 @@ function runBridgeRequest<TResult>(request: SyncBridgeRequest): TResult | null {
     return workerResult.result;
   }
 
-  const result = runSpawnBridgeRequest<TResult>(cacheKey);
-  bridgeResultCache.set(cacheKey, result);
-  return result;
+  // Avoid a cold Node child process per bridge miss. If the persistent worker
+  // cannot serve a request, keep the rule conservative for this request.
+  bridgeResultCache.set(cacheKey, null);
+  return null;
 }
 
 export function resolveDirectImportsSync(request: {
