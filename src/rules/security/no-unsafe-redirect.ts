@@ -14,6 +14,13 @@ type Options = [];
 const SAFE_URL_BUILDERS = new Set(["withQuery", "withTrailingSlash"]);
 
 /**
+ * Response objects whose `.redirect()` can perform a real open redirect
+ * when handed an attacker-controlled URL (`Response.redirect(userInput)`,
+ * Next.js `NextResponse.redirect(userInput)`).
+ */
+const REDIRECT_RESPONSE_OBJECTS = new Set(["Response", "NextResponse"]);
+
+/**
  * Checks whether a call argument is statically safe — i.e. not
  * attacker-controlled. Safe patterns include:
  * - String literals: "/dashboard"
@@ -51,6 +58,59 @@ function isStaticOrSafeUrl(node: TSESTree.Node): boolean {
   return false;
 }
 
+/**
+ * A redirect URL argument is unsafe to pass through unchecked when it is
+ * missing entirely or is not a statically safe value (i.e. it could be
+ * attacker-controlled). Mirrors the original rule's "report unless static"
+ * semantics so existing call-site behavior is preserved.
+ */
+function shouldReport(urlArg: TSESTree.Node | undefined): boolean {
+  return urlArg === undefined || !isStaticOrSafeUrl(urlArg);
+}
+
+/**
+ * Detects assignment targets that navigate the browser, which become open
+ * redirects when assigned an attacker-controlled URL:
+ * - `location.href = ...`
+ * - `window.location.href = ...`
+ * - `window.location = ...`
+ */
+function isLocationAssignmentSink(target: TSESTree.Node): boolean {
+  if (target.type !== AST_NODE_TYPES.MemberExpression) {
+    return false;
+  }
+  const { object, property } = target;
+  if (property.type !== AST_NODE_TYPES.Identifier) {
+    return false;
+  }
+
+  // location.href = ... | window.location.href = ...
+  if (property.name === "href") {
+    if (
+      object.type === AST_NODE_TYPES.Identifier &&
+      object.name === "location"
+    ) {
+      return true;
+    }
+    if (
+      object.type === AST_NODE_TYPES.MemberExpression &&
+      object.object.type === AST_NODE_TYPES.Identifier &&
+      object.object.name === "window" &&
+      object.property.type === AST_NODE_TYPES.Identifier &&
+      object.property.name === "location"
+    ) {
+      return true;
+    }
+  }
+
+  // window.location = ...
+  return (
+    property.name === "location" &&
+    object.type === AST_NODE_TYPES.Identifier &&
+    object.name === "window"
+  );
+}
+
 export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   meta: {
     type: "problem",
@@ -67,48 +127,62 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
+    const report = (node: TSESTree.Node): void => {
+      context.report({ node, messageId: "noUnsafeRedirect" });
+    };
+
     return {
       CallExpression(node: TSESTree.CallExpression): void {
         // Match standalone redirect/permanentRedirect calls
         if (node.callee.type === AST_NODE_TYPES.Identifier) {
           const functionName = node.callee.name;
           if (
-            functionName === "redirect" ||
-            functionName === "permanentRedirect"
+            (functionName === "redirect" ||
+              functionName === "permanentRedirect") &&
+            shouldReport(node.arguments[0])
           ) {
-            // Skip if the URL argument is a static string or safe builder
-            const urlArg = node.arguments[0];
-            if (urlArg && isStaticOrSafeUrl(urlArg)) {
-              return;
-            }
-
-            context.report({
-              node,
-              messageId: "noUnsafeRedirect",
-            });
+            report(node);
           }
+          return;
         }
 
-        // Match router.push() and router.replace() member expressions
+        // Match member-expression redirect sinks
         if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
           const { object, property } = node.callee;
           if (
-            object.type === AST_NODE_TYPES.Identifier &&
-            object.name === "router" &&
-            property.type === AST_NODE_TYPES.Identifier &&
-            (property.name === "push" || property.name === "replace")
+            object.type !== AST_NODE_TYPES.Identifier ||
+            property.type !== AST_NODE_TYPES.Identifier
           ) {
-            // Skip if the URL argument is a static string or safe builder
-            const urlArg = node.arguments[0];
-            if (urlArg && isStaticOrSafeUrl(urlArg)) {
-              return;
-            }
-
-            context.report({
-              node,
-              messageId: "noUnsafeRedirect",
-            });
+            return;
           }
+
+          // router.push() / router.replace()
+          const isRouterNav =
+            object.name === "router" &&
+            (property.name === "push" || property.name === "replace");
+
+          // Response.redirect() / NextResponse.redirect()
+          const isResponseRedirect =
+            REDIRECT_RESPONSE_OBJECTS.has(object.name) &&
+            property.name === "redirect";
+
+          if (
+            (isRouterNav || isResponseRedirect) &&
+            shouldReport(node.arguments[0])
+          ) {
+            report(node);
+          }
+        }
+      },
+
+      // window.location.href = userInput / location.href = userInput
+      AssignmentExpression(node: TSESTree.AssignmentExpression): void {
+        if (
+          node.operator === "=" &&
+          isLocationAssignmentSink(node.left) &&
+          shouldReport(node.right)
+        ) {
+          report(node);
         }
       },
     };

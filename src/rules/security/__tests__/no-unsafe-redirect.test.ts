@@ -31,6 +31,16 @@ ruleTester.run("no-unsafe-redirect", rule, {
     // Unrelated function calls — not redirect patterns
     'console.log("redirect");',
     'fetch("/api/redirect");',
+
+    // Static location assignment — safe internal navigation
+    'window.location.href = "/dashboard";',
+    'location.href = "/home";',
+    "window.location.href = `/settings`;",
+
+    // Response/NextResponse redirect with static path — safe
+    'Response.redirect("/login");',
+    'NextResponse.redirect("/login");',
+    'NextResponse.redirect(withQuery("/search", params));',
   ],
   invalid: [
     // User-controlled variable — unsafe
@@ -59,6 +69,34 @@ ruleTester.run("no-unsafe-redirect", rule, {
     // withQuery with dynamic first arg — unsafe
     {
       code: "redirect(withQuery(baseUrl, params));",
+      errors: [{ messageId: "noUnsafeRedirect" }],
+    },
+    // window.location.href = userInput — open redirect sink
+    {
+      code: "window.location.href = userInput;",
+      errors: [{ messageId: "noUnsafeRedirect" }],
+    },
+    {
+      code: "location.href = nextUrl;",
+      errors: [{ messageId: "noUnsafeRedirect" }],
+    },
+    // window.location = userInput — direct navigation sink
+    {
+      code: "window.location = userInput;",
+      errors: [{ messageId: "noUnsafeRedirect" }],
+    },
+    // Response/NextResponse.redirect with attacker-controlled URL
+    {
+      code: "Response.redirect(userInput);",
+      errors: [{ messageId: "noUnsafeRedirect" }],
+    },
+    {
+      code: "NextResponse.redirect(target);",
+      errors: [{ messageId: "noUnsafeRedirect" }],
+    },
+    // Dynamic template literal assigned to location — unsafe
+    {
+      code: "window.location.href = `/go/${userInput}`;",
       errors: [{ messageId: "noUnsafeRedirect" }],
     },
   ],
