@@ -1,6 +1,7 @@
 import {
   AST_NODE_TYPES,
   ESLintUtils,
+  type TSESLint,
   type TSESTree,
 } from "@typescript-eslint/utils";
 import { isComplexType, isPascalCase } from "../utils/common";
@@ -16,6 +17,7 @@ type MessageIds =
   | "enumShouldEndWithEnum"
   | "avoidAnyType"
   | "avoidUnknownWithoutComment"
+  | "addUnknownExplanationComment"
   | "preferTypeOverInterface"
   | "preferInterfaceOverType"
   | "missingGenericConstraint"
@@ -57,7 +59,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       description:
         "Enforce consistent TypeScript patterns and naming conventions",
     },
-    fixable: "code",
+    hasSuggestions: true,
     schema: [],
     messages: {
       typeAliasMustBePascalCase:
@@ -76,6 +78,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         "Avoid using 'any' type. Use 'unknown' or create a specific type instead",
       avoidUnknownWithoutComment:
         "Using 'unknown' type should include a comment explaining why",
+      addUnknownExplanationComment:
+        "Add a comment explaining the use of 'unknown'",
       preferTypeOverInterface:
         "Prefer type aliases over interfaces for simple object types",
       preferInterfaceOverType:
@@ -232,23 +236,30 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           context.report({
             node,
             messageId: "avoidUnknownWithoutComment",
-            fix(fixer) {
-              // Add a TODO comment before the unknown keyword
-              const nodeStart = node.range[0];
-              const lineStart = sourceCode.getIndexFromLoc({
-                line: node.loc.start.line,
-                column: 0,
-              });
-              const indentation =
-                sourceCode.text
-                  .slice(lineStart, nodeStart)
-                  .match(/^\s*/)?.[0] || "";
+            suggest: [
+              {
+                messageId: "addUnknownExplanationComment",
+                fix(fixer): TSESLint.RuleFix {
+                  // Insert a neutral placeholder comment for the developer to
+                  // fill in — never a TODO/FIXME marker (the project's
+                  // no-debug-comments rule flags those).
+                  const nodeStart = node.range[0];
+                  const lineStart = sourceCode.getIndexFromLoc({
+                    line: node.loc.start.line,
+                    column: 0,
+                  });
+                  const indentation =
+                    sourceCode.text
+                      .slice(lineStart, nodeStart)
+                      .match(/^\s*/)?.[0] || "";
 
-              return fixer.insertTextBefore(
-                node,
-                `// TODO: strengthen this type or explain the usage of unknown\n${indentation}`
-              );
-            },
+                  return fixer.insertTextBefore(
+                    node,
+                    `// Explain why 'unknown' is used here, or replace it with a specific type\n${indentation}`
+                  );
+                },
+              },
+            ],
           });
         }
       },
