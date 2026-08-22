@@ -84,6 +84,35 @@ ruleTester.run("no-event-handlers-to-client-props", rule, {
       `,
       filename: "/app/components/MyComponent.tsx",
     },
+    // Server Action defined in an outer scope, referenced from a nested scope
+    {
+      code: `
+        async function submitOrder(formData) {
+          "use server";
+          console.log(formData);
+        }
+        function MyComponent() {
+          function renderForm() {
+            return <Form onSubmit={submitOrder} />;
+          }
+          return renderForm();
+        }
+      `,
+      filename: "/app/components/MyComponent.tsx",
+    },
+    // Server Action variable declared with const arrow function
+    {
+      code: `
+        function MyComponent() {
+          const handleSave = async (formData) => {
+            "use server";
+            console.log(formData);
+          };
+          return <Form onSubmit={handleSave} />;
+        }
+      `,
+      filename: "/app/components/MyComponent.tsx",
+    },
     // API routes should be ignored (no JSX typically)
     {
       code: `
@@ -220,6 +249,51 @@ ruleTester.run("no-event-handlers-to-client-props", rule, {
           data: {
             propName: "onToggle",
             handlerName: "toggleHandler",
+          },
+        },
+      ],
+    },
+    // Shadowing: inner client handler shadows an outer server action
+    {
+      code: `
+        async function handleSubmit(formData) {
+          "use server";
+          console.log(formData);
+        }
+        function MyComponent() {
+          const handleSubmit = () => {};
+          return <Form onSubmit={handleSubmit} />;
+        }
+      `,
+      filename: "/app/components/MyComponent.tsx",
+      errors: [
+        {
+          messageId: "eventHandlerToClientProp",
+          data: {
+            propName: "onSubmit",
+            handlerName: "handleSubmit",
+          },
+        },
+      ],
+    },
+    // Nested scope: plain client handler in an inner function still reports
+    {
+      code: `
+        function MyComponent() {
+          function renderButton() {
+            const handleClick = () => {};
+            return <Button onClick={handleClick} />;
+          }
+          return renderButton();
+        }
+      `,
+      filename: "/app/components/MyComponent.tsx",
+      errors: [
+        {
+          messageId: "eventHandlerToClientProp",
+          data: {
+            propName: "onClick",
+            handlerName: "handleClick",
           },
         },
       ],
