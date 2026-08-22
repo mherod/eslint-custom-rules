@@ -1,5 +1,5 @@
 // General/shared rules plugin
-import { prefixRules } from "./config-utils";
+import { buildCategoryPlugin } from "./config-utils";
 import enforceFileNaming from "./rules/general/enforce-file-naming";
 import enforceImportOrder from "./rules/general/enforce-import-order";
 import noBarrelFileImports from "./rules/general/no-barrel-file-imports";
@@ -17,81 +17,70 @@ import preferUfoWithQuery from "./rules/general/prefer-ufo-with-query";
 import preferZodDefaultWithCatch from "./rules/general/prefer-zod-default-with-catch";
 import preferZodUrl from "./rules/general/prefer-zod-url";
 
-// Rule severity maps -- single source of truth for both legacy and flat configs
-export const GENERAL_RECOMMENDED_SEVERITIES = {
-  "enforce-file-naming": "warn",
-  "enforce-import-order": "warn",
-  "no-barrel-file-imports": "warn",
-  "no-debug-comments": "warn",
-  "no-deprecated-declarations": "warn",
-  "no-import-type-queries": "warn",
-  "no-long-relative-imports": "warn",
-  "no-unresolvable-imports": "warn",
-  "prefer-date-fns": "warn",
-  "prefer-date-fns-over-date-operations": "warn",
-  "prefer-direct-imports": "warn",
-  "prefer-lodash-es-imports": "error",
-  "prefer-lodash-uniq-over-set": "warn",
-  "prefer-ufo-with-query": "warn",
-  "prefer-zod-default-with-catch": "warn",
-  "prefer-zod-url": "warn",
+// Canonical manifest: one entry per rule holding identity + preset policy.
+export const GENERAL_MANIFEST = {
+  "enforce-file-naming": {
+    recommended: "warn",
+    rule: enforceFileNaming,
+    strict: "error",
+  },
+  "enforce-import-order": {
+    recommended: "warn",
+    rule: enforceImportOrder,
+    strict: "error",
+  },
+  "no-barrel-file-imports": { recommended: "warn", rule: noBarrelFileImports },
+  "no-debug-comments": { recommended: "warn", rule: noDebugComments },
+  "no-deprecated-declarations": {
+    recommended: "warn",
+    rule: noDeprecatedDeclarations,
+  },
+  "no-import-type-queries": { recommended: "warn", rule: noImportTypeQueries },
+  "no-long-relative-imports": {
+    recommended: "warn",
+    rule: noLongRelativeImports,
+  },
+  "no-unresolvable-imports": {
+    recommended: "warn",
+    rule: noUnresolvableImports,
+  },
+  "prefer-date-fns": {
+    recommended: "warn",
+    rule: preferDateFns,
+    strict: "error",
+  },
+  "prefer-date-fns-over-date-operations": {
+    recommended: "warn",
+    rule: preferDateFnsOverDateOperations,
+  },
+  "prefer-direct-imports": { recommended: "warn", rule: preferDirectImports },
+  "prefer-lodash-es-imports": {
+    recommended: "error",
+    rule: preferLodashEsImports,
+  },
+  "prefer-lodash-uniq-over-set": {
+    recommended: "warn",
+    rule: preferLodashUniqOverSet,
+    strict: "error",
+  },
+  "prefer-ufo-with-query": {
+    recommended: "warn",
+    rule: preferUfoWithQuery,
+    strict: "error",
+  },
+  "prefer-zod-default-with-catch": {
+    recommended: "warn",
+    rule: preferZodDefaultWithCatch,
+  },
+  "prefer-zod-url": { recommended: "warn", rule: preferZodUrl },
 } as const;
 
-export const GENERAL_STRICT_SEVERITIES = {
-  ...GENERAL_RECOMMENDED_SEVERITIES,
-  "enforce-file-naming": "error",
-  "enforce-import-order": "error",
-  "no-import-type-queries": "warn",
-  "prefer-date-fns": "error",
-  "prefer-lodash-uniq-over-set": "error",
-  "prefer-ufo-with-query": "error",
-} as const;
+const assembly = buildCategoryPlugin("@mherod/general", GENERAL_MANIFEST);
 
-export const generalRules = {
-  "enforce-file-naming": enforceFileNaming,
-  "no-barrel-file-imports": noBarrelFileImports,
-  "enforce-import-order": enforceImportOrder,
-  "no-debug-comments": noDebugComments,
-  "no-deprecated-declarations": noDeprecatedDeclarations,
-  "no-import-type-queries": noImportTypeQueries,
-  "no-long-relative-imports": noLongRelativeImports,
-  "no-unresolvable-imports": noUnresolvableImports,
-  "prefer-date-fns-over-date-operations": preferDateFnsOverDateOperations,
-  "prefer-date-fns": preferDateFns,
-  "prefer-direct-imports": preferDirectImports,
-  "prefer-lodash-es-imports": preferLodashEsImports,
-  "prefer-lodash-uniq-over-set": preferLodashUniqOverSet,
-  "prefer-ufo-with-query": preferUfoWithQuery,
-  "prefer-zod-default-with-catch": preferZodDefaultWithCatch,
-  "prefer-zod-url": preferZodUrl,
-};
-
-const GENERAL_PREFIX = "@mherod/general";
-
-export const generalPlugin = {
-  rules: generalRules,
-  configs: {
-    recommended: {
-      plugins: [GENERAL_PREFIX],
-      rules: prefixRules(GENERAL_RECOMMENDED_SEVERITIES, GENERAL_PREFIX),
-    },
-    strict: {
-      plugins: [GENERAL_PREFIX],
-      rules: prefixRules(GENERAL_STRICT_SEVERITIES, GENERAL_PREFIX),
-    },
-  },
-};
-
-// Support for flat config
-export const generalConfigs = {
-  recommended: {
-    plugins: { [GENERAL_PREFIX]: generalPlugin },
-    rules: prefixRules(GENERAL_RECOMMENDED_SEVERITIES, GENERAL_PREFIX),
-  },
-  strict: {
-    plugins: { [GENERAL_PREFIX]: generalPlugin },
-    rules: prefixRules(GENERAL_STRICT_SEVERITIES, GENERAL_PREFIX),
-  },
-};
+export const GENERAL_RECOMMENDED_SEVERITIES = assembly.recommendedSeverities;
+export const GENERAL_STRICT_SEVERITIES = assembly.strictSeverities;
+export const generalRules = assembly.rules;
+export const generalPlugin = assembly.plugin;
+export const generalConfigs = assembly.configs;
 
 export default generalPlugin;

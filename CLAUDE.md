@@ -58,7 +58,7 @@ Entry points (`package.json#exports`): `@mherod/eslint-plugin-custom` and `/type
 
 1. Create `src/rules/<category>/<kebab-name>.ts` using `ESLintUtils.RuleCreator` (default export). Set `fixable: "code"` only with a real `fix()`; for IDE-only quick fixes set `hasSuggestions: true` and provide `suggest` arrays.
 2. Create `src/rules/<category>/__tests__/<kebab-name>.test.ts` with both `valid` and `invalid` cases. Match parser options to the syntax under test.
-3. Register in `src/rules/index.ts` (default registry) and in `src/<category>.ts` (rules + recommended/strict configs + flat-config variant).
+3. Register once in the category manifest (`<CATEGORY>_MANIFEST` in `src/<category>.ts`) with the rule module plus optional `recommended`/`strict` severities. Rule maps, severity maps, legacy/flat configs, and the combined registry (`src/rules/index.ts`) are all derived from the manifests via `buildCategoryPlugin` — never edit them by hand.
 4. Main `src/index.ts` already re-exports category plugins — no change needed unless you alter the top-level shape.
 
 ## Toolchain

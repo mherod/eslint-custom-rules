@@ -1,5 +1,5 @@
 // Security-specific rules plugin
-import { prefixRules } from "./config-utils";
+import { buildCategoryPlugin } from "./config-utils";
 import enforceSecurityPatterns from "./rules/security/enforce-security-patterns";
 import noHardcodedSecrets from "./rules/security/no-hardcoded-secrets";
 import noLogSecrets from "./rules/security/no-log-secrets";
@@ -13,73 +13,46 @@ import requireAuthValidation from "./rules/security/require-auth-validation";
 import requireRateLimiting from "./rules/security/require-rate-limiting";
 import noUnstableMathRandom from "./rules/shared/no-unstable-math-random";
 
-// Rule severity maps -- single source of truth for both legacy and flat configs
-// "enforce-security-patterns" is deliberately absent: the aggregate rule
-// duplicates the focused Security rules below and is deprecated. It stays
-// registered in `securityRules` for explicit opt-in during the deprecation
+// Canonical manifest: one entry per rule holding identity + preset policy.
+// "enforce-security-patterns" carries no preset severity: the deprecated
+// aggregate stays registered for explicit opt-in during its deprecation
 // window and will be removed in the next major release.
-export const SECURITY_RECOMMENDED_SEVERITIES = {
-  "no-hardcoded-secrets": "error",
-  "no-log-secrets": "error",
-  "no-sql-injection": "error",
-  "no-unsafe-eval": "error",
-  "no-unsafe-innerHTML": "error",
-  "no-unsafe-redirect": "error",
-  "no-unsafe-template-literals": "warn",
-  "no-unstable-math-random": "warn",
-  "no-weak-crypto": "error",
-  "require-auth-validation": "error",
-  "require-rate-limiting": "warn",
+export const SECURITY_MANIFEST = {
+  "enforce-security-patterns": { rule: enforceSecurityPatterns },
+  "no-hardcoded-secrets": { recommended: "error", rule: noHardcodedSecrets },
+  "no-log-secrets": { recommended: "error", rule: noLogSecrets },
+  "no-sql-injection": { recommended: "error", rule: noSqlInjection },
+  "no-unsafe-eval": { recommended: "error", rule: noUnsafeEval },
+  "no-unsafe-innerHTML": { recommended: "error", rule: noUnsafeInnerHTML },
+  "no-unsafe-redirect": { recommended: "error", rule: noUnsafeRedirect },
+  "no-unsafe-template-literals": {
+    recommended: "warn",
+    rule: noUnsafeTemplateLiterals,
+    strict: "error",
+  },
+  "no-unstable-math-random": {
+    recommended: "warn",
+    rule: noUnstableMathRandom,
+    strict: "error",
+  },
+  "no-weak-crypto": { recommended: "error", rule: noWeakCrypto },
+  "require-auth-validation": {
+    recommended: "error",
+    rule: requireAuthValidation,
+  },
+  "require-rate-limiting": {
+    recommended: "warn",
+    rule: requireRateLimiting,
+    strict: "error",
+  },
 } as const;
 
-export const SECURITY_STRICT_SEVERITIES = {
-  ...SECURITY_RECOMMENDED_SEVERITIES,
-  "no-unsafe-template-literals": "error",
-  "no-unstable-math-random": "error",
-  "require-rate-limiting": "error",
-} as const;
+const assembly = buildCategoryPlugin("@mherod/security", SECURITY_MANIFEST);
 
-export const securityRules = {
-  "enforce-security-patterns": enforceSecurityPatterns,
-  "no-hardcoded-secrets": noHardcodedSecrets,
-  "no-log-secrets": noLogSecrets,
-  "no-sql-injection": noSqlInjection,
-  "no-unsafe-eval": noUnsafeEval,
-  "no-unsafe-innerHTML": noUnsafeInnerHTML,
-  "no-unsafe-redirect": noUnsafeRedirect,
-  "no-unsafe-template-literals": noUnsafeTemplateLiterals,
-  "no-unstable-math-random": noUnstableMathRandom,
-  "no-weak-crypto": noWeakCrypto,
-  "require-auth-validation": requireAuthValidation,
-  "require-rate-limiting": requireRateLimiting,
-};
-
-const SECURITY_PREFIX = "@mherod/security";
-
-export const securityPlugin = {
-  rules: securityRules,
-  configs: {
-    recommended: {
-      plugins: [SECURITY_PREFIX],
-      rules: prefixRules(SECURITY_RECOMMENDED_SEVERITIES, SECURITY_PREFIX),
-    },
-    strict: {
-      plugins: [SECURITY_PREFIX],
-      rules: prefixRules(SECURITY_STRICT_SEVERITIES, SECURITY_PREFIX),
-    },
-  },
-};
-
-// Support for flat config
-export const securityConfigs = {
-  recommended: {
-    plugins: { [SECURITY_PREFIX]: securityPlugin },
-    rules: prefixRules(SECURITY_RECOMMENDED_SEVERITIES, SECURITY_PREFIX),
-  },
-  strict: {
-    plugins: { [SECURITY_PREFIX]: securityPlugin },
-    rules: prefixRules(SECURITY_STRICT_SEVERITIES, SECURITY_PREFIX),
-  },
-};
+export const SECURITY_RECOMMENDED_SEVERITIES = assembly.recommendedSeverities;
+export const SECURITY_STRICT_SEVERITIES = assembly.strictSeverities;
+export const securityRules = assembly.rules;
+export const securityPlugin = assembly.plugin;
+export const securityConfigs = assembly.configs;
 
 export default securityPlugin;

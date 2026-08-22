@@ -1,47 +1,22 @@
 // Vue-specific rules plugin
-import { prefixRules } from "./config-utils";
+import { buildCategoryPlugin } from "./config-utils";
 import preferToValue from "./rules/vue/prefer-to-value";
 
-// Rule severity maps -- single source of truth for both legacy and flat configs
-export const VUE_RECOMMENDED_SEVERITIES = {
-  "prefer-to-value": "warn",
+// Canonical manifest: one entry per rule holding identity + preset policy.
+export const VUE_MANIFEST = {
+  "prefer-to-value": {
+    recommended: "warn",
+    rule: preferToValue,
+    strict: "error",
+  },
 } as const;
 
-export const VUE_STRICT_SEVERITIES = {
-  ...VUE_RECOMMENDED_SEVERITIES,
-  "prefer-to-value": "error",
-} as const;
+const assembly = buildCategoryPlugin("@mherod/vue", VUE_MANIFEST);
 
-export const vueRules = {
-  "prefer-to-value": preferToValue,
-};
-
-const VUE_PREFIX = "@mherod/vue";
-
-export const vuePlugin = {
-  rules: vueRules,
-  configs: {
-    recommended: {
-      plugins: [VUE_PREFIX],
-      rules: prefixRules(VUE_RECOMMENDED_SEVERITIES, VUE_PREFIX),
-    },
-    strict: {
-      plugins: [VUE_PREFIX],
-      rules: prefixRules(VUE_STRICT_SEVERITIES, VUE_PREFIX),
-    },
-  },
-};
-
-// Support for flat config
-export const vueConfigs = {
-  recommended: {
-    plugins: { [VUE_PREFIX]: vuePlugin },
-    rules: prefixRules(VUE_RECOMMENDED_SEVERITIES, VUE_PREFIX),
-  },
-  strict: {
-    plugins: { [VUE_PREFIX]: vuePlugin },
-    rules: prefixRules(VUE_STRICT_SEVERITIES, VUE_PREFIX),
-  },
-};
+export const VUE_RECOMMENDED_SEVERITIES = assembly.recommendedSeverities;
+export const VUE_STRICT_SEVERITIES = assembly.strictSeverities;
+export const vueRules = assembly.rules;
+export const vuePlugin = assembly.plugin;
+export const vueConfigs = assembly.configs;
 
 export default vuePlugin;

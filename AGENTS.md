@@ -76,9 +76,13 @@ When adding a rule:
 
 1. Add `src/rules/[category]/rule-name.ts`.
 2. Add `src/rules/[category]/__tests__/rule-name.test.ts`.
-3. Export from `src/rules/index.ts`.
-4. Register in the category plugin file.
-5. Run focused Jest, `pnpm typecheck`, `pnpm lint`, and usually `pnpm test`.
+3. Register once in the category manifest (`<CATEGORY>_MANIFEST` in
+   `src/<category>.ts`) with the rule module plus optional
+   `recommended`/`strict` severities. Rule maps, severity maps, legacy
+   configs, flat configs, and the combined registry are all derived from
+   the manifest — do not edit `src/rules/index.ts` or duplicate severity
+   maps by hand.
+4. Run focused Jest, `pnpm typecheck`, `pnpm lint`, and usually `pnpm test`.
 
 Use `interface` for object shapes. Avoid `any`; tests may use relaxed overrides already configured in Biome/ESLint.
 
@@ -167,7 +171,7 @@ If GitHub Actions release fails with `ENEEDAUTH`, refresh or set `NPM_TOKEN`.
 
 Build failures: run `pnpm typecheck` and fix TypeScript errors.
 
-Rule not found: verify exports in `src/rules/index.ts` and the category plugin.
+Rule not found: verify the rule has a `<CATEGORY>_MANIFEST` entry in `src/<category>.ts`; everything else is derived from it.
 
 Autofix not applying: verify `meta.fixable`, return a valid fixer, and test with `output`.
 
