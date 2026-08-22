@@ -100,6 +100,23 @@ let bridgeWorkerDisabled = false;
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
+/**
+ * Decode exactly `length` bytes from the front of a shared payload buffer.
+ * Buffers are not cleared between requests, so trailing bytes may hold stale
+ * data from a previous, longer payload; a bounded decode never exposes them.
+ * Returns null for negative, non-integer, or over-capacity lengths.
+ */
+export function decodeBoundedPayload(
+  buffer: Uint8Array,
+  length: number
+): string | null {
+  if (!Number.isInteger(length) || length < 0 || length > buffer.byteLength) {
+    return null;
+  }
+
+  return textDecoder.decode(buffer.subarray(0, length));
+}
+
 const RESECT_BRIDGE_CORE_SCRIPT = String.raw`
 const fs = require("node:fs");
 const path = require("node:path");
@@ -519,7 +536,6 @@ function writeWorkerResponse(value) {
     );
   }
 
-  responseBuffer.fill(0);
   responseBuffer.set(encoded);
   Atomics.store(
     control,
@@ -532,6 +548,18 @@ function writeWorkerResponse(value) {
 
 async function handleCurrentRequest() {
   const requestLength = Atomics.load(control, BRIDGE_REQUEST_LENGTH_INDEX);
+  if (
+    !Number.isInteger(requestLength) ||
+    requestLength < 0 ||
+    requestLength > requestBuffer.byteLength
+  ) {
+    writeWorkerResponse({
+      ok: false,
+      error: "Bridge request length out of bounds",
+    });
+    return;
+  }
+
   const requestText = workerTextDecoder.decode(
     requestBuffer.subarray(0, requestLength)
   );
@@ -667,7 +695,6 @@ function runBridgeWorkerRequest<TResult>(
     };
   }
 
-  state.requestBuffer.fill(0);
   state.requestBuffer.set(encodedRequest);
   Atomics.store(
     state.control,
@@ -706,11 +733,21 @@ function runBridgeWorkerRequest<TResult>(
     state.control,
     BRIDGE_RESPONSE_LENGTH_INDEX
   );
-  const responseText = textDecoder.decode(
-    state.responseBuffer.subarray(0, responseLength)
+  const responseText = decodeBoundedPayload(
+    state.responseBuffer,
+    responseLength
   );
   Atomics.store(state.control, BRIDGE_STATE_INDEX, STATE_IDLE);
   Atomics.notify(state.control, BRIDGE_STATE_INDEX);
+
+  if (responseText === null) {
+    disableBridgeWorker(state);
+    return {
+      handled: false,
+      ok: false,
+      result: null,
+    };
+  }
 
   try {
     const parsed = JSON.parse(responseText) as BridgeResponse<TResult>;
