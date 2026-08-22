@@ -53,7 +53,7 @@ temp/
 *.bak
 *.backup
 
-# Package manager locks (optional - uncomment if desired)
+# Package manager locks — pnpm-lock.yaml is the only authoritative lockfile
 # yarn.lock
-# package-lock.json
+package-lock.json
 # pnpm-lock.yaml
