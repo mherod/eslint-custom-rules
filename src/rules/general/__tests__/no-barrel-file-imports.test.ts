@@ -1,5 +1,13 @@
+import path from "node:path";
 import { RuleTester } from "@typescript-eslint/rule-tester";
 import rule from "../no-barrel-file-imports";
+
+const fixtureFilename = path.join(
+  __dirname,
+  "fixtures",
+  "no-barrel-file-imports",
+  "consumer.ts"
+);
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -27,6 +35,10 @@ ruleTester.run("no-barrel-file-imports", rule, {
     `import { useState } from 'react';`,
     `import { clsx } from 'clsx';`,
     `import merge from 'lodash-es/merge';`,
+    {
+      code: `import { directExport } from 'direct-package';`,
+      filename: fixtureFilename,
+    },
     // react-icons subpath that ends with a path separator is safe
     `import { FaArrowRight } from 'react-icons/fa/index';`,
   ],
@@ -78,6 +90,16 @@ ruleTester.run("no-barrel-file-imports", rule, {
         {
           messageId: "noBarrelImport",
           data: { package: "@radix-ui/react-popover" },
+        },
+      ],
+    },
+    {
+      code: `import { StructuralExport } from 'structural-barrel';`,
+      filename: fixtureFilename,
+      errors: [
+        {
+          messageId: "noBarrelImport",
+          data: { package: "structural-barrel" },
         },
       ],
     },

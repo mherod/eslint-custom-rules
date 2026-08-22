@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "direct-package": ["./direct-package.ts"],
+      "structural-barrel": ["./structural-barrel.ts"]
+    }
+  },
+  "include": ["*.ts"]
+}
