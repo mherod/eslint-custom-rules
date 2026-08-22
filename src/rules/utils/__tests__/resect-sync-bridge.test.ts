@@ -1,10 +1,12 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { TextEncoder } from "node:util";
+import { BoundedResultCache } from "../bounded-result-cache";
 import {
   buildExportOwnerCacheKey,
   decodeBoundedPayload,
   decodeBridgeResponse,
+  getOrCreateCachedValue,
   writeBridgeDebug,
 } from "../resect-sync-bridge";
 
@@ -131,5 +133,36 @@ describe("bridge source safety", () => {
     });
 
     expect(hasControlCharacter).toBe(false);
+  });
+});
+
+describe("project analysis caching", () => {
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it("builds once per project during the TTL window", async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(0);
+    const cache = new BoundedResultCache<string>({
+      maxEntries: 2,
+      maxTotalBytes: 1000,
+      ttlMs: 1000,
+    });
+    const build = jest.fn(async () => "cycle-analysis");
+
+    await expect(
+      getOrCreateCachedValue(cache, "/project/tsconfig.json", build)
+    ).resolves.toBe("cycle-analysis");
+    await expect(
+      getOrCreateCachedValue(cache, "/project/tsconfig.json", build)
+    ).resolves.toBe("cycle-analysis");
+    expect(build).toHaveBeenCalledTimes(1);
+
+    jest.setSystemTime(1001);
+    await expect(
+      getOrCreateCachedValue(cache, "/project/tsconfig.json", build)
+    ).resolves.toBe("cycle-analysis");
+    expect(build).toHaveBeenCalledTimes(2);
   });
 });

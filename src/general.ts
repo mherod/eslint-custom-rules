@@ -5,6 +5,7 @@ import enforceImportOrder from "./rules/general/enforce-import-order";
 import noBarrelFileImports from "./rules/general/no-barrel-file-imports";
 import noDebugComments from "./rules/general/no-debug-comments";
 import noDeprecatedDeclarations from "./rules/general/no-deprecated-declarations";
+import noImportCycles from "./rules/general/no-import-cycles";
 import noImportTypeQueries from "./rules/general/no-import-type-queries";
 import noLongRelativeImports from "./rules/general/no-long-relative-imports";
 import noUnresolvableImports from "./rules/general/no-unresolvable-imports";
@@ -35,6 +36,7 @@ export const GENERAL_MANIFEST = {
     recommended: "warn",
     rule: noDeprecatedDeclarations,
   },
+  "no-import-cycles": { recommended: "warn", rule: noImportCycles },
   "no-import-type-queries": { recommended: "warn", rule: noImportTypeQueries },
   "no-long-relative-imports": {
     recommended: "warn",
