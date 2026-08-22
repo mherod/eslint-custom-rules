@@ -1,10 +1,18 @@
 import {
-  AST_NODE_TYPES,
   ESLintUtils,
   type TSESLint,
   type TSESTree,
 } from "@typescript-eslint/utils";
 import { isComplexType, isPascalCase } from "../utils/common";
+import {
+  createUnknownKeywordAssessor,
+  hasAllowedTypeSuffix,
+  isUnnecessaryTypeAssertion,
+  shouldBeInterface,
+  shouldBeTypeAlias,
+  shouldUseConstAssertion,
+  UNKNOWN_EXPLANATION_PLACEHOLDER,
+} from "./type-pattern-checks";
 
 export const RULE_NAME = "enforce-typescript-patterns";
 
@@ -27,34 +35,15 @@ type MessageIds =
 
 type Options = [];
 
-const ALLOWED_TYPE_SUFFIXES: readonly string[] = [
-  "Type",
-  "Props",
-  "Return",
-  "State",
-  "Config",
-  "Options",
-  "Params",
-  "Payload",
-  "Context",
-  "Result",
-  "Error",
-  "Response",
-  "Request",
-];
-
-function hasAllowedTypeSuffix(name: string): boolean {
-  for (const suffix of ALLOWED_TYPE_SUFFIXES) {
-    if (name.endsWith(suffix)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   meta: {
     type: "problem",
+    deprecated: true,
+    replacedBy: [
+      "enforce-type-naming",
+      "no-undocumented-unknown",
+      "enforce-assertion-policies",
+    ],
     docs: {
       description:
         "Enforce consistent TypeScript patterns and naming conventions",
@@ -97,10 +86,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   defaultOptions: [],
   create(context) {
     const sourceCode = context.sourceCode;
-
-    // Built lazily on the first unknown token, then shared by all of them.
-    let commentLineIndex: Set<number> | null = null;
-    const documentedNodeCache = new WeakMap<TSESTree.Node, boolean>();
+    const assessUnknownKeyword = createUnknownKeywordAssessor(sourceCode);
 
     return {
       // Type alias declarations
@@ -192,104 +178,35 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
       // Unknown type usage
       TSUnknownKeyword(node: TSESTree.TSUnknownKeyword): void {
-        // Be extremely permissive - if there are ANY comments anywhere in the file within reasonable range, allow it
-        const currentLine = node.loc.start.line;
-
-        // Index comment lines once per file context; every subsequent
-        // unknown token reuses the same index instead of rescanning the
-        // full comment list.
-        if (!commentLineIndex) {
-          commentLineIndex = new Set<number>();
-          for (const comment of sourceCode.getAllComments()) {
-            commentLineIndex.add(comment.loc.start.line);
-          }
+        if (!assessUnknownKeyword(node).needsExplanation) {
+          return;
         }
 
-        // Look for comments in a very wide range: 5 lines before to 5 lines after
-        let hasNearbyComments = false;
-        for (let line = currentLine - 5; line <= currentLine + 5; line += 1) {
-          if (commentLineIndex.has(line)) {
-            hasNearbyComments = true;
-            break;
-          }
-        }
+        context.report({
+          node,
+          messageId: "avoidUnknownWithoutComment",
+          suggest: [
+            {
+              messageId: "addUnknownExplanationComment",
+              fix(fixer): TSESLint.RuleFix {
+                const nodeStart = node.range[0];
+                const lineStart = sourceCode.getIndexFromLoc({
+                  line: node.loc.start.line,
+                  column: 0,
+                });
+                const indentation =
+                  sourceCode.text
+                    .slice(lineStart, nodeStart)
+                    .match(/^\s*/)?.[0] || "";
 
-        // Check if this is part of any documented context (JSDoc, regular comments, etc.)
-        // Memoized per ancestor node so overlapping parent chains from
-        // multiple unknown tokens are only inspected once.
-        function nodeHasAdjacentComments(target: TSESTree.Node): boolean {
-          const cached = documentedNodeCache.get(target);
-          if (cached !== undefined) {
-            return cached;
-          }
-          const result =
-            sourceCode.getCommentsBefore(target).length > 0 ||
-            sourceCode.getCommentsAfter(target).length > 0;
-          documentedNodeCache.set(target, result);
-          return result;
-        }
-
-        let parentNode: TSESTree.Node | undefined = node.parent;
-        let hasAnyDocumentation = false;
-
-        // Walk up the AST to find ANY documentation
-        while (parentNode && !hasAnyDocumentation) {
-          if (nodeHasAdjacentComments(parentNode)) {
-            hasAnyDocumentation = true;
-          }
-          parentNode = parentNode.parent;
-        }
-
-        // Check if this is in a generic constraint (these are usually well-understood)
-        const isInGenericConstraint =
-          node.parent?.type === AST_NODE_TYPES.TSTypeReference ||
-          node.parent?.type === AST_NODE_TYPES.TSTypeLiteral ||
-          node.parent?.parent?.type ===
-            AST_NODE_TYPES.TSTypeParameterInstantiation;
-
-        // Check if the line itself has any meaningful content that suggests intentional usage
-        const currentLineText = sourceCode.lines[currentLine - 1] || "";
-        const hasDescriptiveName =
-          /\b(logContext|params|data|payload|options|config|meta)\b/i.test(
-            currentLineText
-          );
-
-        const hasExplanatoryComment =
-          hasNearbyComments ||
-          hasAnyDocumentation ||
-          isInGenericConstraint ||
-          hasDescriptiveName;
-
-        if (!hasExplanatoryComment) {
-          context.report({
-            node,
-            messageId: "avoidUnknownWithoutComment",
-            suggest: [
-              {
-                messageId: "addUnknownExplanationComment",
-                fix(fixer): TSESLint.RuleFix {
-                  // Insert a neutral placeholder comment for the developer to
-                  // fill in — never a TODO/FIXME marker (the project's
-                  // no-debug-comments rule flags those).
-                  const nodeStart = node.range[0];
-                  const lineStart = sourceCode.getIndexFromLoc({
-                    line: node.loc.start.line,
-                    column: 0,
-                  });
-                  const indentation =
-                    sourceCode.text
-                      .slice(lineStart, nodeStart)
-                      .match(/^\s*/)?.[0] || "";
-
-                  return fixer.insertTextBefore(
-                    node,
-                    `// Explain why 'unknown' is used here, or replace it with a specific type\n${indentation}`
-                  );
-                },
+                return fixer.insertTextBefore(
+                  node,
+                  `${UNKNOWN_EXPLANATION_PLACEHOLDER}\n${indentation}`
+                );
               },
-            ],
-          });
-        }
+            },
+          ],
+        });
       },
 
       // Generic type parameters
@@ -336,46 +253,3 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     };
   },
 });
-
-function shouldBeInterface(typeAnnotation: TSESTree.TypeNode): boolean {
-  // Object types with multiple properties should be interfaces
-  return (
-    typeAnnotation.type === AST_NODE_TYPES.TSTypeLiteral &&
-    typeAnnotation.members.length > 2 &&
-    typeAnnotation.members.every(
-      (member) =>
-        member.type === AST_NODE_TYPES.TSPropertySignature ||
-        member.type === AST_NODE_TYPES.TSMethodSignature
-    )
-  );
-}
-
-function shouldBeTypeAlias(node: TSESTree.TSInterfaceDeclaration): boolean {
-  // Simple interfaces with no extends and few properties should be type aliases
-  return (
-    node.extends === null &&
-    node.body.body.length <= 3 &&
-    node.body.body.every(
-      (member) => member.type === AST_NODE_TYPES.TSPropertySignature
-    )
-  );
-}
-
-function isUnnecessaryTypeAssertion(node: TSESTree.TSTypeAssertion): boolean {
-  // Check if the expression already has the asserted type
-  // This is a simplified check - in practice, you'd need TypeScript's type checker
-  return (
-    node.expression.type === AST_NODE_TYPES.Literal &&
-    node.typeAnnotation.type === AST_NODE_TYPES.TSLiteralType
-  );
-}
-
-function shouldUseConstAssertion(node: TSESTree.TSAsExpression): boolean {
-  // Check if asserting to a literal type when const assertion would be better
-  return (
-    node.expression.type === AST_NODE_TYPES.ArrayExpression ||
-    node.expression.type === AST_NODE_TYPES.ObjectExpression ||
-    (node.expression.type === AST_NODE_TYPES.Literal &&
-      node.typeAnnotation.type === AST_NODE_TYPES.TSLiteralType)
-  );
-}

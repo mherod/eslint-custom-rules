@@ -112,7 +112,7 @@ export default [
     },
     rules: {
       // Recommended rules
-      '@mherod/typescript/enforce-typescript-patterns': 'warn',
+      '@mherod/typescript/enforce-type-naming': 'warn',
       '@mherod/typescript/enforce-zod-schema-naming': 'warn',
       '@mherod/typescript/no-empty-function-implementations': 'warn',
 
@@ -132,7 +132,7 @@ export default [
 {
   "plugins": ["@mherod/typescript"],
   "rules": {
-    "@mherod/typescript/enforce-typescript-patterns": "warn",
+    "@mherod/typescript/enforce-type-naming": "warn",
     "@mherod/typescript/enforce-zod-schema-naming": "warn",
     "@mherod/typescript/no-empty-function-implementations": "warn"
   }
@@ -142,10 +142,25 @@ export default [
 #### Available Rules
 
 - `enforce-api-patterns` - Enforces consistent API endpoint patterns
+- `enforce-assertion-policies` - Generic constraint, type assertion, and non-null policies
 - `enforce-documentation` - Requires JSDoc comments for public APIs
-- `enforce-typescript-patterns` - General TypeScript best practices
+- `enforce-type-naming` - Naming, suffix, and alias-vs-interface conventions
+- `enforce-typescript-patterns` - **Deprecated** aggregate rule; no longer enabled by any preset and scheduled for removal in the next major release
 - `enforce-zod-schema-naming` - Consistent naming for Zod schemas
 - `no-empty-function-implementations` - Prevents empty function bodies
+- `no-undocumented-unknown` - Disallows `any` and undocumented `unknown` types
+
+##### Migrating from `enforce-typescript-patterns`
+
+The aggregate rule is deprecated and no longer enabled by the recommended, strict, flat, legacy, or combined presets (SemVer: disabled-by-preset in a minor release; the rule itself will be deleted in the next major release). Its diagnostics moved unchanged to three focused rules that the presets now enable at the same severities (`warn` in recommended, `error` in strict), so most users need no config change:
+
+| `enforce-typescript-patterns` check | Focused replacement |
+|---|---|
+| PascalCase / suffix naming, type-vs-interface preference | `enforce-type-naming` |
+| `any` usage, undocumented `unknown` (with suggestion) | `no-undocumented-unknown` |
+| Generic constraints, unnecessary/const assertions, non-null `!` | `enforce-assertion-policies` |
+
+To keep the old single-rule setup during the deprecation window, enable `@mherod/typescript/enforce-typescript-patterns` explicitly.
 
 ### React/Next.js Plugin
 

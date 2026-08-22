@@ -80,11 +80,14 @@ import requireAuthValidation from "./security/require-auth-validation";
 import requireRateLimiting from "./security/require-rate-limiting";
 import noUnstableMathRandom from "./shared/no-unstable-math-random";
 import enforceApiPatterns from "./typescript/enforce-api-patterns";
+import enforceAssertionPolicies from "./typescript/enforce-assertion-policies";
 import enforceDocumentation from "./typescript/enforce-documentation";
+import enforceTypeNaming from "./typescript/enforce-type-naming";
 import enforceTypescriptPatterns from "./typescript/enforce-typescript-patterns";
 import enforceZodSchemaNaming from "./typescript/enforce-zod-schema-naming";
 import noComplexTypeGymnastics from "./typescript/no-complex-type-gymnastics";
 import noEmptyFunctionImplementations from "./typescript/no-empty-function-implementations";
+import noUndocumentedUnknown from "./typescript/no-undocumented-unknown";
 import noUnsafeTypeAssertion from "./typescript/no-unsafe-type-assertion";
 
 export const rules = {
@@ -156,6 +159,9 @@ export const rules = {
   // Enforce rules
   "enforce-admin-separation": enforceAdminSeparation,
   "enforce-api-patterns": enforceApiPatterns,
+  "enforce-assertion-policies": enforceAssertionPolicies,
+  "enforce-type-naming": enforceTypeNaming,
+  "no-undocumented-unknown": noUndocumentedUnknown,
   "enforce-component-patterns": enforceComponentPatterns,
   "enforce-documentation": enforceDocumentation,
   "enforce-file-naming": enforceFileNaming,
