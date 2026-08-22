@@ -141,8 +141,12 @@ export default [
 
 #### Available Rules
 
-- `enforce-api-patterns` - Enforces consistent API endpoint patterns
+- `enforce-api-patterns` - **Deprecated** aggregate rule; no longer enabled by any preset and scheduled for removal in the next major release
 - `enforce-assertion-policies` - Generic constraint, type assertion, and non-null policies
+- `enforce-route-shape` - API route handler shape: error handling, status codes, method checks, response types
+- `no-direct-db-in-route` - Disallows direct database access in API routes
+- `require-route-auth` - Requires authentication checks in protected API routes
+- `require-route-validation` - Requires schema validation of route input
 - `enforce-documentation` - Requires JSDoc comments for public APIs
 - `enforce-type-naming` - Naming, suffix, and alias-vs-interface conventions
 - `enforce-typescript-patterns` - **Deprecated** aggregate rule; no longer enabled by any preset and scheduled for removal in the next major release
@@ -161,6 +165,19 @@ The aggregate rule is deprecated and no longer enabled by the recommended, stric
 | Generic constraints, unnecessary/const assertions, non-null `!` | `enforce-assertion-policies` |
 
 To keep the old single-rule setup during the deprecation window, enable `@mherod/typescript/enforce-typescript-patterns` explicitly.
+
+##### Migrating from `enforce-api-patterns`
+
+The aggregate API rule is likewise deprecated and out of the presets. It was strict-only, so the strict presets now enable its four focused replacements at `error` (the recommended presets never enabled API policy and still do not):
+
+| `enforce-api-patterns` check | Focused replacement |
+|---|---|
+| Error handling, status codes, method checks, response types | `enforce-route-shape` |
+| Schema validation of route input | `require-route-validation` |
+| Auth checks in protected routes | `require-route-auth` |
+| Direct database access | `no-direct-db-in-route` |
+
+To keep the old behaviour during the deprecation window, enable `@mherod/typescript/enforce-api-patterns` explicitly.
 
 ### React/Next.js Plugin
 

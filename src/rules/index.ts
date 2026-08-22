@@ -82,13 +82,17 @@ import noUnstableMathRandom from "./shared/no-unstable-math-random";
 import enforceApiPatterns from "./typescript/enforce-api-patterns";
 import enforceAssertionPolicies from "./typescript/enforce-assertion-policies";
 import enforceDocumentation from "./typescript/enforce-documentation";
+import enforceRouteShape from "./typescript/enforce-route-shape";
 import enforceTypeNaming from "./typescript/enforce-type-naming";
 import enforceTypescriptPatterns from "./typescript/enforce-typescript-patterns";
 import enforceZodSchemaNaming from "./typescript/enforce-zod-schema-naming";
 import noComplexTypeGymnastics from "./typescript/no-complex-type-gymnastics";
+import noDirectDbInRoute from "./typescript/no-direct-db-in-route";
 import noEmptyFunctionImplementations from "./typescript/no-empty-function-implementations";
 import noUndocumentedUnknown from "./typescript/no-undocumented-unknown";
 import noUnsafeTypeAssertion from "./typescript/no-unsafe-type-assertion";
+import requireRouteAuth from "./typescript/require-route-auth";
+import requireRouteValidation from "./typescript/require-route-validation";
 
 export const rules = {
   // General rules
@@ -160,6 +164,10 @@ export const rules = {
   "enforce-admin-separation": enforceAdminSeparation,
   "enforce-api-patterns": enforceApiPatterns,
   "enforce-assertion-policies": enforceAssertionPolicies,
+  "enforce-route-shape": enforceRouteShape,
+  "no-direct-db-in-route": noDirectDbInRoute,
+  "require-route-auth": requireRouteAuth,
+  "require-route-validation": requireRouteValidation,
   "enforce-type-naming": enforceTypeNaming,
   "no-undocumented-unknown": noUndocumentedUnknown,
   "enforce-component-patterns": enforceComponentPatterns,

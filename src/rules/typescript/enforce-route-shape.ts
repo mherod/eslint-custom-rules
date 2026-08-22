@@ -1,27 +1,17 @@
 import {
   AST_NODE_TYPES,
   ESLintUtils,
-  type TSESLint,
   type TSESTree,
 } from "@typescript-eslint/utils";
-import {
-  getRouteName,
-  isApiRoute,
-  isDatabaseObject,
-  isHttpMethod,
-  isProtectedRoute,
-} from "../utils/common";
+import { getRouteName, isApiRoute, isHttpMethod } from "../utils/common";
 
-export const RULE_NAME = "enforce-api-patterns";
+export const RULE_NAME = "enforce-route-shape";
 
 type MessageIds =
   | "missingErrorHandling"
-  | "missingInputValidation"
   | "improperStatusCode"
   | "missingRequestMethodCheck"
   | "missingResponseType"
-  | "unsafeDirectDbAccess"
-  | "missingAuthCheck"
   | "improperErrorResponse";
 
 type Options = [];
@@ -29,33 +19,20 @@ type Options = [];
 export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   meta: {
     type: "suggestion",
-    deprecated: true,
-    replacedBy: [
-      "enforce-route-shape",
-      "require-route-validation",
-      "require-route-auth",
-      "no-direct-db-in-route",
-    ],
     docs: {
-      description: "Enforce consistent API route patterns and best practices",
+      description:
+        "Enforce API route handler shape: error handling, status codes, method checks, and response types",
     },
-    fixable: "code",
     schema: [],
     messages: {
       missingErrorHandling:
         "API route '{{route}}' should have proper error handling with try-catch blocks",
-      missingInputValidation:
-        "API route '{{route}}' should validate request body/parameters using validation schema",
       improperStatusCode:
         "API route '{{route}}' should return appropriate HTTP status codes",
       missingRequestMethodCheck:
         "API route '{{route}}' should check request method (GET, POST, etc.)",
       missingResponseType:
         "API route '{{route}}' should have proper response type annotation",
-      unsafeDirectDbAccess:
-        "API route '{{route}}' should not directly access database - use repository pattern",
-      missingAuthCheck:
-        "API route '{{route}}' should implement authentication checks for protected endpoints",
       improperErrorResponse:
         "API route '{{route}}' should return consistent error response format",
     },
@@ -71,37 +48,48 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
     const routeName = getRouteName(filename);
     let hasErrorHandling = false;
-    let hasInputValidation = false;
     let hasMethodCheck = false;
     let hasStatusCodeHandling = false;
-    let hasAuthCheck = false;
-    let hasDbAccess = false;
     let hasProperErrorResponse = false;
 
+    function validateApiHandler(node: TSESTree.FunctionDeclaration): void {
+      if (node.params.length < 1) {
+        context.report({
+          node,
+          messageId: "missingResponseType",
+          data: { route: routeName },
+        });
+      }
+
+      if (!node.returnType) {
+        context.report({
+          node,
+          messageId: "missingResponseType",
+          data: { route: routeName },
+        });
+      }
+    }
+
     return {
-      // Check for exported handler functions
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration): void {
         if (node.declaration?.type === AST_NODE_TYPES.FunctionDeclaration) {
           const functionName = node.declaration.id?.name;
           if (isHttpMethod(functionName)) {
-            validateApiHandler(context, node.declaration, routeName);
+            validateApiHandler(node.declaration);
           }
         }
       },
 
-      // Check for default export functions
       ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration): void {
         if (node.declaration.type === AST_NODE_TYPES.FunctionDeclaration) {
-          validateApiHandler(context, node.declaration, routeName);
+          validateApiHandler(node.declaration);
         }
       },
 
-      // Check for try-catch blocks
       TryStatement(_node: TSESTree.TryStatement): void {
         hasErrorHandling = true;
       },
 
-      // Check for request method validation
       MemberExpression(node: TSESTree.MemberExpression): void {
         if (
           node.object.type === AST_NODE_TYPES.Identifier &&
@@ -113,7 +101,6 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         }
       },
 
-      // Check for status code usage
       CallExpression(node: TSESTree.CallExpression): void {
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
@@ -122,38 +109,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         ) {
           hasStatusCodeHandling = true;
         }
-
-        // Check for input validation using helper
-        if (
-          node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          (node.callee.property.name === "parse" ||
-            node.callee.property.name === "validate")
-        ) {
-          hasInputValidation = true;
-        }
-
-        // Check for auth checks
-        if (
-          node.callee.type === AST_NODE_TYPES.Identifier &&
-          (node.callee.name.includes("auth") ||
-            node.callee.name.includes("verify") ||
-            node.callee.name.includes("authenticate"))
-        ) {
-          hasAuthCheck = true;
-        }
-
-        // Check for direct database access
-        if (
-          node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.object.type === AST_NODE_TYPES.Identifier &&
-          isDatabaseObject(node.callee.object.name)
-        ) {
-          hasDbAccess = true;
-        }
       },
 
-      // Check for NextResponse usage
       NewExpression(node: TSESTree.NewExpression): void {
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
@@ -165,19 +122,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       },
 
       "Program:exit"(): void {
-        // Validate API route patterns
         if (!hasErrorHandling) {
           context.report({
             node: sourceCode.ast,
             messageId: "missingErrorHandling",
-            data: { route: routeName },
-          });
-        }
-
-        if (!hasInputValidation) {
-          context.report({
-            node: sourceCode.ast,
-            messageId: "missingInputValidation",
             data: { route: routeName },
           });
         }
@@ -198,7 +146,6 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           });
         }
 
-        // Check if error responses are properly formed with NextResponse
         if (hasErrorHandling && !hasProperErrorResponse) {
           context.report({
             node: sourceCode.ast,
@@ -206,47 +153,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             data: { route: routeName },
           });
         }
-
-        if (hasDbAccess) {
-          context.report({
-            node: sourceCode.ast,
-            messageId: "unsafeDirectDbAccess",
-            data: { route: routeName },
-          });
-        }
-
-        if (!hasAuthCheck && isProtectedRoute(routeName)) {
-          context.report({
-            node: sourceCode.ast,
-            messageId: "missingAuthCheck",
-            data: { route: routeName },
-          });
-        }
       },
     };
   },
 });
-
-function validateApiHandler(
-  context: Readonly<TSESLint.RuleContext<MessageIds, Options>>,
-  node: TSESTree.FunctionDeclaration,
-  routeName: string
-): void {
-  // Check if function has proper parameters
-  if (node.params.length < 1) {
-    context.report({
-      node,
-      messageId: "missingResponseType",
-      data: { route: routeName },
-    });
-  }
-
-  // Check if function has return type annotation
-  if (!node.returnType) {
-    context.report({
-      node,
-      messageId: "missingResponseType",
-      data: { route: routeName },
-    });
-  }
-}

@@ -60,4 +60,33 @@ describe("typescript config contract", () => {
     expect(typescriptRules[AGGREGATE_RULE]).toBeDefined();
     expect(typescriptRules[AGGREGATE_RULE].meta.deprecated).toBe(true);
   });
+
+  const API_AGGREGATE_RULE = "enforce-api-patterns";
+  const API_FOCUSED_RULES = [
+    "enforce-route-shape",
+    "no-direct-db-in-route",
+    "require-route-auth",
+    "require-route-validation",
+  ] as const;
+
+  it.each(
+    presetRuleMaps
+  )("%s preset does not enable the aggregate API rule", (_name, ruleMap) => {
+    const aggregateEntries = Object.keys(ruleMap).filter((ruleId) =>
+      ruleId.endsWith(`/${API_AGGREGATE_RULE}`)
+    );
+    expect(aggregateEntries).toEqual([]);
+  });
+
+  it("enables the focused API route rules in strict presets only", () => {
+    for (const focusedRule of API_FOCUSED_RULES) {
+      expect(TYPESCRIPT_STRICT_SEVERITIES[focusedRule]).toBe("error");
+      expect(focusedRule in TYPESCRIPT_RECOMMENDED_SEVERITIES).toBe(false);
+    }
+  });
+
+  it("keeps the aggregate API rule registered for explicit opt-in", () => {
+    expect(typescriptRules[API_AGGREGATE_RULE]).toBeDefined();
+    expect(typescriptRules[API_AGGREGATE_RULE].meta.deprecated).toBe(true);
+  });
 });

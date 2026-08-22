@@ -3,13 +3,17 @@ import { prefixRules } from "./config-utils";
 import enforceApiPatterns from "./rules/typescript/enforce-api-patterns";
 import enforceAssertionPolicies from "./rules/typescript/enforce-assertion-policies";
 import enforceDocumentation from "./rules/typescript/enforce-documentation";
+import enforceRouteShape from "./rules/typescript/enforce-route-shape";
 import enforceTypeNaming from "./rules/typescript/enforce-type-naming";
 import enforceTypescriptPatterns from "./rules/typescript/enforce-typescript-patterns";
 import enforceZodSchemaNaming from "./rules/typescript/enforce-zod-schema-naming";
 import noComplexTypeGymnastics from "./rules/typescript/no-complex-type-gymnastics";
+import noDirectDbInRoute from "./rules/typescript/no-direct-db-in-route";
 import noEmptyFunctionImplementations from "./rules/typescript/no-empty-function-implementations";
 import noUndocumentedUnknown from "./rules/typescript/no-undocumented-unknown";
 import noUnsafeTypeAssertion from "./rules/typescript/no-unsafe-type-assertion";
+import requireRouteAuth from "./rules/typescript/require-route-auth";
+import requireRouteValidation from "./rules/typescript/require-route-validation";
 
 // Rule severity maps -- single source of truth for both legacy and flat configs
 // "enforce-typescript-patterns" is deliberately absent: the aggregate rule
@@ -28,8 +32,11 @@ export const TYPESCRIPT_RECOMMENDED_SEVERITIES = {
 
 export const TYPESCRIPT_STRICT_SEVERITIES = {
   ...TYPESCRIPT_RECOMMENDED_SEVERITIES,
-  "enforce-api-patterns": "error",
   "enforce-assertion-policies": "error",
+  "enforce-route-shape": "error",
+  "no-direct-db-in-route": "error",
+  "require-route-auth": "error",
+  "require-route-validation": "error",
   "enforce-documentation": "warn",
   "enforce-type-naming": "error",
   "enforce-zod-schema-naming": "error",
@@ -41,6 +48,10 @@ export const TYPESCRIPT_STRICT_SEVERITIES = {
 export const typescriptRules = {
   "enforce-api-patterns": enforceApiPatterns,
   "enforce-assertion-policies": enforceAssertionPolicies,
+  "enforce-route-shape": enforceRouteShape,
+  "no-direct-db-in-route": noDirectDbInRoute,
+  "require-route-auth": requireRouteAuth,
+  "require-route-validation": requireRouteValidation,
   "enforce-documentation": enforceDocumentation,
   "enforce-type-naming": enforceTypeNaming,
   "no-undocumented-unknown": noUndocumentedUnknown,
