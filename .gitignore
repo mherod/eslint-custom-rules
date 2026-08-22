@@ -42,6 +42,7 @@ lerna-debug.log*
 .eslintcache
 .turbo/
 .cache/
+.pnpm-store/
 
 # Temporary files
 tmp/

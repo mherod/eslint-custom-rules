@@ -23,6 +23,10 @@ const ruleTester = new RuleTester({
 ruleTester.run(RULE_NAME, rule, {
   valid: [
     {
+      code: "const answer = 42;",
+      filename: FIXTURE_FILE,
+    },
+    {
       code: 'import { existing } from "@/existing";',
       filename: FIXTURE_FILE,
     },
@@ -87,6 +91,17 @@ ruleTester.run(RULE_NAME, rule, {
     {
       code: 'vitest.doMock("./missing-vitest");',
       errors: [{ messageId: "unresolvableImport" }],
+      filename: FIXTURE_FILE,
+    },
+    {
+      code: [
+        'import { first } from "./missing-duplicate";',
+        'const second = require("./missing-duplicate");',
+      ].join("\n"),
+      errors: [
+        { column: 1, line: 1, messageId: "unresolvableImport" },
+        { column: 16, line: 2, messageId: "unresolvableImport" },
+      ],
       filename: FIXTURE_FILE,
     },
   ],

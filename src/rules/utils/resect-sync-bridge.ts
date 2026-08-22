@@ -21,7 +21,7 @@ export interface CanonicalImportResolution {
   strategy: "alias" | "relative" | "shortest" | "workspace";
 }
 
-export interface UnresolvableSpecifierDiagnostic {
+export interface UnresolvableImportResolution {
   diagnostic: string;
   specifier: string;
 }
@@ -52,7 +52,7 @@ type SyncBridgeRequest =
     }
   | {
       filePath: string;
-      operation: "resolve-specifiers";
+      operation: "resolve-unresolvable-import-specifiers";
       specifiers: string[];
     }
   | {
@@ -709,31 +709,72 @@ async function canonicalizeImport(payload) {
   );
 }
 
-async function resolveSpecifiers(payload) {
+function matchesPathAliasPattern(specifier, project) {
+  const compilerPaths = project?.compilerOptions?.paths ?? {};
+  for (const aliasPattern of Object.keys(compilerPaths)) {
+    if (aliasPattern.includes("*")) {
+      const prefix = aliasPattern.split("*")[0] ?? "";
+      if (prefix && specifier.startsWith(prefix)) {
+        return true;
+      }
+    } else if (
+      specifier === aliasPattern ||
+      specifier.startsWith(aliasPattern + "/")
+    ) {
+      return true;
+    }
+  }
+  if (project?.pathAliases && typeof project.pathAliases.keys === "function") {
+    for (const alias of project.pathAliases.keys()) {
+      const prefix = alias.replace(/\*$/, "");
+      if (prefix && specifier.startsWith(prefix)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+async function resolveUnresolvableImportSpecifiers(payload) {
   const projectContext = await getProjectContext(payload.filePath);
   if (!projectContext) {
     return [];
   }
 
   const { project, resect } = projectContext;
-  const diagnostics = [];
+  const resolutions = [];
 
-  for (const specifier of payload.specifiers) {
+  for (const specifier of new Set(payload.specifiers)) {
     const resolved = resect.resolveModuleSpecifier(
       specifier,
       payload.filePath,
       project
     );
 
-    if (resolved.kind !== "resolved") {
-      diagnostics.push({
-        diagnostic: resolved.diagnostic,
-        specifier,
-      });
+    if (resolved.kind === "resolved") {
+      continue;
     }
+
+    const isUnresolvable =
+      resolved.kind === "unresolvable" ||
+      (resolved.kind === "external" &&
+        matchesPathAliasPattern(specifier, project));
+
+    if (!isUnresolvable) {
+      continue;
+    }
+
+    const diagnostic =
+      resolved.diagnostic ||
+      ("Cannot resolve \"" + specifier + "\" from " + payload.filePath);
+
+    resolutions.push({
+      diagnostic,
+      specifier,
+    });
   }
 
-  return diagnostics;
+  return resolutions;
 }
 
 const STATIC_IMPORT_TYPES = new Set([
@@ -852,8 +893,8 @@ async function handleBridgeRequest(request) {
     return canonicalizeImport(request);
   }
 
-  if (request.operation === "resolve-specifiers") {
-    return resolveSpecifiers(request);
+  if (request.operation === "resolve-unresolvable-import-specifiers") {
+    return resolveUnresolvableImportSpecifiers(request);
   }
 
   if (request.operation === "classify-barrel-import") {
@@ -1182,13 +1223,13 @@ export function canonicalizeImportSync(request: {
   });
 }
 
-export function resolveSpecifiersSync(request: {
+export function resolveUnresolvableImportSpecifiersSync(request: {
   filePath: string;
   specifiers: string[];
-}): UnresolvableSpecifierDiagnostic[] | null {
-  return runBridgeRequest<UnresolvableSpecifierDiagnostic[]>({
+}): UnresolvableImportResolution[] | null {
+  return runBridgeRequest<UnresolvableImportResolution[]>({
     ...request,
-    operation: "resolve-specifiers",
+    operation: "resolve-unresolvable-import-specifiers",
   });
 }
 
