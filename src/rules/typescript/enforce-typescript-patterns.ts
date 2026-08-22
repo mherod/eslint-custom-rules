@@ -98,6 +98,10 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   create(context) {
     const sourceCode = context.sourceCode;
 
+    // Built lazily on the first unknown token, then shared by all of them.
+    let commentLineIndex: Set<number> | null = null;
+    const documentedNodeCache = new WeakMap<TSESTree.Node, boolean>();
+
     return {
       // Type alias declarations
       TSTypeAliasDeclaration(node: TSESTree.TSTypeAliasDeclaration): void {
@@ -190,23 +194,47 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       TSUnknownKeyword(node: TSESTree.TSUnknownKeyword): void {
         // Be extremely permissive - if there are ANY comments anywhere in the file within reasonable range, allow it
         const currentLine = node.loc.start.line;
-        const allComments = sourceCode.getAllComments();
+
+        // Index comment lines once per file context; every subsequent
+        // unknown token reuses the same index instead of rescanning the
+        // full comment list.
+        if (!commentLineIndex) {
+          commentLineIndex = new Set<number>();
+          for (const comment of sourceCode.getAllComments()) {
+            commentLineIndex.add(comment.loc.start.line);
+          }
+        }
 
         // Look for comments in a very wide range: 5 lines before to 5 lines after
-        const hasNearbyComments = allComments.some((comment) => {
-          const commentLine = comment.loc.start.line;
-          return Math.abs(commentLine - currentLine) <= 5;
-        });
+        let hasNearbyComments = false;
+        for (let line = currentLine - 5; line <= currentLine + 5; line += 1) {
+          if (commentLineIndex.has(line)) {
+            hasNearbyComments = true;
+            break;
+          }
+        }
 
         // Check if this is part of any documented context (JSDoc, regular comments, etc.)
+        // Memoized per ancestor node so overlapping parent chains from
+        // multiple unknown tokens are only inspected once.
+        function nodeHasAdjacentComments(target: TSESTree.Node): boolean {
+          const cached = documentedNodeCache.get(target);
+          if (cached !== undefined) {
+            return cached;
+          }
+          const result =
+            sourceCode.getCommentsBefore(target).length > 0 ||
+            sourceCode.getCommentsAfter(target).length > 0;
+          documentedNodeCache.set(target, result);
+          return result;
+        }
+
         let parentNode: TSESTree.Node | undefined = node.parent;
         let hasAnyDocumentation = false;
 
         // Walk up the AST to find ANY documentation
         while (parentNode && !hasAnyDocumentation) {
-          const parentComments = sourceCode.getCommentsBefore(parentNode);
-          const parentCommentsAfter = sourceCode.getCommentsAfter(parentNode);
-          if (parentComments.length > 0 || parentCommentsAfter.length > 0) {
+          if (nodeHasAdjacentComments(parentNode)) {
             hasAnyDocumentation = true;
           }
           parentNode = parentNode.parent;

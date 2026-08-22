@@ -18,6 +18,10 @@ ruleTester.run(RULE_NAME, rule, {
 
     // `unknown` on a descriptively-named declaration — allowed
     "function handler(payload: unknown) { return payload; }",
+
+    // Multiple `unknown` tokens sharing one nearby comment — all allowed via
+    // the per-file comment-line index
+    "// upstream values of unknown shape\nlet first: unknown;\nlet second: unknown;\nlet third: unknown;",
   ],
   invalid: [
     // Bare `unknown` with no explanation — flagged, offered as a suggestion
@@ -33,6 +37,33 @@ ruleTester.run(RULE_NAME, rule, {
               messageId: "addUnknownExplanationComment",
               output:
                 "let x: // Explain why 'unknown' is used here, or replace it with a specific type\nunknown;",
+            },
+          ],
+        },
+      ],
+    },
+    // Multiple bare `unknown` tokens with no comments anywhere — each one is
+    // flagged independently against the shared comment-line index
+    {
+      code: "let a: unknown;\nlet b: unknown;",
+      errors: [
+        {
+          messageId: "avoidUnknownWithoutComment",
+          suggestions: [
+            {
+              messageId: "addUnknownExplanationComment",
+              output:
+                "let a: // Explain why 'unknown' is used here, or replace it with a specific type\nunknown;\nlet b: unknown;",
+            },
+          ],
+        },
+        {
+          messageId: "avoidUnknownWithoutComment",
+          suggestions: [
+            {
+              messageId: "addUnknownExplanationComment",
+              output:
+                "let a: unknown;\nlet b: // Explain why 'unknown' is used here, or replace it with a specific type\nunknown;",
             },
           ],
         },
