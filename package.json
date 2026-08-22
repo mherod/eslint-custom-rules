@@ -70,7 +70,7 @@
     "@biomejs/biome": "^2.4.15",
     "@commitlint/cli": "^20.5.3",
     "@commitlint/config-conventional": "^20.5.3",
-    "@mherod/resect": "^1.6.0",
+    "@mherod/resect": "^1.8.1",
     "@types/eslint": "^9.6.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.8.0",

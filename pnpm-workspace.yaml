@@ -9,3 +9,6 @@ allowBuilds:
   esbuild: true
   lefthook: true
   unrs-resolver: true
+
+minimumReleaseAgeExclude:
+  - '@mherod/resect@1.8.1'
