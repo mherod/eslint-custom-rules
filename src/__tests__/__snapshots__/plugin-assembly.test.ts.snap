@@ -80,6 +80,10 @@ exports[`plugin assembly contract combined plugin severity contract is stable 1`
       "error",
     ],
     [
+      "@mherod/custom/no-import-cycles",
+      "warn",
+    ],
+    [
       "@mherod/custom/no-import-type-queries",
       "warn",
     ],
@@ -364,6 +368,10 @@ exports[`plugin assembly contract combined plugin severity contract is stable 1`
     [
       "@mherod/custom/no-hardcoded-secrets",
       "error",
+    ],
+    [
+      "@mherod/custom/no-import-cycles",
+      "warn",
     ],
     [
       "@mherod/custom/no-import-type-queries",
@@ -700,6 +708,10 @@ exports[`plugin assembly contract combined plugin severity contract is stable 1`
       "error",
     ],
     [
+      "@mherod/custom/no-import-cycles",
+      "warn",
+    ],
+    [
       "@mherod/custom/no-import-type-queries",
       "warn",
     ],
@@ -984,6 +996,10 @@ exports[`plugin assembly contract combined plugin severity contract is stable 1`
     [
       "@mherod/custom/no-hardcoded-secrets",
       "error",
+    ],
+    [
+      "@mherod/custom/no-import-cycles",
+      "warn",
     ],
     [
       "@mherod/custom/no-import-type-queries",
@@ -1269,6 +1285,10 @@ exports[`plugin assembly contract general category contract is stable 1`] = `
       "warn",
     ],
     [
+      "@mherod/general/no-import-cycles",
+      "warn",
+    ],
+    [
       "@mherod/general/no-import-type-queries",
       "warn",
     ],
@@ -1332,6 +1352,10 @@ exports[`plugin assembly contract general category contract is stable 1`] = `
     ],
     [
       "@mherod/general/no-deprecated-declarations",
+      "warn",
+    ],
+    [
+      "@mherod/general/no-import-cycles",
       "warn",
     ],
     [
@@ -1401,6 +1425,10 @@ exports[`plugin assembly contract general category contract is stable 1`] = `
       "warn",
     ],
     [
+      "@mherod/general/no-import-cycles",
+      "warn",
+    ],
+    [
       "@mherod/general/no-import-type-queries",
       "warn",
     ],
@@ -1464,6 +1492,10 @@ exports[`plugin assembly contract general category contract is stable 1`] = `
     ],
     [
       "@mherod/general/no-deprecated-declarations",
+      "warn",
+    ],
+    [
+      "@mherod/general/no-import-cycles",
       "warn",
     ],
     [
@@ -1533,6 +1565,10 @@ exports[`plugin assembly contract general category contract is stable 1`] = `
       "warn",
     ],
     [
+      "no-import-cycles",
+      "warn",
+    ],
+    [
       "no-import-type-queries",
       "warn",
     ],
@@ -1583,6 +1619,7 @@ exports[`plugin assembly contract general category contract is stable 1`] = `
     "no-barrel-file-imports",
     "no-debug-comments",
     "no-deprecated-declarations",
+    "no-import-cycles",
     "no-import-type-queries",
     "no-long-relative-imports",
     "no-unresolvable-imports",
@@ -1614,6 +1651,10 @@ exports[`plugin assembly contract general category contract is stable 1`] = `
     ],
     [
       "no-deprecated-declarations",
+      "warn",
+    ],
+    [
+      "no-import-cycles",
       "warn",
     ],
     [

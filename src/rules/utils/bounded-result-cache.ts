@@ -10,7 +10,7 @@ export interface BoundedResultCacheOptions {
   ttlMs: number;
 }
 
-function approximateValueBytes(key: string, value: unknown): number {
+export function approximateValueBytes(key: string, value: unknown): number {
   let serializedLength = 0;
   try {
     serializedLength = JSON.stringify(value)?.length ?? 0;

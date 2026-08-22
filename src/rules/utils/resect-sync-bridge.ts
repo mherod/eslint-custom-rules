@@ -1,6 +1,9 @@
 import { TextDecoder, TextEncoder } from "node:util";
 import { Worker } from "node:worker_threads";
-import { BoundedResultCache } from "./bounded-result-cache";
+import {
+  approximateValueBytes,
+  BoundedResultCache,
+} from "./bounded-result-cache";
 
 export interface DirectImportBindingRequest {
   importedName: string;
@@ -20,6 +23,11 @@ export interface CanonicalImportResolution {
 
 export interface UnresolvableSpecifierDiagnostic {
   diagnostic: string;
+  specifier: string;
+}
+
+export interface ImportCycleDiagnostic {
+  cycle: string[];
   specifier: string;
 }
 
@@ -45,6 +53,10 @@ type SyncBridgeRequest =
       filePath: string;
       operation: "classify-barrel-import";
       specifier: string;
+    }
+  | {
+      filePath: string;
+      operation: "detect-cycles";
     };
 
 type BridgeResponse<TResult> =
@@ -78,6 +90,8 @@ interface BridgeDebugRequest {
 const BRIDGE_CACHE_MAX_ENTRIES = 2000;
 const BRIDGE_CACHE_MAX_TOTAL_BYTES = 8 * 1024 * 1024;
 const BRIDGE_CACHE_TTL_MS = 30_000;
+const PROJECT_CYCLE_CACHE_MAX_ENTRIES = 32;
+const PROJECT_CYCLE_CACHE_MAX_TOTAL_BYTES = 4 * 1024 * 1024;
 
 const bridgeResultCache = new BoundedResultCache<unknown>({
   maxEntries: BRIDGE_CACHE_MAX_ENTRIES,
@@ -185,12 +199,35 @@ export function buildExportOwnerCacheKey(
   return `${modulePath.length}:${modulePath}${exportName}`;
 }
 
+interface CacheReaderWriter<TValue> {
+  get(key: string): TValue | undefined;
+  set(key: string, value: TValue): void;
+}
+
+export async function getOrCreateCachedValue<TValue>(
+  cache: CacheReaderWriter<TValue>,
+  key: string,
+  createValue: () => Promise<TValue>
+): Promise<TValue> {
+  const cached = cache.get(key);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const value = await createValue();
+  cache.set(key, value);
+  return value;
+}
+
 const RESECT_BRIDGE_CORE_SCRIPT = String.raw`
 const fs = require("node:fs");
 const path = require("node:path");
 const ts = require("typescript");
 
+const approximateValueBytes = ${approximateValueBytes.toString()};
+const BoundedResultCache = ${BoundedResultCache.toString()};
 const buildExportOwnerCacheKey = ${buildExportOwnerCacheKey.toString()};
+const getOrCreateCachedValue = ${getOrCreateCachedValue.toString()};
 
 globalThis.Bun ??= { Glob: class Glob {} };
 
@@ -199,6 +236,11 @@ let resectApiPromise = null;
 const projectDiscoveryCache = new Map();
 const projectContextCache = new Map();
 const workspaceCache = new Map();
+const projectCycleCache = new BoundedResultCache({
+  maxEntries: ${PROJECT_CYCLE_CACHE_MAX_ENTRIES},
+  maxTotalBytes: ${PROJECT_CYCLE_CACHE_MAX_TOTAL_BYTES},
+  ttlMs: ${BRIDGE_CACHE_TTL_MS},
+});
 
 async function loadResectApi() {
   if (!resectApiPromise) {
@@ -252,6 +294,7 @@ async function getProjectContext(filePath) {
     project,
     projectRoot: path.dirname(effectiveTsconfigPath),
     resect,
+    tsconfigPath: effectiveTsconfigPath,
   };
 }
 
@@ -639,6 +682,87 @@ async function resolveSpecifiers(payload) {
   return diagnostics;
 }
 
+const STATIC_IMPORT_TYPES = new Set([
+  "import",
+  "import-named",
+  "import-namespace",
+  "import-side-effect",
+]);
+
+function displayCyclePath(filePath, projectRoot) {
+  const relativePath = path.relative(projectRoot, filePath).replace(/\\/gu, "/");
+  return relativePath || path.basename(filePath);
+}
+
+async function buildProjectCycleDiagnostics(projectContext) {
+  const { project, projectRoot, resect } = projectContext;
+  const graph = await resect.buildDependencyGraph(project);
+  const cycles = resect.detectCycles(graph);
+  const diagnosticsByFile = Object.create(null);
+
+  for (const cycle of cycles) {
+    for (let index = 0; index < cycle.files.length; index += 1) {
+      const currentFile = resect.normalizePath(cycle.files[index]);
+      const nextFile = resect.normalizePath(
+        cycle.files[(index + 1) % cycle.files.length]
+      );
+      const references = graph.imports.get(currentFile) ?? [];
+      const staticReferences = references.filter(
+        (reference) =>
+          STATIC_IMPORT_TYPES.has(reference.type) &&
+          resect.normalizePath(reference.resolvedPath) === nextFile
+      );
+
+      if (staticReferences.length === 0) {
+        continue;
+      }
+
+      const rotatedCycle = [
+        ...cycle.files.slice(index),
+        ...cycle.files.slice(0, index),
+        currentFile,
+      ].map((file) => displayCyclePath(file, projectRoot));
+      const existing = diagnosticsByFile[currentFile] ?? [];
+
+      for (const reference of staticReferences) {
+        if (
+          existing.some(
+            (diagnostic) => diagnostic.specifier === reference.specifier
+          )
+        ) {
+          continue;
+        }
+
+        existing.push({
+          cycle: rotatedCycle,
+          specifier: reference.specifier,
+        });
+      }
+
+      diagnosticsByFile[currentFile] = existing;
+    }
+  }
+
+  return diagnosticsByFile;
+}
+
+async function detectImportCycles(payload) {
+  const projectContext = await getProjectContext(payload.filePath);
+  if (!projectContext) {
+    return [];
+  }
+
+  const diagnosticsByFile = await getOrCreateCachedValue(
+    projectCycleCache,
+    projectContext.tsconfigPath,
+    () => buildProjectCycleDiagnostics(projectContext)
+  );
+  const normalizedFilePath = projectContext.resect.normalizePath(
+    path.resolve(payload.filePath)
+  );
+  return diagnosticsByFile[normalizedFilePath] ?? [];
+}
+
 async function handleBridgeRequest(request) {
   if (request.operation === "resolve-direct-imports") {
     return resolveDirectImports(request);
@@ -654,6 +778,10 @@ async function handleBridgeRequest(request) {
 
   if (request.operation === "classify-barrel-import") {
     return classifyBarrelImport(request);
+  }
+
+  if (request.operation === "detect-cycles") {
+    return detectImportCycles(request);
   }
 
   return null;
@@ -987,5 +1115,14 @@ export function classifyBarrelImportSync(request: {
   return runBridgeRequest<boolean>({
     ...request,
     operation: "classify-barrel-import",
+  });
+}
+
+export function detectImportCyclesSync(request: {
+  filePath: string;
+}): ImportCycleDiagnostic[] | null {
+  return runBridgeRequest<ImportCycleDiagnostic[]>({
+    ...request,
+    operation: "detect-cycles",
   });
 }
