@@ -4,36 +4,11 @@ import {
   type TSESTree,
 } from "@typescript-eslint/utils";
 import { isExported, isHttpMethod } from "../utils/common";
-import { normalizePath } from "../utils/component-type-utils";
-import { hasRateLimit, isProtectedRoute } from "./route-policy-detectors";
+import { getFileFacts } from "../utils/file-facts";
+import { hasRateLimit } from "./route-policy-detectors";
 
 type MessageIds = "requireRateLimit";
 type Options = [];
-
-// Next.js App Router API route files: app/api/.../route.ts
-const APP_ROUTER_API_ROUTE_PATTERN = /\/app\/api\/.*\/route\.(ts|js|tsx|jsx)$/;
-
-// Next.js Pages Router API route files: pages/api/.../*.ts
-const PAGES_ROUTER_API_ROUTE_PATTERN = /\/pages\/api\/.+\.(ts|js|tsx|jsx)$/;
-
-// Next.js middleware files: middleware.ts at project root or src/
-const MIDDLEWARE_PATTERN = /\/(src\/)?middleware\.(ts|js|tsx|jsx)$/;
-
-function isApiRouteFile(filename: string): boolean {
-  const normalized = normalizePath(filename);
-  return (
-    APP_ROUTER_API_ROUTE_PATTERN.test(normalized) ||
-    PAGES_ROUTER_API_ROUTE_PATTERN.test(normalized)
-  );
-}
-
-function isPagesRouterApiRoute(filename: string): boolean {
-  return PAGES_ROUTER_API_ROUTE_PATTERN.test(normalizePath(filename));
-}
-
-function isMiddlewareFile(filename: string): boolean {
-  return MIDDLEWARE_PATTERN.test(normalizePath(filename));
-}
 
 export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   meta: {
@@ -51,19 +26,21 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const filename = context.filename;
     const sourceCode = context.sourceCode;
-    const middleware = isMiddlewareFile(filename);
+    const facts = getFileFacts(context.filename, sourceCode);
+    const middleware = facts.isMiddleware;
 
-    if (!(middleware || isApiRouteFile(filename))) {
+    if (
+      !(middleware || facts.isAppRouterApiRoute || facts.isPagesRouterApiRoute)
+    ) {
       return {};
     }
 
-    if (!middleware && isProtectedRoute(filename)) {
+    if (!middleware && facts.isProtectedRoute) {
       return {};
     }
 
-    const pagesRouter = isPagesRouterApiRoute(filename);
+    const pagesRouter = facts.isPagesRouterApiRoute;
 
     return {
       FunctionDeclaration(node: TSESTree.FunctionDeclaration): void {

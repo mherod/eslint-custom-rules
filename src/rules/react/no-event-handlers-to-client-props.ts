@@ -7,6 +7,7 @@ import type {
   Scope,
   SourceCode,
 } from "@typescript-eslint/utils/dist/ts-eslint";
+import { getFileFacts } from "../utils/file-facts";
 
 export const RULE_NAME = "no-event-handlers-to-client-props";
 
@@ -30,57 +31,20 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const filename = context.filename;
     const sourceCode = context.sourceCode;
+    const facts = getFileFacts(context.filename, sourceCode);
+    const { normalizedPath } = facts;
+    const hasUseServerDirective = facts.hasUseServer;
 
-    // Check if current file is a server component
-    let isServerComponent = false;
-    let hasUseClientDirective = false;
-
-    // Check for "use client" and "use server" directives
-    let hasUseServerDirective = false;
-    const firstToken = sourceCode.getFirstToken(sourceCode.ast);
-    const comments = sourceCode.getCommentsBefore(firstToken || sourceCode.ast);
-    const allComments = [...comments, ...sourceCode.getAllComments()];
-
-    for (const comment of allComments) {
-      if (
-        (comment.type as string) === "Line" &&
-        comment.value.trim() === "use client"
-      ) {
-        hasUseClientDirective = true;
-      }
-    }
-
-    // Also check for string literals
-    const program = sourceCode.ast;
-    for (const statement of program.body) {
-      if (
-        statement.type === AST_NODE_TYPES.ExpressionStatement &&
-        "expression" in statement &&
-        statement.expression.type === AST_NODE_TYPES.Literal &&
-        typeof statement.expression.value === "string"
-      ) {
-        if (statement.expression.value === "use client") {
-          hasUseClientDirective = true;
-        }
-        if (statement.expression.value === "use server") {
-          hasUseServerDirective = true;
-        }
-        // Continue checking other string literals (like "use strict")
-      } else {
-        // Stop checking once we hit a non-directive statement
-        break;
-      }
-    }
-
-    // Determine if this is a server component by checking file location and lack of "use client"
-    isServerComponent =
-      !hasUseClientDirective &&
-      (filename.includes("/app/") ||
-        filename.includes("/pages/") ||
-        filename.includes("/components/")) &&
-      !filename.includes("/api/");
+    // Rule-specific policy: a server component for this rule is a non-client
+    // file in a component-bearing location outside API routes. The directive
+    // facts come from the shared per-file facts seam.
+    const isServerComponent =
+      !facts.hasUseClient &&
+      (normalizedPath.includes("/app/") ||
+        normalizedPath.includes("/pages/") ||
+        normalizedPath.includes("/components/")) &&
+      !normalizedPath.includes("/api/");
 
     // Server-action status memoized per definition node. The cache lives for
     // one rule context only, so there is no cross-file invalidation concern.

@@ -4,15 +4,13 @@ import {
   type TSESTree,
 } from "@typescript-eslint/utils";
 import {
-  hasUseClientDirective,
-  isClientComponent,
   isClientOnlyHook,
   isClientOnlyModule,
-  isServerComponent,
   isServerEnvVar,
   isServerOnlyModule,
   isUseCacheModule,
 } from "../utils/component-type-utils";
+import { getFileFacts } from "../utils/file-facts";
 import { isActionModule } from "../utils/server-action-utils";
 
 export const RULE_NAME = "enforce-server-client-separation";
@@ -68,15 +66,11 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const filename = context.filename;
-    const sourceCode = context.sourceCode;
-
-    // File-level classification is a per-file invariant: compute it once at
-    // rule-context setup and reuse it in every visitor.
-    const isClientFile =
-      hasUseClientDirective(sourceCode) ||
-      isClientComponent(filename, sourceCode);
-    const isServerFile = isServerComponent(filename, sourceCode);
+    // File-level classification is a per-file invariant computed once via the
+    // shared per-file facts seam and reused in every visitor.
+    const facts = getFileFacts(context.filename, context.sourceCode);
+    const isClientFile = facts.hasUseClient || facts.isClientFile;
+    const isServerFile = facts.isServerFile;
 
     function checkModuleReference(
       node: TSESTree.Node,
