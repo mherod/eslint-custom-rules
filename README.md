@@ -347,9 +347,11 @@ export default [
 - `no-barrel-file-imports` - Prevents importing through known barrel-style package entry points
 - `no-debug-comments` - Flags TODO, FIXME, HACK, and other debug comments
 - `no-deprecated-declarations` - Warns on usage of deprecated APIs and patterns
+- `no-import-cycles` - Flags static imports that participate in a project dependency cycle
 - `no-import-type-queries` - Prevents `import type` queries (strict only)
 - `no-long-relative-imports` - Warns against deeply nested relative imports and auto-fixes to a canonical alias or stable specifier when possible
 - `no-unresolvable-imports` - Flags imports, exports, `require`, `require.resolve`, and Jest/Vitest mocks that TypeScript cannot resolve
+- `no-unused-exports` - Opt-in detection for exports with no statically visible project consumer; package APIs and recognized App Router entrypoints are protected, but custom convention entrypoints should be excluded with ESLint overrides
 - `prefer-date-fns` - Prefer date-fns library over native Date methods
 - `prefer-date-fns-over-date-operations` - Use date-fns for date arithmetic and formatting
 - `prefer-direct-imports` - Prefer direct module imports over barrel file re-exports and auto-split mixed imports onto the real source modules

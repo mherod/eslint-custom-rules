@@ -31,6 +31,12 @@ export interface ImportCycleDiagnostic {
   specifier: string;
 }
 
+export interface UnusedExportDiagnostic {
+  internalUsage: boolean;
+  line: number;
+  name: string;
+}
+
 type SyncBridgeRequest =
   | {
       bindings: DirectImportBindingRequest[];
@@ -57,6 +63,10 @@ type SyncBridgeRequest =
   | {
       filePath: string;
       operation: "detect-cycles";
+    }
+  | {
+      filePath: string;
+      operation: "find-unused-exports";
     };
 
 type BridgeResponse<TResult> =
@@ -90,8 +100,8 @@ interface BridgeDebugRequest {
 const BRIDGE_CACHE_MAX_ENTRIES = 2000;
 const BRIDGE_CACHE_MAX_TOTAL_BYTES = 8 * 1024 * 1024;
 const BRIDGE_CACHE_TTL_MS = 30_000;
-const PROJECT_CYCLE_CACHE_MAX_ENTRIES = 32;
-const PROJECT_CYCLE_CACHE_MAX_TOTAL_BYTES = 4 * 1024 * 1024;
+const PROJECT_ANALYSIS_CACHE_MAX_ENTRIES = 32;
+const PROJECT_ANALYSIS_CACHE_MAX_TOTAL_BYTES = 4 * 1024 * 1024;
 
 const bridgeResultCache = new BoundedResultCache<unknown>({
   maxEntries: BRIDGE_CACHE_MAX_ENTRIES,
@@ -219,6 +229,33 @@ export async function getOrCreateCachedValue<TValue>(
   return value;
 }
 
+export function groupUnusedExportDiagnostics(
+  report: {
+    coverageIncomplete: boolean;
+    unused: Array<UnusedExportDiagnostic & { file: string }>;
+  },
+  normalizePath: (filePath: string) => string
+): Record<string, UnusedExportDiagnostic[]> {
+  const diagnosticsByFile: Record<string, UnusedExportDiagnostic[]> =
+    Object.create(null) as Record<string, UnusedExportDiagnostic[]>;
+  if (report.coverageIncomplete) {
+    return diagnosticsByFile;
+  }
+
+  for (const unusedExport of report.unused) {
+    const normalizedFile = normalizePath(unusedExport.file);
+    const existing = diagnosticsByFile[normalizedFile] ?? [];
+    existing.push({
+      internalUsage: unusedExport.internalUsage,
+      line: unusedExport.line,
+      name: unusedExport.name,
+    });
+    diagnosticsByFile[normalizedFile] = existing;
+  }
+
+  return diagnosticsByFile;
+}
+
 const RESECT_BRIDGE_CORE_SCRIPT = String.raw`
 const fs = require("node:fs");
 const path = require("node:path");
@@ -228,8 +265,20 @@ const approximateValueBytes = ${approximateValueBytes.toString()};
 const BoundedResultCache = ${BoundedResultCache.toString()};
 const buildExportOwnerCacheKey = ${buildExportOwnerCacheKey.toString()};
 const getOrCreateCachedValue = ${getOrCreateCachedValue.toString()};
+const groupUnusedExportDiagnostics = ${groupUnusedExportDiagnostics.toString()};
 
-globalThis.Bun ??= { Glob: class Glob {} };
+globalThis.Bun ??= {};
+globalThis.Bun.Glob ??= class Glob {};
+globalThis.Bun.file ??= (filePath) => ({
+  exists: async () => {
+    try {
+      return fs.statSync(filePath).isFile();
+    } catch {
+      return false;
+    }
+  },
+  text: async () => fs.promises.readFile(filePath, "utf8"),
+});
 
 const KNOWN_EXTENSIONS = /\.(tsx?|jsx?|mts|cts|mjs|cjs|vue)$/u;
 let resectApiPromise = null;
@@ -237,8 +286,13 @@ const projectDiscoveryCache = new Map();
 const projectContextCache = new Map();
 const workspaceCache = new Map();
 const projectCycleCache = new BoundedResultCache({
-  maxEntries: ${PROJECT_CYCLE_CACHE_MAX_ENTRIES},
-  maxTotalBytes: ${PROJECT_CYCLE_CACHE_MAX_TOTAL_BYTES},
+  maxEntries: ${PROJECT_ANALYSIS_CACHE_MAX_ENTRIES},
+  maxTotalBytes: ${PROJECT_ANALYSIS_CACHE_MAX_TOTAL_BYTES},
+  ttlMs: ${BRIDGE_CACHE_TTL_MS},
+});
+const projectUnusedExportCache = new BoundedResultCache({
+  maxEntries: ${PROJECT_ANALYSIS_CACHE_MAX_ENTRIES},
+  maxTotalBytes: ${PROJECT_ANALYSIS_CACHE_MAX_TOTAL_BYTES},
   ttlMs: ${BRIDGE_CACHE_TTL_MS},
 });
 
@@ -763,6 +817,32 @@ async function detectImportCycles(payload) {
   return diagnosticsByFile[normalizedFilePath] ?? [];
 }
 
+async function buildProjectUnusedExportDiagnostics(projectContext) {
+  const { projectRoot, resect, tsconfigPath } = projectContext;
+  const report = await resect.findUnusedExports(projectRoot, {
+    project: tsconfigPath,
+    workspace: true,
+  });
+  return groupUnusedExportDiagnostics(report, resect.normalizePath);
+}
+
+async function findUnusedExportDiagnostics(payload) {
+  const projectContext = await getProjectContext(payload.filePath);
+  if (!projectContext) {
+    return [];
+  }
+
+  const diagnosticsByFile = await getOrCreateCachedValue(
+    projectUnusedExportCache,
+    projectContext.tsconfigPath,
+    () => buildProjectUnusedExportDiagnostics(projectContext)
+  );
+  const normalizedFilePath = projectContext.resect.normalizePath(
+    path.resolve(payload.filePath)
+  );
+  return diagnosticsByFile[normalizedFilePath] ?? [];
+}
+
 async function handleBridgeRequest(request) {
   if (request.operation === "resolve-direct-imports") {
     return resolveDirectImports(request);
@@ -782,6 +862,10 @@ async function handleBridgeRequest(request) {
 
   if (request.operation === "detect-cycles") {
     return detectImportCycles(request);
+  }
+
+  if (request.operation === "find-unused-exports") {
+    return findUnusedExportDiagnostics(request);
   }
 
   return null;
@@ -1124,5 +1208,14 @@ export function detectImportCyclesSync(request: {
   return runBridgeRequest<ImportCycleDiagnostic[]>({
     ...request,
     operation: "detect-cycles",
+  });
+}
+
+export function findUnusedExportsSync(request: {
+  filePath: string;
+}): UnusedExportDiagnostic[] | null {
+  return runBridgeRequest<UnusedExportDiagnostic[]>({
+    ...request,
+    operation: "find-unused-exports",
   });
 }
