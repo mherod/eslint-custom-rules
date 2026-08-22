@@ -17,18 +17,9 @@ export interface CanonicalImportResolution {
   strategy: "alias" | "relative" | "shortest" | "workspace";
 }
 
-export interface UnresolvableImportDiagnostic {
-  column: number;
+export interface UnresolvableSpecifierDiagnostic {
   diagnostic: string;
-  line: number;
   specifier: string;
-  type:
-    | "export-from"
-    | "import"
-    | "import-dynamic"
-    | "jest-mock"
-    | "require"
-    | "require-resolve";
 }
 
 type SyncBridgeRequest =
@@ -46,8 +37,8 @@ type SyncBridgeRequest =
     }
   | {
       filePath: string;
-      operation: "scan-unresolvable-imports";
-      sourceText: string;
+      operation: "resolve-specifiers";
+      specifiers: string[];
     };
 
 type BridgeResponse<TResult> =
@@ -430,93 +421,30 @@ async function canonicalizeImport(payload) {
   );
 }
 
-async function collectUnresolvableImports(payload) {
+async function resolveSpecifiers(payload) {
   const projectContext = await getProjectContext(payload.filePath);
   if (!projectContext) {
     return [];
   }
 
   const { project, resect } = projectContext;
-  const sourceFile = ts.createSourceFile(
-    payload.filePath,
-    payload.sourceText,
-    ts.ScriptTarget.Latest,
-    true,
-    payload.filePath.endsWith(".tsx") || payload.filePath.endsWith(".jsx")
-      ? ts.ScriptKind.TSX
-      : ts.ScriptKind.TS
-  );
-
   const diagnostics = [];
 
-  function pushDiagnostic(specifier, node, type) {
+  for (const specifier of payload.specifiers) {
     const resolved = resect.resolveModuleSpecifier(
       specifier,
       payload.filePath,
       project
     );
 
-    if (resolved.kind === "resolved") {
-      return;
+    if (resolved.kind !== "resolved") {
+      diagnostics.push({
+        diagnostic: resolved.diagnostic,
+        specifier,
+      });
     }
-
-    const location = sourceFile.getLineAndCharacterOfPosition(
-      node.getStart(sourceFile)
-    );
-
-    diagnostics.push({
-      column: location.character + 1,
-      diagnostic: resolved.diagnostic,
-      line: location.line + 1,
-      specifier,
-      type,
-    });
   }
 
-  function visit(node) {
-    if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
-      pushDiagnostic(node.moduleSpecifier.text, node, "import");
-    } else if (
-      ts.isExportDeclaration(node) &&
-      node.moduleSpecifier &&
-      ts.isStringLiteral(node.moduleSpecifier)
-    ) {
-      pushDiagnostic(node.moduleSpecifier.text, node, "export-from");
-    } else if (ts.isCallExpression(node)) {
-      const firstArgument = node.arguments[0];
-      if (firstArgument && ts.isStringLiteral(firstArgument)) {
-        if (node.expression.kind === ts.SyntaxKind.ImportKeyword) {
-          pushDiagnostic(firstArgument.text, node, "import-dynamic");
-        } else if (ts.isIdentifier(node.expression) && node.expression.text === "require") {
-          pushDiagnostic(firstArgument.text, node, "require");
-        } else if (
-          ts.isPropertyAccessExpression(node.expression) &&
-          ts.isIdentifier(node.expression.expression) &&
-          node.expression.expression.text === "require" &&
-          node.expression.name.text === "resolve"
-        ) {
-          pushDiagnostic(firstArgument.text, node, "require-resolve");
-        } else if (
-          ts.isPropertyAccessExpression(node.expression) &&
-          ts.isIdentifier(node.expression.expression) &&
-          ts.isIdentifier(node.expression.name)
-        ) {
-          const objectName = node.expression.expression.text;
-          const methodName = node.expression.name.text;
-          if (
-            (objectName === "jest" || objectName === "vi" || objectName === "vitest") &&
-            (methodName === "mock" || methodName === "doMock" || methodName === "unmock")
-          ) {
-            pushDiagnostic(firstArgument.text, node, "jest-mock");
-          }
-        }
-      }
-    }
-
-    ts.forEachChild(node, visit);
-  }
-
-  visit(sourceFile);
   return diagnostics;
 }
 
@@ -529,8 +457,8 @@ async function handleBridgeRequest(request) {
     return canonicalizeImport(request);
   }
 
-  if (request.operation === "scan-unresolvable-imports") {
-    return collectUnresolvableImports(request);
+  if (request.operation === "resolve-specifiers") {
+    return resolveSpecifiers(request);
   }
 
   return null;
@@ -821,12 +749,12 @@ export function canonicalizeImportSync(request: {
   });
 }
 
-export function scanUnresolvableImportsSync(request: {
+export function resolveSpecifiersSync(request: {
   filePath: string;
-  sourceText: string;
-}): UnresolvableImportDiagnostic[] | null {
-  return runBridgeRequest<UnresolvableImportDiagnostic[]>({
+  specifiers: string[];
+}): UnresolvableSpecifierDiagnostic[] | null {
+  return runBridgeRequest<UnresolvableSpecifierDiagnostic[]>({
     ...request,
-    operation: "scan-unresolvable-imports",
+    operation: "resolve-specifiers",
   });
 }
