@@ -1,5 +1,8 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { TextEncoder } from "node:util";
 import {
+  buildExportOwnerCacheKey,
   decodeBoundedPayload,
   decodeBridgeResponse,
   writeBridgeDebug,
@@ -99,5 +102,34 @@ describe("bridge debug output", () => {
       "[eslint-plugin-custom/resect-bridge] operation=resolve-specifiers " +
         "file=/project/src/example.ts error=worker import failed\n"
     );
+  });
+});
+
+describe("bridge source safety", () => {
+  it("keeps export-owner cache keys collision-safe", () => {
+    expect(buildExportOwnerCacheKey("ab", "c")).not.toBe(
+      buildExportOwnerCacheKey("a", "bc")
+    );
+    expect(buildExportOwnerCacheKey("ab", "c")).toBe("2:abc");
+  });
+
+  it("contains no literal control bytes", () => {
+    const source = readFileSync(
+      path.join(__dirname, "..", "resect-sync-bridge.ts"),
+      "utf8"
+    );
+
+    const hasControlCharacter = Array.from(source).some((character) => {
+      const codePoint = character.charCodeAt(0);
+      return (
+        codePoint <= 8 ||
+        codePoint === 11 ||
+        codePoint === 12 ||
+        (codePoint >= 14 && codePoint <= 31) ||
+        codePoint === 127
+      );
+    });
+
+    expect(hasControlCharacter).toBe(false);
   });
 });

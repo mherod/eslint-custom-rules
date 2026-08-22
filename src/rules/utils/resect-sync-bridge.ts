@@ -178,10 +178,19 @@ export function writeBridgeDebug(
   );
 }
 
+export function buildExportOwnerCacheKey(
+  modulePath: string,
+  exportName: string
+): string {
+  return `${modulePath.length}:${modulePath}${exportName}`;
+}
+
 const RESECT_BRIDGE_CORE_SCRIPT = String.raw`
 const fs = require("node:fs");
 const path = require("node:path");
 const ts = require("typescript");
+
+const buildExportOwnerCacheKey = ${buildExportOwnerCacheKey.toString()};
 
 globalThis.Bun ??= { Glob: class Glob {} };
 
@@ -337,7 +346,7 @@ function resolveExportOwnerCached(
   resect,
   requestCaches
 ) {
-  const cacheKey = modulePath + " " + exportName;
+  const cacheKey = buildExportOwnerCacheKey(modulePath, exportName);
   if (requestCaches.owners.has(cacheKey)) {
     return requestCaches.owners.get(cacheKey);
   }
