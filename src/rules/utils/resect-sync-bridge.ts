@@ -1,5 +1,6 @@
 import { TextDecoder, TextEncoder } from "node:util";
 import { Worker } from "node:worker_threads";
+import { BoundedResultCache } from "./bounded-result-cache";
 
 export interface DirectImportBindingRequest {
   importedName: string;
@@ -54,10 +55,24 @@ interface BridgeWorkerState {
 
 interface WorkerBridgeResult<TResult> {
   handled: boolean;
+  ok: boolean;
   result: TResult | null;
 }
 
-const bridgeResultCache = new Map<string, unknown>();
+// Cache identity is the compact serialized request (file path, operation, and
+// specifiers/bindings — never full source text). Bounds keep long-lived editor
+// ESLint servers from retaining unbounded state, and the TTL doubles as the
+// invalidation window for tsconfig, workspace metadata, and import-graph
+// changes made outside the current process.
+const BRIDGE_CACHE_MAX_ENTRIES = 2000;
+const BRIDGE_CACHE_MAX_TOTAL_BYTES = 8 * 1024 * 1024;
+const BRIDGE_CACHE_TTL_MS = 30_000;
+
+const bridgeResultCache = new BoundedResultCache<unknown>({
+  maxEntries: BRIDGE_CACHE_MAX_ENTRIES,
+  maxTotalBytes: BRIDGE_CACHE_MAX_TOTAL_BYTES,
+  ttlMs: BRIDGE_CACHE_TTL_MS,
+});
 
 const STATE_IDLE = 0;
 const STATE_REQUEST = 1;
@@ -638,6 +653,7 @@ function runBridgeWorkerRequest<TResult>(
   ) {
     return {
       handled: false,
+      ok: false,
       result: null,
     };
   }
@@ -646,6 +662,7 @@ function runBridgeWorkerRequest<TResult>(
   if (encodedRequest.byteLength > state.requestBuffer.byteLength) {
     return {
       handled: false,
+      ok: false,
       result: null,
     };
   }
@@ -671,6 +688,7 @@ function runBridgeWorkerRequest<TResult>(
     disableBridgeWorker(state);
     return {
       handled: false,
+      ok: false,
       result: null,
     };
   }
@@ -679,6 +697,7 @@ function runBridgeWorkerRequest<TResult>(
     disableBridgeWorker(state);
     return {
       handled: false,
+      ok: false,
       result: null,
     };
   }
@@ -697,12 +716,14 @@ function runBridgeWorkerRequest<TResult>(
     const parsed = JSON.parse(responseText) as BridgeResponse<TResult>;
     return {
       handled: true,
+      ok: parsed.ok,
       result: parsed.ok ? parsed.result : null,
     };
   } catch {
     disableBridgeWorker(state);
     return {
       handled: false,
+      ok: false,
       result: null,
     };
   }
@@ -716,14 +737,14 @@ function runBridgeRequest<TResult>(request: SyncBridgeRequest): TResult | null {
   }
 
   const workerResult = runBridgeWorkerRequest<TResult>(cacheKey);
-  if (workerResult.handled) {
+  if (workerResult.handled && workerResult.ok) {
     bridgeResultCache.set(cacheKey, workerResult.result);
     return workerResult.result;
   }
 
-  // Avoid a cold Node child process per bridge miss. If the persistent worker
-  // cannot serve a request, keep the rule conservative for this request.
-  bridgeResultCache.set(cacheKey, null);
+  // Transport failures, timeouts, and worker errors are not cached so a
+  // recovered worker can serve the request on a later pass. The rule stays
+  // conservative (null) for this request only.
   return null;
 }
 
