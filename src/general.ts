@@ -9,6 +9,7 @@ import noImportCycles from "./rules/general/no-import-cycles";
 import noImportTypeQueries from "./rules/general/no-import-type-queries";
 import noLongRelativeImports from "./rules/general/no-long-relative-imports";
 import noUnresolvableImports from "./rules/general/no-unresolvable-imports";
+import noUnusedExports from "./rules/general/no-unused-exports";
 import preferDateFns from "./rules/general/prefer-date-fns";
 import preferDateFnsOverDateOperations from "./rules/general/prefer-date-fns-over-date-operations";
 import preferDirectImports from "./rules/general/prefer-direct-imports";
@@ -46,6 +47,7 @@ export const GENERAL_MANIFEST = {
     recommended: "warn",
     rule: noUnresolvableImports,
   },
+  "no-unused-exports": { rule: noUnusedExports },
   "prefer-date-fns": {
     recommended: "warn",
     rule: preferDateFns,

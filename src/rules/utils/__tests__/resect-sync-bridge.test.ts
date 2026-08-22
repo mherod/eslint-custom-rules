@@ -7,6 +7,7 @@ import {
   decodeBoundedPayload,
   decodeBridgeResponse,
   getOrCreateCachedValue,
+  groupUnusedExportDiagnostics,
   writeBridgeDebug,
 } from "../resect-sync-bridge";
 
@@ -164,5 +165,49 @@ describe("project analysis caching", () => {
       getOrCreateCachedValue(cache, "/project/tsconfig.json", build)
     ).resolves.toBe("cycle-analysis");
     expect(build).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("unused export diagnostics", () => {
+  it("groups safe results by normalized file", () => {
+    expect(
+      groupUnusedExportDiagnostics(
+        {
+          coverageIncomplete: false,
+          unused: [
+            {
+              file: "C:\\project\\unused.ts",
+              internalUsage: false,
+              line: 3,
+              name: "unused",
+            },
+          ],
+        },
+        (filePath) => filePath.replace(/\\/gu, "/")
+      )
+    ).toEqual({
+      "C:/project/unused.ts": [
+        { internalUsage: false, line: 3, name: "unused" },
+      ],
+    });
+  });
+
+  it("suppresses results when graph coverage is incomplete", () => {
+    expect(
+      groupUnusedExportDiagnostics(
+        {
+          coverageIncomplete: true,
+          unused: [
+            {
+              file: "/project/unused.ts",
+              internalUsage: false,
+              line: 1,
+              name: "unused",
+            },
+          ],
+        },
+        (filePath) => filePath
+      )
+    ).toEqual({});
   });
 });

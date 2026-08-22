@@ -1,0 +1,7 @@
+{
+  "name": "no-unused-exports-fixture",
+  "private": true,
+  "exports": {
+    "./public": "./public.ts"
+  }
+}

@@ -1623,6 +1623,7 @@ exports[`plugin assembly contract general category contract is stable 1`] = `
     "no-import-type-queries",
     "no-long-relative-imports",
     "no-unresolvable-imports",
+    "no-unused-exports",
     "prefer-date-fns",
     "prefer-date-fns-over-date-operations",
     "prefer-direct-imports",
