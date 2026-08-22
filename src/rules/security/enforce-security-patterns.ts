@@ -4,21 +4,27 @@ import {
   type TSESTree,
 } from "@typescript-eslint/utils";
 import {
-  _hasUnsanitizedInput,
-  _isRiskyTemplateContext,
-  hasAuthValidation,
-  hasDangerousTemplateUsage,
-  hasRateLimit,
   hasSecretInArguments,
-  hasStringConcatenation,
-  hasZodImport,
   isApiKeyOrSecret,
   isHardcodedSecret,
-  isLoggingFunction,
-  isProtectedRoute,
-  isSqlFunction,
   isWeakCryptoFunction,
-} from "./security-utils";
+} from "./credential-detectors";
+import {
+  hasAuthValidation,
+  hasRateLimit,
+  isProtectedRoute,
+} from "./route-policy-detectors";
+import {
+  hasStringConcatenation,
+  isLoggingFunction,
+  isSqlFunction,
+} from "./sql-logging-detectors";
+import {
+  _hasUnsanitizedInput,
+  _isRiskyTemplateContext,
+  hasDangerousTemplateUsage,
+  hasZodImport,
+} from "./template-taint-detectors";
 
 export const RULE_NAME = "enforce-security-patterns";
 

@@ -3,7 +3,7 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
-import { isApiKeyOrSecret, isHardcodedSecret } from "./security-utils";
+import { isApiKeyOrSecret, isHardcodedSecret } from "./credential-detectors";
 
 type MessageIds = "noHardcodedSecrets" | "noClientSideSecrets";
 type Options = [];

@@ -4,7 +4,7 @@ import {
   type TSESLint,
   type TSESTree,
 } from "@typescript-eslint/utils";
-import { isWeakCryptoFunction } from "./security-utils";
+import { isWeakCryptoFunction } from "./credential-detectors";
 
 type MessageIds = "noWeakCrypto" | "replaceWithStrongerAlgorithm";
 type Options = [];

@@ -1,5 +1,5 @@
 import { ESLintUtils, type TSESTree } from "@typescript-eslint/utils";
-import { hasAuthValidation, isProtectedRoute } from "./security-utils";
+import { hasAuthValidation, isProtectedRoute } from "./route-policy-detectors";
 
 type MessageIds = "requireAuthValidation";
 type Options = [];

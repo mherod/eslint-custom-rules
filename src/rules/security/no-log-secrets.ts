@@ -3,7 +3,8 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
-import { hasSecretInArguments, isLoggingFunction } from "./security-utils";
+import { hasSecretInArguments } from "./credential-detectors";
+import { isLoggingFunction } from "./sql-logging-detectors";
 
 type MessageIds = "noLogSecrets";
 type Options = [];

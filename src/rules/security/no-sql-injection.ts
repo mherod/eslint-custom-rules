@@ -3,7 +3,7 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
-import { hasStringConcatenation, isSqlFunction } from "./security-utils";
+import { hasStringConcatenation, isSqlFunction } from "./sql-logging-detectors";
 
 type MessageIds = "noSqlInjection";
 type Options = [];

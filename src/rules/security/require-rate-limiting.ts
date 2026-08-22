@@ -5,7 +5,7 @@ import {
 } from "@typescript-eslint/utils";
 import { isExported, isHttpMethod } from "../utils/common";
 import { normalizePath } from "../utils/component-type-utils";
-import { hasRateLimit, isProtectedRoute } from "./security-utils";
+import { hasRateLimit, isProtectedRoute } from "./route-policy-detectors";
 
 type MessageIds = "requireRateLimit";
 type Options = [];

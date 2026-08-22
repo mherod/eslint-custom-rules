@@ -8,7 +8,7 @@ import {
   _isRiskyTemplateContext,
   hasDangerousTemplateUsage,
   hasZodImport,
-} from "./security-utils";
+} from "./template-taint-detectors";
 
 type MessageIds = "requireInputSanitization" | "noDirectProcessEnvInClient";
 type Options = [];
