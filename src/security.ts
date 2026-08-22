@@ -14,8 +14,11 @@ import requireRateLimiting from "./rules/security/require-rate-limiting";
 import noUnstableMathRandom from "./rules/shared/no-unstable-math-random";
 
 // Rule severity maps -- single source of truth for both legacy and flat configs
+// "enforce-security-patterns" is deliberately absent: the aggregate rule
+// duplicates the focused Security rules below and is deprecated. It stays
+// registered in `securityRules` for explicit opt-in during the deprecation
+// window and will be removed in the next major release.
 export const SECURITY_RECOMMENDED_SEVERITIES = {
-  "enforce-security-patterns": "error",
   "no-hardcoded-secrets": "error",
   "no-log-secrets": "error",
   "no-sql-injection": "error",

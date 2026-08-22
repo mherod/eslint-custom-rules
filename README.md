@@ -328,7 +328,7 @@ export default [
       '@mherod/security': securityPlugin,
     },
     rules: {
-      '@mherod/security/enforce-security-patterns': 'error',
+      '@mherod/security/no-unsafe-redirect': 'error',
 
       // Or use preset
       ...securityPlugin.configs.recommended.rules,
@@ -343,7 +343,6 @@ export default [
 {
   "plugins": ["@mherod/security"],
   "rules": {
-    "@mherod/security/enforce-security-patterns": "error",
     "@mherod/security/no-hardcoded-secrets": "error",
     "@mherod/security/no-sql-injection": "error",
     "@mherod/security/no-unsafe-eval": "error"
@@ -353,7 +352,7 @@ export default [
 
 #### Available Rules (16 rules)
 
-- `enforce-security-patterns` - Comprehensive security pattern enforcement
+- `enforce-security-patterns` - **Deprecated** aggregate rule; no longer enabled by any preset and scheduled for removal in the next major release
 - `no-hardcoded-secrets` - Prevents hardcoded API keys, tokens, and passwords
 - `no-log-secrets` - Prevents logging sensitive data
 - `no-sql-injection` - Detects SQL injection vulnerabilities
@@ -365,6 +364,25 @@ export default [
 - `no-weak-crypto` - Prevents use of weak cryptographic algorithms
 - `require-auth-validation` - Requires authentication validation in protected routes
 - `require-rate-limiting` - Requires rate limiting on API endpoints
+
+#### Migrating from `enforce-security-patterns`
+
+The aggregate `enforce-security-patterns` rule is deprecated and no longer enabled by the recommended, strict, flat, legacy, or combined presets (SemVer: disabled-by-preset in a minor release; the rule itself will be deleted in the next major release). The focused rules below are the canonical replacements and were already enabled by the presets, so most users need no config change:
+
+| `enforce-security-patterns` check | Focused replacement | Recommended severity |
+|---|---|---|
+| Hardcoded secrets | `no-hardcoded-secrets` | error |
+| Secret logging | `no-log-secrets` | error |
+| SQL injection | `no-sql-injection` | error |
+| `eval()` / `Function()` | `no-unsafe-eval` | error |
+| `dangerouslySetInnerHTML` | `no-unsafe-innerHTML` | error |
+| Unsafe redirects | `no-unsafe-redirect` | error |
+| Unsafe template literals | `no-unsafe-template-literals` | warn (error in strict) |
+| Weak crypto | `no-weak-crypto` | error |
+| Auth validation | `require-auth-validation` | error |
+| Rate limiting | `require-rate-limiting` | warn (error in strict) |
+
+Note the severity change: the aggregate reported template-literal and rate-limit findings at `error`; the focused presets report them at `warn` under `recommended` (still `error` under `strict`). To keep the old behavior during the deprecation window, enable `@mherod/security/enforce-security-patterns` explicitly.
 
 ### Vue.js Plugin
 

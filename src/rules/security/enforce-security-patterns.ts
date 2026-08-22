@@ -43,6 +43,19 @@ type Options = [];
 export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   meta: {
     type: "problem",
+    deprecated: true,
+    replacedBy: [
+      "no-hardcoded-secrets",
+      "no-log-secrets",
+      "no-sql-injection",
+      "no-unsafe-eval",
+      "no-unsafe-innerHTML",
+      "no-unsafe-redirect",
+      "no-unsafe-template-literals",
+      "no-weak-crypto",
+      "require-auth-validation",
+      "require-rate-limiting",
+    ],
     docs: {
       description:
         "Enforce security best practices and prevent common vulnerabilities",
