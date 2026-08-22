@@ -19,6 +19,22 @@ pnpm add -D @mherod/eslint-plugin-custom
 - TypeScript ^5.0.0 (for TypeScript projects)
 - @typescript-eslint/parser ^8.0.0 (for TypeScript projects)
 
+### Optional resect integration
+
+Install `@mherod/resect` to enable project-aware import analysis:
+
+```bash
+pnpm add -D @mherod/resect
+```
+
+The following rules require resect for their project graph and module resolution:
+
+- `prefer-direct-imports`
+- `no-long-relative-imports`
+- `no-unresolvable-imports`
+
+Without resect, these rules return no diagnostics rather than failing ESLint. The `no-barrel-file-imports` rule also uses resect for structural package detection when available, while retaining its known-package fallback when it is absent.
+
 ## Available Plugins
 
 This package provides five specialised plugins:

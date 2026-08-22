@@ -3,6 +3,7 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import { classifyBarrelImportSync } from "../utils/resect-sync-bridge";
 
 export const RULE_NAME = "no-barrel-file-imports";
 
@@ -72,6 +73,13 @@ const BARREL_PACKAGES: ReadonlySet<string> = new Set([
  */
 const RADIX_BARREL_RE = /^@radix-ui\/react-[^/]+$/;
 
+const TREE_SHAKEABLE_ROOT_PACKAGES: ReadonlySet<string> = new Set([
+  "@headlessui/react",
+  "@phosphor-icons/react",
+  "@tabler/icons-react",
+  "lucide-react",
+]);
+
 function isBarrelImport(source: string): boolean {
   // Exact match against the known barrel package set
   if (BARREL_PACKAGES.has(source)) {
@@ -83,12 +91,23 @@ function isBarrelImport(source: string): boolean {
   return source.charCodeAt(0) === 64 /* '@' */ && RADIX_BARREL_RE.test(source);
 }
 
+function isPackageLikeSpecifier(source: string): boolean {
+  return !(
+    source.startsWith(".") ||
+    source.startsWith("/") ||
+    source.startsWith("@/") ||
+    source.startsWith("~/") ||
+    source.startsWith("#") ||
+    source.startsWith("node:")
+  );
+}
+
 export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   meta: {
     type: "suggestion",
     docs: {
       description:
-        "Prevent importing from barrel files of known heavy packages to avoid loading thousands of unused modules",
+        "Prevent importing from structurally detected barrel files of heavy packages to avoid loading thousands of unused modules",
     },
     fixable: "code",
     schema: [],
@@ -118,7 +137,19 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
         const source = node.source.value;
 
-        if (!isBarrelImport(source)) {
+        if (
+          TREE_SHAKEABLE_ROOT_PACKAGES.has(source) ||
+          !isPackageLikeSpecifier(source)
+        ) {
+          return;
+        }
+
+        const structuralResult = classifyBarrelImportSync({
+          filePath: context.filename,
+          specifier: source,
+        });
+
+        if (!(structuralResult ?? isBarrelImport(source))) {
           return;
         }
 
