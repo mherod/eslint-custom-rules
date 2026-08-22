@@ -71,6 +71,46 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
     const filename = context.filename;
     const sourceCode = context.sourceCode;
 
+    // File-level classification is a per-file invariant: compute it once at
+    // rule-context setup and reuse it in every visitor.
+    const isClientFile =
+      hasUseClientDirective(sourceCode) ||
+      isClientComponent(filename, sourceCode);
+    const isServerFile = isServerComponent(filename, sourceCode);
+
+    function checkModuleReference(
+      node: TSESTree.Node,
+      importedModule: string
+    ): void {
+      if (isClientFile && isServerOnlyModule(importedModule)) {
+        // Allow action files - clients can call server actions
+        if (!isActionModule(importedModule)) {
+          context.report({
+            node,
+            messageId: "clientImportingServerModule",
+            data: { module: importedModule },
+          });
+        }
+      }
+
+      // Client importing "use cache" functions creates network boundaries
+      if (isClientFile && isUseCacheModule(importedModule)) {
+        context.report({
+          node,
+          messageId: "clientImportingUseCacheFunction",
+          data: { module: importedModule },
+        });
+      }
+
+      if (isServerFile && isClientOnlyModule(importedModule)) {
+        context.report({
+          node,
+          messageId: "serverImportingClientModule",
+          data: { module: importedModule },
+        });
+      }
+    }
+
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration): void {
         const importedModule = node.source.value;
@@ -100,41 +140,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           return;
         }
 
-        // Determine if this is a client component
-        const isClientFile =
-          hasUseClientDirective(sourceCode) ||
-          isClientComponent(filename, sourceCode);
-        const isServerFile = isServerComponent(filename, sourceCode);
-
-        // Client importing server modules
-        if (isClientFile && isServerOnlyModule(importedModule)) {
-          // Allow action files - clients can call server actions
-          if (!isActionModule(importedModule)) {
-            context.report({
-              node,
-              messageId: "clientImportingServerModule",
-              data: { module: importedModule },
-            });
-          }
-        }
-
-        // Client importing "use cache" functions - BLOCKED (creates network boundaries)
-        if (isClientFile && isUseCacheModule(importedModule)) {
-          context.report({
-            node,
-            messageId: "clientImportingUseCacheFunction",
-            data: { module: importedModule },
-          });
-        }
-
-        // Server importing client modules
-        if (isServerFile && isClientOnlyModule(importedModule)) {
-          context.report({
-            node,
-            messageId: "serverImportingClientModule",
-            data: { module: importedModule },
-          });
-        }
+        checkModuleReference(node, importedModule);
       },
 
       // Dynamic import() expressions
@@ -147,37 +153,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           return;
         }
 
-        const importedModule = source.value;
-        const isClientFile =
-          hasUseClientDirective(sourceCode) ||
-          isClientComponent(filename, sourceCode);
-        const isServerFile = isServerComponent(filename, sourceCode);
-
-        if (isClientFile && isServerOnlyModule(importedModule)) {
-          if (!isActionModule(importedModule)) {
-            context.report({
-              node,
-              messageId: "clientImportingServerModule",
-              data: { module: importedModule },
-            });
-          }
-        }
-
-        if (isClientFile && isUseCacheModule(importedModule)) {
-          context.report({
-            node,
-            messageId: "clientImportingUseCacheFunction",
-            data: { module: importedModule },
-          });
-        }
-
-        if (isServerFile && isClientOnlyModule(importedModule)) {
-          context.report({
-            node,
-            messageId: "serverImportingClientModule",
-            data: { module: importedModule },
-          });
-        }
+        checkModuleReference(node, source.value);
       },
 
       CallExpression(node: TSESTree.CallExpression): void {
@@ -194,45 +170,12 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
             arg?.type === AST_NODE_TYPES.Literal &&
             typeof arg.value === "string"
           ) {
-            const importedModule = arg.value;
-            const isClientFile =
-              hasUseClientDirective(sourceCode) ||
-              isClientComponent(filename, sourceCode);
-            const isServerFile = isServerComponent(filename, sourceCode);
-
-            if (isClientFile && isServerOnlyModule(importedModule)) {
-              if (!isActionModule(importedModule)) {
-                context.report({
-                  node,
-                  messageId: "clientImportingServerModule",
-                  data: { module: importedModule },
-                });
-              }
-            }
-
-            if (isClientFile && isUseCacheModule(importedModule)) {
-              context.report({
-                node,
-                messageId: "clientImportingUseCacheFunction",
-                data: { module: importedModule },
-              });
-            }
-
-            if (isServerFile && isClientOnlyModule(importedModule)) {
-              context.report({
-                node,
-                messageId: "serverImportingClientModule",
-                data: { module: importedModule },
-              });
-            }
+            checkModuleReference(node, arg.value);
           }
         }
 
         // Server using client-only hook
-        if (
-          isClientOnlyHook(functionName) &&
-          isServerComponent(filename, sourceCode)
-        ) {
+        if (isServerFile && isClientOnlyHook(functionName)) {
           context.report({
             node,
             messageId: "serverUsingClientHook",
@@ -254,11 +197,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
           const envVar = node.property.name;
 
           // Client accessing server environment variable
-          if (
-            isServerEnvVar(envVar) &&
-            (hasUseClientDirective(sourceCode) ||
-              isClientComponent(filename, sourceCode))
-          ) {
+          if (isClientFile && isServerEnvVar(envVar)) {
             context.report({
               node,
               messageId: "clientAccessingServerEnv",
