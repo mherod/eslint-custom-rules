@@ -1,5 +1,9 @@
 import { TextEncoder } from "node:util";
-import { decodeBoundedPayload } from "../resect-sync-bridge";
+import {
+  decodeBoundedPayload,
+  decodeBridgeResponse,
+  writeBridgeDebug,
+} from "../resect-sync-bridge";
 
 const encoder = new TextEncoder();
 
@@ -44,5 +48,56 @@ describe("decodeBoundedPayload", () => {
   it("decodes an empty payload as an empty string", () => {
     const buffer = bufferWith("stale", 64);
     expect(decodeBoundedPayload(buffer, 0)).toBe("");
+  });
+});
+
+describe("bridge debug output", () => {
+  const originalDebugValue = process.env.RESECT_BRIDGE_DEBUG;
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+    if (originalDebugValue === undefined) {
+      delete process.env.RESECT_BRIDGE_DEBUG;
+    } else {
+      process.env.RESECT_BRIDGE_DEBUG = originalDebugValue;
+    }
+  });
+
+  it("keeps worker failures silent by default", () => {
+    delete process.env.RESECT_BRIDGE_DEBUG;
+    const writeSpy = jest
+      .spyOn(process.stderr, "write")
+      .mockImplementation(() => true);
+    const response = decodeBridgeResponse<never>(
+      '{"ok":false,"error":"worker import failed"}'
+    );
+
+    writeBridgeDebug(
+      { filePath: "/project/src/example.ts", operation: "resolve-specifiers" },
+      response.error ?? "unknown failure"
+    );
+
+    expect(response).toMatchObject({ handled: true, ok: false, result: null });
+    expect(writeSpy).not.toHaveBeenCalled();
+  });
+
+  it("writes failed worker responses when debug mode is enabled", () => {
+    process.env.RESECT_BRIDGE_DEBUG = "1";
+    const writeSpy = jest
+      .spyOn(process.stderr, "write")
+      .mockImplementation(() => true);
+    const response = decodeBridgeResponse<never>(
+      '{"ok":false,"error":"worker import failed"}'
+    );
+
+    writeBridgeDebug(
+      { filePath: "/project/src/example.ts", operation: "resolve-specifiers" },
+      response.error ?? "unknown failure"
+    );
+
+    expect(writeSpy).toHaveBeenCalledWith(
+      "[eslint-plugin-custom/resect-bridge] operation=resolve-specifiers " +
+        "file=/project/src/example.ts error=worker import failed\n"
+    );
   });
 });
