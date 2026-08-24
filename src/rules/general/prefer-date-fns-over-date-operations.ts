@@ -1,8 +1,14 @@
 import {
   AST_NODE_TYPES,
   ESLintUtils,
+  type TSESLint,
   type TSESTree,
 } from "@typescript-eslint/utils";
+import {
+  getStaticMemberName,
+  isDateLikeExpression,
+  isDateTimestampExpression,
+} from "../utils/date-expression-utils";
 
 export const RULE_NAME = "prefer-date-fns-over-date-operations";
 
@@ -14,42 +20,13 @@ type MessageIds =
 
 type Options = [];
 
-const COMPARISON_OPS = new Set([
-  "<",
-  ">",
-  "<=",
-  ">=",
-  "==",
-  "===",
-  "!=",
-  "!==",
-]);
-
-function isNewDateCall(node: TSESTree.Node | null | undefined): boolean {
-  return (
-    !!node &&
-    node.type === AST_NODE_TYPES.NewExpression &&
-    node.callee.type === AST_NODE_TYPES.Identifier &&
-    node.callee.name === "Date"
-  );
-}
-
-function isGetTimeCall(node: TSESTree.Node | null | undefined): boolean {
-  return (
-    !!node &&
-    node.type === AST_NODE_TYPES.CallExpression &&
-    node.callee.type === AST_NODE_TYPES.MemberExpression &&
-    node.callee.property.type === AST_NODE_TYPES.Identifier &&
-    node.callee.property.name === "getTime"
-  );
-}
-
-function isDateOp(node: TSESTree.Node | null | undefined): boolean {
-  return isGetTimeCall(node) || isNewDateCall(node);
-}
+const RELATIONAL_COMPARISON_OPS = new Set(["<", ">", "<=", ">="]);
+const EQUALITY_COMPARISON_OPS = new Set(["==", "===", "!=", "!=="]);
+const SORT_METHODS = new Set(["sort", "toSorted"]);
 
 function isSortCallback(
-  node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression
+  node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression,
+  sourceCode: TSESLint.SourceCode
 ): boolean {
   const parent = node.parent;
   if (!parent || parent.type !== AST_NODE_TYPES.CallExpression) {
@@ -61,38 +38,72 @@ function isSortCallback(
   const callee = parent.callee;
   return (
     callee.type === AST_NODE_TYPES.MemberExpression &&
-    callee.property.type === AST_NODE_TYPES.Identifier &&
-    callee.property.name === "sort"
+    SORT_METHODS.has(getStaticMemberName(callee, sourceCode) ?? "")
+  );
+}
+
+function getReturnedBinaryExpression(
+  node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression
+): TSESTree.BinaryExpression | null {
+  const body = node.body;
+  if (body.type === AST_NODE_TYPES.BinaryExpression) {
+    return body;
+  }
+
+  if (body.type !== AST_NODE_TYPES.BlockStatement) {
+    return null;
+  }
+
+  const returnedExpressions = body.body.flatMap((statement) => {
+    if (
+      statement.type === AST_NODE_TYPES.ReturnStatement &&
+      statement.argument?.type === AST_NODE_TYPES.BinaryExpression
+    ) {
+      return [statement.argument];
+    }
+    return [];
+  });
+
+  if (returnedExpressions.length !== 1) {
+    return null;
+  }
+
+  return returnedExpressions[0] ?? null;
+}
+
+function isDateComparableExpression(
+  node: TSESTree.BinaryExpression["left"],
+  sourceCode: TSESLint.SourceCode
+): boolean {
+  if (node.type === AST_NODE_TYPES.PrivateIdentifier) {
+    return false;
+  }
+
+  return (
+    isDateLikeExpression(node, sourceCode) ||
+    isDateTimestampExpression(node, sourceCode)
+  );
+}
+
+function isDateTimestampOperand(
+  node: TSESTree.BinaryExpression["left"],
+  sourceCode: TSESLint.SourceCode
+): boolean {
+  return (
+    node.type !== AST_NODE_TYPES.PrivateIdentifier &&
+    isDateTimestampExpression(node, sourceCode)
   );
 }
 
 function isDateSubtractionSort(
-  node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression
+  node: TSESTree.BinaryExpression,
+  sourceCode: TSESLint.SourceCode
 ): boolean {
-  const body = node.body;
-  if (!body || body.type !== AST_NODE_TYPES.BinaryExpression) {
-    return false;
-  }
-  if (body.operator !== "-") {
-    return false;
-  }
-
-  const left = body.left;
-  const right = body.right;
-  const leftOk =
-    left.type === AST_NODE_TYPES.CallExpression &&
-    left.callee.type === AST_NODE_TYPES.MemberExpression &&
-    isGetTimeCall(left) &&
-    isNewDateCall(left.callee.object);
-  if (!leftOk) {
-    return false;
-  }
-  const rightOk =
-    right.type === AST_NODE_TYPES.CallExpression &&
-    right.callee.type === AST_NODE_TYPES.MemberExpression &&
-    isGetTimeCall(right) &&
-    isNewDateCall(right.callee.object);
-  return rightOk;
+  return (
+    node.operator === "-" &&
+    isDateComparableExpression(node.left, sourceCode) &&
+    isDateComparableExpression(node.right, sourceCode)
+  );
 }
 
 export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
@@ -111,59 +122,20 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       preferDateFnsSubtraction:
         "Prefer date-fns functions for date arithmetic. Consider using differenceInMilliseconds, differenceInDays, or other date-fns utilities.",
       preferDateFnsArithmetic:
-        "Prefer date-fns functions for date arithmetic. Consider using add, sub, addDays, subDays, or other date-fns utilities.",
+        "Prefer explicit date-fns arithmetic for Date-derived timestamps, preserving whether the result is a Date or number.",
     },
   },
   defaultOptions: [],
   create(context) {
-    let hasDateFnsImport = false;
-    // Tracks nesting inside .sort() callbacks so we can skip the parent-walk
-    // on every BinaryExpression (a very hot AST node).
-    let sortCallbackDepth = 0;
-
-    function enterCallback(
-      node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression
-    ): void {
-      if (isSortCallback(node)) {
-        sortCallbackDepth++;
-      }
-    }
-    function exitCallback(
-      node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression
-    ): void {
-      if (isSortCallback(node)) {
-        sortCallbackDepth--;
-      }
-    }
+    const sourceCode = context.sourceCode;
+    const reportedSortExpressions = new WeakSet<TSESTree.BinaryExpression>();
 
     return {
-      ImportDeclaration(node: TSESTree.ImportDeclaration): void {
-        if (hasDateFnsImport) {
-          return;
-        }
-        const value = node.source.value;
-        if (
-          typeof value === "string" &&
-          (value === "date-fns" || value.startsWith("date-fns/"))
-        ) {
-          hasDateFnsImport = true;
-        }
-      },
-
-      ArrowFunctionExpression: enterCallback,
-      "ArrowFunctionExpression:exit": exitCallback,
-      FunctionExpression: enterCallback,
-      "FunctionExpression:exit": exitCallback,
-
       CallExpression(node: TSESTree.CallExpression): void {
-        if (hasDateFnsImport) {
-          return;
-        }
         const callee = node.callee;
         if (
           callee.type !== AST_NODE_TYPES.MemberExpression ||
-          callee.property.type !== AST_NODE_TYPES.Identifier ||
-          callee.property.name !== "sort" ||
+          !SORT_METHODS.has(getStaticMemberName(callee, sourceCode) ?? "") ||
           node.arguments.length === 0
         ) {
           return;
@@ -176,34 +148,69 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         ) {
           return;
         }
-        if (isDateSubtractionSort(sortFn)) {
+
+        if (!isSortCallback(sortFn, sourceCode)) {
+          return;
+        }
+
+        const comparison = getReturnedBinaryExpression(sortFn);
+        if (comparison && isDateSubtractionSort(comparison, sourceCode)) {
+          reportedSortExpressions.add(comparison);
           context.report({ node: sortFn, messageId: "preferDateFnsSort" });
         }
       },
 
       BinaryExpression(node: TSESTree.BinaryExpression): void {
-        if (hasDateFnsImport) {
-          return;
-        }
-        if (sortCallbackDepth > 0) {
+        if (reportedSortExpressions.has(node)) {
           return;
         }
 
         const op = node.operator;
         let messageId: MessageIds | null = null;
         if (op === "-") {
+          if (
+            !(
+              isDateComparableExpression(node.left, sourceCode) ||
+              isDateComparableExpression(node.right, sourceCode)
+            )
+          ) {
+            return;
+          }
           messageId = "preferDateFnsSubtraction";
         } else if (op === "+") {
+          if (
+            !(
+              isDateTimestampOperand(node.left, sourceCode) ||
+              isDateTimestampOperand(node.right, sourceCode)
+            )
+          ) {
+            return;
+          }
           messageId = "preferDateFnsArithmetic";
-        } else if (COMPARISON_OPS.has(op)) {
+        } else if (RELATIONAL_COMPARISON_OPS.has(op)) {
+          if (
+            !(
+              isDateComparableExpression(node.left, sourceCode) ||
+              isDateComparableExpression(node.right, sourceCode)
+            )
+          ) {
+            return;
+          }
+          messageId = "preferDateFnsComparison";
+        } else if (EQUALITY_COMPARISON_OPS.has(op)) {
+          if (
+            !(
+              isDateTimestampOperand(node.left, sourceCode) &&
+              isDateTimestampOperand(node.right, sourceCode)
+            )
+          ) {
+            return;
+          }
           messageId = "preferDateFnsComparison";
         } else {
           return;
         }
 
-        if (!(isDateOp(node.left) || isDateOp(node.right))) {
-          return;
-        }
         context.report({ node, messageId });
       },
     };

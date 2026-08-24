@@ -54,6 +54,35 @@ ruleTester.run(RULE_NAME, rule, {
         const timestamp = Date.now();
       `,
     },
+    // Unknown getTime methods are not necessarily Date operations
+    {
+      code: `
+        const delta = clock.getTime() - baseline;
+      `,
+    },
+    // Date identity and string coercion do not have equivalent date-fns operations
+    {
+      code: `
+        const sameReference = new Date(a) === new Date(b);
+        const label = new Date(a) + '';
+      `,
+    },
+    // Date.parse diagnostics belong to the leaf prefer-date-fns rule
+    {
+      code: `
+        const delta = Date.parse(a) - Date.parse(b);
+      `,
+    },
+    // A local constructor named Date is not the built-in Date
+    {
+      code: `
+        function compareCustomDates(
+          Date: { new (value: string): { getTime(): number } },
+        ) {
+          return new Date(a).getTime() - new Date(b).getTime();
+        }
+      `,
+    },
   ],
   invalid: [
     // Sort with date operations - the exact pattern from the example
@@ -124,9 +153,115 @@ ruleTester.run(RULE_NAME, rule, {
         },
       ],
     },
+    // An unrelated date-fns import must not disable native Date diagnostics
+    {
+      code: `
+        const beforeImport = new Date(item.created) > new Date(other.created);
+        import { format } from 'date-fns';
+        const afterImport = new Date(item.updated) > new Date(other.updated);
+      `,
+      errors: [
+        {
+          messageId: "preferDateFnsComparison",
+        },
+        {
+          messageId: "preferDateFnsComparison",
+        },
+      ],
+    },
+    // Proven Date identifiers are detected without requiring inline constructors
+    {
+      code: `
+        const created = new Date(item.created);
+        const updated: Date = getUpdatedDate();
+        const isNewer = updated >= created;
+        const isGlobalNewer = new globalThis.Date(a) > new globalThis.Date(b);
+      `,
+      errors: [
+        {
+          messageId: "preferDateFnsComparison",
+        },
+        {
+          messageId: "preferDateFnsComparison",
+        },
+      ],
+    },
+    // Block-bodied arrow and function comparators receive one sort diagnostic each
+    {
+      code: `
+        items.sort((a, b) => {
+          return new Date(a.date).getTime() - new Date(b.date).getTime();
+        });
+        items.sort(function compare(a, b) {
+          return new Date(a.date).getTime() - new Date(b.date).getTime();
+        });
+      `,
+      errors: [
+        {
+          messageId: "preferDateFnsSort",
+        },
+        {
+          messageId: "preferDateFnsSort",
+        },
+      ],
+    },
+    // Computed sort and toSorted calls use the same comparator contract
+    {
+      code: `
+        items['sort'](
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+        );
+        items.toSorted(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+        );
+      `,
+      errors: [
+        {
+          messageId: "preferDateFnsSort",
+        },
+        {
+          messageId: "preferDateFnsSort",
+        },
+      ],
+    },
+    // Other Date expressions inside sort callbacks must not be hidden
+    {
+      code: `
+        items.sort((a, b) => {
+          if (new Date(a.date) > new Date(b.date)) {
+            return 1;
+          }
+          return -1;
+        });
+      `,
+      errors: [
+        {
+          messageId: "preferDateFnsComparison",
+        },
+      ],
+    },
+    // Computed getTime access and timestamp equality stay detectable
+    {
+      code: `
+        const left: Date = getLeftDate();
+        const right: Date = getRightDate();
+        const delta = left['getTime']() - right.getTime();
+        const isEqual = left.getTime() === right.getTime();
+      `,
+      errors: [
+        {
+          messageId: "preferDateFnsSubtraction",
+        },
+        {
+          messageId: "preferDateFnsComparison",
+        },
+      ],
+    },
     // Mixed scenarios
     {
       code: `
+        const date1: Date = getDate1();
+        const date2: Date = getDate2();
         const isOlder = date1.getTime() < date2.getTime();
         const sortedDates = dates.sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
       `,
