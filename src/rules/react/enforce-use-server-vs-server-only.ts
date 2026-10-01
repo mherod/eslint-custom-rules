@@ -3,7 +3,10 @@ import {
   ESLintUtils,
   type TSESTree,
 } from "@typescript-eslint/utils";
-import { hasUseClientDirective } from "../utils/component-type-utils";
+import {
+  hasUseClientDirective,
+  normalizePath,
+} from "../utils/component-type-utils";
 import {
   isActionFile,
   isAsyncExportedFunction,
@@ -21,7 +24,7 @@ type MessageIds =
   | "missingServerOnlyImport"
   | "useServerWithoutActionPatterns";
 
-type Options = [];
+type Options = [{ dataDirectories?: string[] }];
 
 const DB_IDENTIFIERS = new Set([
   "db",
@@ -74,7 +77,18 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         "Enforce correct usage of 'use server' (communication) vs 'server-only' (isolation) based on file purpose. " +
         "These directives are mutually exclusive and serve different purposes.",
     },
-    schema: [],
+    schema: [
+      {
+        type: "object",
+        properties: {
+          dataDirectories: {
+            type: "array",
+            items: { type: "string", minLength: 1 },
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
     messages: {
       bothDirectivesPresent:
         "File has both 'use server' and 'server-only' which contradict each other. " +
@@ -101,9 +115,9 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         "'use server' should only be used for files that export functions callable from clients.",
     },
   },
-  defaultOptions: [],
-  create(context) {
-    const filename = context.filename;
+  defaultOptions: [{}],
+  create(context, [options]) {
+    const filename = normalizePath(context.filename);
     const sourceCode = context.sourceCode;
 
     // Route Handler files (route.ts/js) export HTTP methods (GET, POST, etc.),
@@ -241,12 +255,23 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
       "Program:exit"(): void {
         const isActionFileResult = isActionFile(filename);
-        const isDataFileResult = isDataFile(filename);
+        const isDataFileResult =
+          isDataFile(filename) ||
+          (!isActionFileResult &&
+            options.dataDirectories?.some((directory) =>
+              filename
+                .toLowerCase()
+                .includes(
+                  `/${directory.toLowerCase().replace(/^\/+|\/+$/gu, "")}/`
+                )
+            ));
         const isApiRoute =
           filename.includes("/app/api/") || filename.includes("/pages/api/");
         const isMiddleware =
           filename.endsWith("/middleware.ts") ||
-          filename.endsWith("/middleware.js");
+          filename.endsWith("/middleware.js") ||
+          filename.endsWith("/proxy.ts") ||
+          filename.endsWith("/proxy.js");
         const hasSensitiveOperations = hasDatabaseOperations || hasApiKeyUsage;
         const useClientDirective = hasUseClientDirective(sourceCode);
         const isExplicitClient = useClientDirective || hasClientOnlyImport;

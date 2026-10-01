@@ -33,7 +33,7 @@ type MessageIds =
   | "clientAccessingServerEnv"
   | "clientImportingUseCacheFunction";
 
-type Options = [];
+type Options = [{ serverModulePrefixes?: string[] }];
 
 export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
   meta: {
@@ -44,7 +44,18 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         "Action files can be imported by clients, but server-only modules cannot.",
     },
     fixable: "code",
-    schema: [],
+    schema: [
+      {
+        type: "object",
+        properties: {
+          serverModulePrefixes: {
+            type: "array",
+            items: { type: "string", minLength: 1 },
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
     messages: {
       clientImportingServerModule:
         "Client component cannot import server-only module '{{module}}'. " +
@@ -64,8 +75,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
         "Remove 'use cache' directive to keep as secure server-side function.",
     },
   },
-  defaultOptions: [],
-  create(context) {
+  defaultOptions: [{}],
+  create(context, [options]) {
     // File-level classification is a per-file invariant computed once via the
     // shared per-file facts seam and reused in every visitor.
     const facts = getFileFacts(context.filename, context.sourceCode);
@@ -76,7 +87,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
       node: TSESTree.Node,
       importedModule: string
     ): void {
-      if (isClientFile && isServerOnlyModule(importedModule)) {
+      if (
+        isClientFile &&
+        (isServerOnlyModule(importedModule) ||
+          options.serverModulePrefixes?.some((prefix) =>
+            importedModule.startsWith(prefix)
+          ))
+      ) {
         // Allow action files - clients can call server actions
         if (!isActionModule(importedModule)) {
           context.report({

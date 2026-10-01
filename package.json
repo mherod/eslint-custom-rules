@@ -1,6 +1,6 @@
 {
   "name": "@mherod/eslint-plugin-custom",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Modular ESLint plugin with specialized rules for TypeScript, React/Next.js, Vue.js, security, and general code quality",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -79,7 +79,6 @@
     "@typescript-eslint/parser": "^8.59.3",
     "@typescript-eslint/rule-tester": "^8.59.3",
     "@typescript-eslint/types": "^8.59.3",
-    "@typescript-eslint/utils": "^8.59.3",
     "eslint": "^9.39.4",
     "husky": "^9.1.7",
     "jest": "^30.4.2",
@@ -108,5 +107,8 @@
     "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
       "npx ultracite fix"
     ]
+  },
+  "dependencies": {
+    "@typescript-eslint/utils": "^8.59.3"
   }
 }
