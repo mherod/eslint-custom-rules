@@ -67,7 +67,7 @@ function typeSafety(type: ts.Type, checker: ts.TypeChecker): Safety {
   if (
     type.flags === ts.TypeFlags.Any ||
     type.flags === ts.TypeFlags.Unknown ||
-    type.isTypeParameter()
+    type.flags === ts.TypeFlags.TypeParameter
   ) {
     const constraint = checker.getBaseConstraintOfType(type);
     return constraint && constraint !== type
