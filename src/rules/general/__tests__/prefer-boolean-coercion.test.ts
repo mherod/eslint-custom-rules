@@ -33,6 +33,7 @@ tester.run("prefer-boolean-coercion", rule, {
       ["Boolean(count++)", "!!count++"],
       ["Boolean(a /* keep */ + b)", "!!(a /* keep */ + b)"],
       ["Boolean(value).toString()", "(!!value).toString()"],
+      ["Boolean(value)!.toString()", "(!!value)!.toString()"],
       ["Boolean(value)()", "(!!value)()"],
       ["Boolean(value) ** 2", "(!!value) ** 2"],
       ["Boolean(value) `text`", "(!!value) `text`"],

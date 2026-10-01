@@ -77,6 +77,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<[], "preferShorter">({
             : `!!${atomic ? text : `(${text})`}`;
         const parent = node.parent;
         if (
+          parent.type === AST_NODE_TYPES.TSNonNullExpression ||
+          parent.type === AST_NODE_TYPES.TSInstantiationExpression ||
           (parent.type === AST_NODE_TYPES.MemberExpression &&
             parent.object === node) ||
           ((parent.type === AST_NODE_TYPES.CallExpression ||
