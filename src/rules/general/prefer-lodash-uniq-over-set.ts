@@ -78,7 +78,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
                 // Add lodash import if not present
                 if (!hasLodashImport && sourceCode.ast.body.length > 0) {
-                  const firstNode = sourceCode.ast.body[0];
+                  const firstNode = sourceCode.ast.body.find(
+                    (statement) =>
+                      !(
+                        statement.type === AST_NODE_TYPES.ExpressionStatement &&
+                        statement.directive
+                      )
+                  );
                   if (firstNode) {
                     fixes.push(
                       fixer.insertTextBefore(
@@ -173,7 +179,13 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
                 // Add lodash import if not present
                 if (!hasLodashImport && sourceCode.ast.body.length > 0) {
-                  const firstNode = sourceCode.ast.body[0];
+                  const firstNode = sourceCode.ast.body.find(
+                    (statement) =>
+                      !(
+                        statement.type === AST_NODE_TYPES.ExpressionStatement &&
+                        statement.directive
+                      )
+                  );
                   if (firstNode) {
                     fixes.push(
                       fixer.insertTextBefore(

@@ -72,10 +72,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 
       const diagnosticsBySpecifier = new Map<string, string>();
       for (const resolution of resolutions) {
-        diagnosticsBySpecifier.set(
-          resolution.specifier,
-          resolution.diagnostic
-        );
+        diagnosticsBySpecifier.set(resolution.specifier, resolution.diagnostic);
       }
 
       for (const reference of references) {
@@ -140,10 +137,7 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
 });
 
 function getStringLiteralValue(node: TSESTree.Node | undefined): string | null {
-  if (
-    node?.type !== AST_NODE_TYPES.Literal ||
-    typeof node.value !== "string"
-  ) {
+  if (node?.type !== AST_NODE_TYPES.Literal || typeof node.value !== "string") {
     return null;
   }
 
@@ -176,10 +170,7 @@ function getCallReferenceType(
     return "require-resolve";
   }
 
-  if (
-    MOCK_OBJECT_NAMES.has(objectName) &&
-    MOCK_METHOD_NAMES.has(methodName)
-  ) {
+  if (MOCK_OBJECT_NAMES.has(objectName) && MOCK_METHOD_NAMES.has(methodName)) {
     return "jest-mock";
   }
 

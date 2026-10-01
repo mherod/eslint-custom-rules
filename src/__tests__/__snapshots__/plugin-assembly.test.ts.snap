@@ -200,6 +200,10 @@ exports[`plugin assembly contract combined plugin severity contract is stable 1`
       "error",
     ],
     [
+      "@mherod/custom/prefer-boolean-coercion",
+      "warn",
+    ],
+    [
       "@mherod/custom/prefer-cache-api",
       "error",
     ],
@@ -495,6 +499,10 @@ exports[`plugin assembly contract combined plugin severity contract is stable 1`
     ],
     [
       "@mherod/custom/prefer-await-params-in-page",
+      "error",
+    ],
+    [
+      "@mherod/custom/prefer-boolean-coercion",
       "error",
     ],
     [
@@ -828,6 +836,10 @@ exports[`plugin assembly contract combined plugin severity contract is stable 1`
       "error",
     ],
     [
+      "@mherod/custom/prefer-boolean-coercion",
+      "warn",
+    ],
+    [
       "@mherod/custom/prefer-cache-api",
       "error",
     ],
@@ -1123,6 +1135,10 @@ exports[`plugin assembly contract combined plugin severity contract is stable 1`
     ],
     [
       "@mherod/custom/prefer-await-params-in-page",
+      "error",
+    ],
+    [
+      "@mherod/custom/prefer-boolean-coercion",
       "error",
     ],
     [
@@ -1301,6 +1317,10 @@ exports[`plugin assembly contract general category contract is stable 1`] = `
       "warn",
     ],
     [
+      "@mherod/general/prefer-boolean-coercion",
+      "warn",
+    ],
+    [
       "@mherod/general/prefer-date-fns",
       "warn",
     ],
@@ -1371,6 +1391,10 @@ exports[`plugin assembly contract general category contract is stable 1`] = `
       "warn",
     ],
     [
+      "@mherod/general/prefer-boolean-coercion",
+      "error",
+    ],
+    [
       "@mherod/general/prefer-date-fns",
       "error",
     ],
@@ -1438,6 +1462,10 @@ exports[`plugin assembly contract general category contract is stable 1`] = `
     ],
     [
       "@mherod/general/no-unresolvable-imports",
+      "warn",
+    ],
+    [
+      "@mherod/general/prefer-boolean-coercion",
       "warn",
     ],
     [
@@ -1511,6 +1539,10 @@ exports[`plugin assembly contract general category contract is stable 1`] = `
       "warn",
     ],
     [
+      "@mherod/general/prefer-boolean-coercion",
+      "error",
+    ],
+    [
       "@mherod/general/prefer-date-fns",
       "error",
     ],
@@ -1581,6 +1613,10 @@ exports[`plugin assembly contract general category contract is stable 1`] = `
       "warn",
     ],
     [
+      "prefer-boolean-coercion",
+      "warn",
+    ],
+    [
       "prefer-date-fns",
       "warn",
     ],
@@ -1624,6 +1660,7 @@ exports[`plugin assembly contract general category contract is stable 1`] = `
     "no-long-relative-imports",
     "no-unresolvable-imports",
     "no-unused-exports",
+    "prefer-boolean-coercion",
     "prefer-date-fns",
     "prefer-date-fns-over-date-operations",
     "prefer-direct-imports",
@@ -1669,6 +1706,10 @@ exports[`plugin assembly contract general category contract is stable 1`] = `
     [
       "no-unresolvable-imports",
       "warn",
+    ],
+    [
+      "prefer-boolean-coercion",
+      "error",
     ],
     [
       "prefer-date-fns",

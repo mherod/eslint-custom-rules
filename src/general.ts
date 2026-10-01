@@ -10,6 +10,7 @@ import noImportTypeQueries from "./rules/general/no-import-type-queries";
 import noLongRelativeImports from "./rules/general/no-long-relative-imports";
 import noUnresolvableImports from "./rules/general/no-unresolvable-imports";
 import noUnusedExports from "./rules/general/no-unused-exports";
+import preferBooleanCoercion from "./rules/general/prefer-boolean-coercion";
 import preferDateFns from "./rules/general/prefer-date-fns";
 import preferDateFnsOverDateOperations from "./rules/general/prefer-date-fns-over-date-operations";
 import preferDirectImports from "./rules/general/prefer-direct-imports";
@@ -48,6 +49,11 @@ export const GENERAL_MANIFEST = {
     rule: noUnresolvableImports,
   },
   "no-unused-exports": { rule: noUnusedExports },
+  "prefer-boolean-coercion": {
+    recommended: "warn",
+    rule: preferBooleanCoercion,
+    strict: "error",
+  },
   "prefer-date-fns": {
     recommended: "warn",
     rule: preferDateFns,

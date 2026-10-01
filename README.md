@@ -266,7 +266,7 @@ export default [
 
 **React Patterns:**
 - `enforce-component-patterns` - Enforces consistent component patterns
-- `no-jsx-logical-and` - Prevents `&&` in JSX (use ternary instead)
+- `no-jsx-logical-and` - Prefers succinct JSX conditionals: keeps safe `&&`, shortens `condition ? <Element /> : null`, and adds `!!` when a numeric condition could render `0` or `NaN`. Uses TypeScript information when available; never rewrites JSX prop values.
 - `prefer-async-page-component` - Prefers async page components
 - `prefer-await-params-in-page` - Requires await for params in page components
 - `prefer-react-destructured-imports` - Use destructured React imports
@@ -357,6 +357,7 @@ export default [
 - `prefer-direct-imports` - Prefer direct module imports over barrel file re-exports and auto-split mixed imports onto the real source modules
 - `prefer-lodash-es-imports` - Prefer lodash-es imports over lodash for tree-shaking
 - `prefer-lodash-uniq-over-set` - Use lodash uniq over Set for array deduplication
+- `prefer-boolean-coercion` - Prefer `!!x` to `Boolean(x)` when calling the built-in function with one argument. Preserves shadowed functions, constructors, spread arguments and extra arguments; configure core `no-implicit-coercion` with `{ allow: ["!!"] }` when using both rules.
 - `prefer-ufo-with-query` - Use ufo library's `withQuery` for URL query manipulation
 - `prefer-zod-default-with-catch` - Use `.default().catch()` pattern for Zod defaults
 - `prefer-zod-url` - Use `z.string().url()` for URL validation

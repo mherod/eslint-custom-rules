@@ -47,6 +47,18 @@ const intersection = [...set1].filter(x => set2.has(x));
     },
   ],
   invalid: [
+    {
+      code: '"use client";\nconst unique = [...new Set(items)];',
+      output:
+        "\"use client\";\nimport { uniq } from 'lodash-es';\nconst unique = uniq(items);",
+      errors: [{ messageId: "preferLodashUniq" }],
+    },
+    {
+      code: '"use server";\nconst unique = Array.from(new Set(items));',
+      output:
+        "\"use server\";\nimport { uniq } from 'lodash-es';\nconst unique = uniq(items);",
+      errors: [{ messageId: "preferLodashUniq" }],
+    },
     // Pattern 1: Array.from(new Set(...))
     {
       code: "const uniqueItems = Array.from(new Set(items));",

@@ -56,12 +56,10 @@ describe("no-unresolvable-imports bridge requests", () => {
     runListener(listeners, "CallExpression", requireNode);
     runListener(listeners, "Program:exit", {} as never);
 
-    expect(
-      mockedResolveUnresolvableImportSpecifiersSync
-    ).toHaveBeenCalledTimes(1);
-    expect(
-      mockedResolveUnresolvableImportSpecifiersSync
-    ).toHaveBeenCalledWith({
+    expect(mockedResolveUnresolvableImportSpecifiersSync).toHaveBeenCalledTimes(
+      1
+    );
+    expect(mockedResolveUnresolvableImportSpecifiersSync).toHaveBeenCalledWith({
       filePath: FIXTURE_FILE,
       specifiers: ["./missing"],
     });

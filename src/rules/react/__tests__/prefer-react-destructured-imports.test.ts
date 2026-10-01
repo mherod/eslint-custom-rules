@@ -72,6 +72,12 @@ ruleTester.run("prefer-react-destructured-imports", rule, {
     },
   ],
   invalid: [
+    {
+      code: "import React, { useState, } from 'react'; React.createElement('div');",
+      output:
+        "import React, { useState, createElement } from 'react'; createElement('div');",
+      errors: [{ messageId: "preferDestructuredImport" }],
+    },
     // React.useState - should error and suggest fix
     {
       code: `

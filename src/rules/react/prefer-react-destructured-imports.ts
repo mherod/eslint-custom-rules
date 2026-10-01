@@ -134,7 +134,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
                   (_match: string, existingImports: string) => {
                     const imports = existingImports
                       .split(",")
-                      .map((imp: string) => imp.trim());
+                      .map((imp: string) => imp.trim())
+                      .filter(Boolean);
                     if (!imports.includes(memberName)) {
                       imports.push(memberName);
                     }
@@ -148,7 +149,8 @@ export default ESLintUtils.RuleCreator.withoutDocs<Options, MessageIds>({
                   (_match: string, existingImports: string) => {
                     const imports = existingImports
                       .split(",")
-                      .map((imp: string) => imp.trim());
+                      .map((imp: string) => imp.trim())
+                      .filter(Boolean);
                     if (!imports.includes(memberName)) {
                       imports.push(memberName);
                     }
